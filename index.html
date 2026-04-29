@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ALIRIN — Sistem Pemantauan Drainase Cerdas Bandar Lampung</title>
+  <meta name="description" content="Platform civic-tech untuk memantau, melaporkan, dan memprioritaskan penanganan drainase mikro berbasis peta risiko di Bandar Lampung.">
+  <meta name="theme-color" content="#0B3A5B">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/landing.css">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+</head>
+<body>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       NAVBAR
+       ════════════════════════════════════════════════════════════════════════ -->
+  <nav id="main-navbar" class="navbar navbar--transparent" aria-label="Navigasi utama">
+    <div class="container navbar__inner">
+      <a href="/" class="navbar__logo" aria-label="ALIRIN Beranda">
+        <span class="navbar__logo-mark" aria-hidden="true">
+          <i data-lucide="droplets" style="width:20px;height:20px"></i>
+        </span>
+        ALIRIN
+      </a>
+
+      <div class="navbar__links" id="nav-links">
+        <a href="#masalah" class="navbar__link">Masalah</a>
+        <a href="#cara-kerja" class="navbar__link">Cara Kerja</a>
+        <a href="#fitur" class="navbar__link">Fitur</a>
+        <a href="#statistik" class="navbar__link">Statistik</a>
+        <a href="peta.html" class="navbar__link">Peta Risiko</a>
+      </div>
+
+      <div class="navbar__actions">
+        <a href="lapor.html" class="btn btn--secondary btn--sm">Laporkan Drainase</a>
+        <a href="admin/login.html" class="btn btn--outline-light btn--sm">Masuk</a>
+      </div>
+
+      <button class="navbar__toggle" id="nav-toggle" aria-label="Buka menu" aria-expanded="false" aria-controls="nav-drawer">
+        <span class="navbar__toggle-bar"></span>
+        <span class="navbar__toggle-bar"></span>
+        <span class="navbar__toggle-bar"></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile Drawer -->
+  <div id="nav-drawer" class="navbar__drawer" aria-hidden="true" role="dialog" aria-label="Menu navigasi">
+    <div id="nav-backdrop" class="navbar__drawer-backdrop"></div>
+    <div class="navbar__drawer-panel">
+      <a href="#masalah" class="navbar__link nav-drawer__link">Masalah</a>
+      <a href="#cara-kerja" class="navbar__link nav-drawer__link">Cara Kerja</a>
+      <a href="#fitur" class="navbar__link nav-drawer__link">Fitur</a>
+      <a href="#statistik" class="navbar__link nav-drawer__link">Statistik</a>
+      <a href="peta.html" class="navbar__link nav-drawer__link">Peta Risiko</a>
+      <hr style="border:none;border-top:1px solid var(--clr-border);margin:var(--sp-4) 0">
+      <a href="lapor.html" class="btn btn--primary btn--mobile">Laporkan Drainase</a>
+      <a href="admin/login.html" class="btn btn--outline btn--mobile">Masuk Dashboard</a>
+    </div>
+  </div>
+
+  <main>
+    <!-- ══════════════════════════════════════════════════════════════════════
+         HERO
+         ══════════════════════════════════════════════════════════════════════ -->
+    <section class="hero" id="hero">
+      <!-- Background gradient -->
+      <div class="hero__bg" aria-hidden="true"></div>
+
+      <!-- Animated particles -->
+      <div class="hero__particles" id="hero-particles" aria-hidden="true"></div>
+
+      <!-- Canvas wave -->
+      <div class="hero__waves" aria-hidden="true">
+        <canvas id="hero-wave-canvas" style="width:100%;height:120px"></canvas>
+      </div>
+
+      <div class="container hero__inner">
+        <!-- Left: Content -->
+        <div class="hero__content">
+          <span class="hero__eyebrow reveal">
+            <span class="hero__eyebrow-dot" aria-hidden="true"></span>
+            Smart City · Bandar Lampung
+          </span>
+
+          <h1 class="hero__headline reveal delay-1">
+            Ubah Laporan Drainase Menjadi <em>Aksi Preventif</em>
+          </h1>
+
+          <p class="hero__body reveal delay-2">
+            ALIRIN membantu warga melaporkan drainase bermasalah, lalu menganalisis risiko genangan secara otomatis agar pemerintah dapat bertindak lebih cepat dan tepat sasaran.
+          </p>
+
+          <div class="hero__actions reveal delay-3">
+            <a href="lapor.html" class="btn btn--secondary btn--lg">
+              <i data-lucide="send" style="width:18px;height:18px" aria-hidden="true"></i>
+              Laporkan Drainase
+            </a>
+            <a href="peta.html" class="btn btn--outline-light btn--lg">
+              <i data-lucide="map" style="width:18px;height:18px" aria-hidden="true"></i>
+              Lihat Peta Risiko
+            </a>
+          </div>
+
+          <div class="hero__stats reveal delay-4">
+            <div class="hero__stat-item">
+              <span class="hero__stat-number"><span class="stat-accent" data-count-to="128" data-suffix="+">0</span></span>
+              <span class="hero__stat-label">Laporan masuk</span>
+            </div>
+            <div class="hero__stat-item">
+              <span class="hero__stat-number"><span class="stat-accent" data-count-to="12">0</span></span>
+              <span class="hero__stat-label">Kelurahan terpantau</span>
+            </div>
+            <div class="hero__stat-item">
+              <span class="hero__stat-number"><span class="stat-accent" data-count-to="87" data-suffix="%">0</span></span>
+              <span class="hero__stat-label">Ditindaklanjuti</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Visual -->
+        <div class="hero__visual reveal delay-2">
+          <div class="hero__map-card">
+            <div class="hero__map-card-header">
+              <span class="hero__map-card-title">
+                <i data-lucide="map-pin" style="width:14px;height:14px" aria-hidden="true"></i>
+                Peta Risiko — Bandar Lampung
+              </span>
+              <span class="badge badge--live">
+                <span class="hero__eyebrow-dot" aria-hidden="true"></span> Live
+              </span>
+            </div>
+
+            <div class="fake-map">
+              <div class="fake-map__roads" aria-hidden="true"></div>
+
+              <!-- Risk markers -->
+              <div class="risk-marker risk-marker--kritis" style="top:25%;left:30%">
+                <span class="risk-marker__ring" aria-hidden="true"></span>
+                <span class="risk-marker__pin">85</span>
+              </div>
+              <div class="risk-marker risk-marker--tinggi" style="top:50%;left:60%">
+                <span class="risk-marker__ring" aria-hidden="true"></span>
+                <span class="risk-marker__pin">67</span>
+              </div>
+              <div class="risk-marker risk-marker--waspada" style="top:65%;left:25%">
+                <span class="risk-marker__pin">48</span>
+              </div>
+              <div class="risk-marker risk-marker--normal" style="top:35%;left:75%">
+                <span class="risk-marker__pin">22</span>
+              </div>
+            </div>
+
+            <div class="hero__map-card-footer">
+              <div class="map-legend-item"><span class="map-legend-dot" style="background:var(--clr-success)"></span> Normal</div>
+              <div class="map-legend-item"><span class="map-legend-dot" style="background:var(--clr-warning)"></span> Waspada</div>
+              <div class="map-legend-item"><span class="map-legend-dot" style="background:var(--clr-risk-high)"></span> Tinggi</div>
+              <div class="map-legend-item"><span class="map-legend-dot" style="background:var(--clr-danger)"></span> Kritis</div>
+            </div>
+          </div>
+
+          <!-- Floating chips -->
+          <div class="hero__chip hero__chip--top-right" aria-hidden="true">
+            <span class="hero__chip-icon" style="background:var(--clr-danger-soft);color:var(--clr-danger)">
+              <i data-lucide="alert-triangle" style="width:18px;height:18px"></i>
+            </span>
+            <span class="hero__chip-text">
+              <span class="hero__chip-label">Risiko Kritis</span>
+              <span class="hero__chip-value">3 Titik Hari Ini</span>
+            </span>
+          </div>
+
+          <div class="hero__chip hero__chip--bottom-left" aria-hidden="true">
+            <span class="hero__chip-icon" style="background:var(--clr-success-soft);color:var(--clr-success)">
+              <i data-lucide="check-circle" style="width:18px;height:18px"></i>
+            </span>
+            <span class="hero__chip-text">
+              <span class="hero__chip-label">Selesai Ditangani</span>
+              <span class="hero__chip-value">24 Minggu Ini</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transition wave to next section -->
+      <div class="hero__transition-wave" aria-hidden="true">
+        <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="display:block;width:100%;height:80px">
+          <path d="M0 40 Q360 0 720 40 T1440 40 V80 H0 Z" fill="var(--clr-surface)"/>
+        </svg>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         PROBLEM SECTION
+         ══════════════════════════════════════════════════════════════════════ -->
+    <section class="section problem" id="masalah">
+      <div class="container">
+        <span class="section-label reveal">Masalah</span>
+        <h2 class="section-headline reveal delay-1">Genangan Kecil, Dampak Besar</h2>
+        <p class="section-body reveal delay-2">
+          Drainase mikro yang tersumbat sering diabaikan hingga menyebabkan genangan luas. Warga sulit melapor, pemerintah sulit menentukan mana yang harus ditangani lebih dulu.
+        </p>
+
+        <div class="problem__grid reveal-group">
+          <div class="problem-card reveal">
+            <div class="problem-card__icon problem-card__icon--danger">
+              <i data-lucide="cloud-rain" style="width:24px;height:24px"></i>
+            </div>
+            <h3 class="problem-card__title">Genangan Berulang</h3>
+            <p class="problem-card__body">Titik-titik genangan yang sama terjadi berulang setiap musim hujan karena penanganan tidak menyentuh akar masalah drainase mikro.</p>
+          </div>
+
+          <div class="problem-card reveal">
+            <div class="problem-card__icon problem-card__icon--warning">
+              <i data-lucide="clock" style="width:24px;height:24px"></i>
+            </div>
+            <h3 class="problem-card__title">Lambat Dilaporkan</h3>
+            <p class="problem-card__body">Tidak ada kanal pelaporan yang mudah diakses warga. Masalah baru diketahui setelah dampaknya meluas.</p>
+          </div>
+
+          <div class="problem-card reveal">
+            <div class="problem-card__icon problem-card__icon--muted">
+              <i data-lucide="list-x" style="width:24px;height:24px"></i>
+            </div>
+            <h3 class="problem-card__title">Prioritas Tidak Jelas</h3>
+            <p class="problem-card__body">Pemerintah menerima laporan tanpa skoring risiko sehingga sulit menentukan urutan penanganan yang paling berdampak.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         HOW IT WORKS
+         ══════════════════════════════════════════════════════════════════════ -->
+    <section class="section how" id="cara-kerja">
+      <div class="container" style="text-align:center">
+        <span class="section-label reveal" style="justify-content:center">Cara Kerja</span>
+        <h2 class="section-headline reveal delay-1" style="margin-inline:auto;max-width:28ch">3 Langkah Sederhana</h2>
+        <p class="section-body reveal delay-2" style="margin-inline:auto;text-align:center">
+          Dari laporan warga hingga aksi penanganan — semua tercatat dan transparan.
+        </p>
+
+        <div class="how__grid reveal-group">
+          <div class="how-step reveal">
+            <div class="how-step__num">1</div>
+            <div class="how-step__icon-wrap">
+              <i data-lucide="camera" style="width:28px;height:28px;color:var(--clr-secondary)"></i>
+            </div>
+            <h3 class="how-step__title">Warga Melapor</h3>
+            <p class="how-step__body">Pilih lokasi, foto drainase bermasalah, dan kirim laporan dalam hitungan menit.</p>
+          </div>
+
+          <div class="how-step reveal">
+            <div class="how-step__num">2</div>
+            <div class="how-step__icon-wrap">
+              <i data-lucide="shield-check" style="width:28px;height:28px;color:var(--clr-secondary)"></i>
+            </div>
+            <h3 class="how-step__title">Sistem Menganalisis</h3>
+            <p class="how-step__body">ALIRIN menghitung risk score otomatis berdasarkan lokasi, frekuensi, dan tingkat genangan.</p>
+          </div>
+
+          <div class="how-step reveal">
+            <div class="how-step__num">3</div>
+            <div class="how-step__icon-wrap">
+              <i data-lucide="check-circle" style="width:28px;height:28px;color:var(--clr-secondary)"></i>
+            </div>
+            <h3 class="how-step__title">Pemerintah Bertindak</h3>
+            <p class="how-step__body">Admin melihat prioritas di dashboard, menjadwalkan penanganan, dan warga dapat melacak statusnya.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         STATS
+         ══════════════════════════════════════════════════════════════════════ -->
+    <section class="stats" id="statistik">
+      <div class="container">
+        <div class="stats__grid reveal-group">
+          <div class="stats__item reveal">
+            <span class="stats__number"><span data-count-to="128" data-suffix="+">0</span></span>
+            <span class="stats__label">Laporan Masuk</span>
+          </div>
+          <div class="stats__item reveal">
+            <span class="stats__number"><span data-count-to="20">0</span></span>
+            <span class="stats__label">Kelurahan Terpantau</span>
+          </div>
+          <div class="stats__item reveal">
+            <span class="stats__number"><span data-count-to="87" data-suffix="%">0</span></span>
+            <span class="stats__label">Tingkat Tindak Lanjut</span>
+          </div>
+          <div class="stats__item reveal">
+            <span class="stats__number"><span class="accent" data-count-to="3">0</span></span>
+            <span class="stats__label">Titik Kritis Hari Ini</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         FEATURES
+         ══════════════════════════════════════════════════════════════════════ -->
+    <section class="section features" id="fitur">
+      <div class="container">
+        <div style="text-align:center">
+          <span class="section-label reveal" style="justify-content:center">Fitur Utama</span>
+          <h2 class="section-headline reveal delay-1" style="margin-inline:auto;max-width:28ch">Didesain untuk Kota Cerdas</h2>
+          <p class="section-body reveal delay-2" style="margin-inline:auto;text-align:center">
+            Fitur-fitur ALIRIN dirancang agar warga mudah melapor dan pemerintah cepat mengambil keputusan.
+          </p>
+        </div>
+
+        <div class="features__grid reveal-group">
+          <div class="feature-card reveal">
+            <div class="feature-card__icon"><i data-lucide="map-pin" style="width:24px;height:24px"></i></div>
+            <h3 class="feature-card__title">Peta Risiko Interaktif</h3>
+            <p class="feature-card__body">Visualisasi titik laporan dengan warna berdasarkan level risiko. Filter per wilayah, status, dan kategori.</p>
+          </div>
+          <div class="feature-card reveal">
+            <div class="feature-card__icon"><i data-lucide="bar-chart-3" style="width:24px;height:24px"></i></div>
+            <h3 class="feature-card__title">Risk Scoring Otomatis</h3>
+            <p class="feature-card__body">Setiap laporan mendapat skor risiko 0–100 berdasarkan lokasi, frekuensi, tingkat genangan, dan riwayat wilayah.</p>
+          </div>
+          <div class="feature-card reveal">
+            <div class="feature-card__icon"><i data-lucide="list-checks" style="width:24px;height:24px"></i></div>
+            <h3 class="feature-card__title">Tabel Prioritas</h3>
+            <p class="feature-card__body">Admin melihat daftar laporan terurut berdasarkan skor risiko untuk menentukan penanganan paling mendesak.</p>
+          </div>
+          <div class="feature-card reveal">
+            <div class="feature-card__icon"><i data-lucide="git-branch" style="width:24px;height:24px"></i></div>
+            <h3 class="feature-card__title">Status Transparan</h3>
+            <p class="feature-card__body">Warga dapat melacak status laporan secara real-time dari tahap verifikasi hingga selesai ditangani.</p>
+          </div>
+          <div class="feature-card reveal">
+            <div class="feature-card__icon"><i data-lucide="image" style="width:24px;height:24px"></i></div>
+            <h3 class="feature-card__title">Dokumentasi Before–After</h3>
+            <p class="feature-card__body">Bukti penanganan berupa foto sebelum dan sesudah, memastikan transparansi dan akuntabilitas.</p>
+          </div>
+          <div class="feature-card reveal">
+            <div class="feature-card__icon"><i data-lucide="cpu" style="width:24px;height:24px"></i></div>
+            <h3 class="feature-card__title">Siap Integrasi IoT</h3>
+            <p class="feature-card__body">Arsitektur terbuka untuk integrasi sensor ketinggian air dan curah hujan di masa depan.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         CTA FINAL
+         ══════════════════════════════════════════════════════════════════════ -->
+    <section class="section--loose cta-final" id="cta-akhir">
+      <div class="container" style="position:relative;z-index:1">
+        <span class="hero__eyebrow cta-final__eyebrow reveal" style="justify-content:center">
+          <span class="hero__eyebrow-dot" aria-hidden="true"></span>
+          Mulai Sekarang
+        </span>
+        <h2 class="cta-final__headline reveal delay-1">Bantu Lindungi Kotamu dari Genangan</h2>
+        <p class="cta-final__body reveal delay-2">
+          Setiap laporan drainase yang kamu kirim membantu pemerintah Bandar Lampung menentukan prioritas penanganan yang lebih tepat sasaran.
+        </p>
+        <div class="cta-final__actions reveal delay-3">
+          <a href="lapor.html" class="btn btn--secondary btn--xl">
+            <i data-lucide="send" style="width:20px;height:20px" aria-hidden="true"></i>
+            Laporkan Drainase
+          </a>
+          <a href="peta.html" class="btn btn--outline-light btn--xl">
+            <i data-lucide="map" style="width:20px;height:20px" aria-hidden="true"></i>
+            Lihat Peta Risiko
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       FOOTER
+       ════════════════════════════════════════════════════════════════════════ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div>
+          <div class="footer__brand-name">ALIRIN</div>
+          <p class="footer__tagline">Sistem pemantauan drainase cerdas berbasis peta risiko untuk Bandar Lampung.</p>
+        </div>
+        <div>
+          <h4 class="footer__col-title">Platform</h4>
+          <div class="footer__links">
+            <a href="peta.html" class="footer__link">Peta Risiko</a>
+            <a href="lapor.html" class="footer__link">Laporkan Drainase</a>
+            <a href="status.html" class="footer__link">Cek Status Laporan</a>
+          </div>
+        </div>
+        <div>
+          <h4 class="footer__col-title">Admin</h4>
+          <div class="footer__links">
+            <a href="admin/login.html" class="footer__link">Masuk Dashboard</a>
+            <a href="admin/prioritas.html" class="footer__link">Prioritas</a>
+            <a href="admin/statistik.html" class="footer__link">Statistik</a>
+          </div>
+        </div>
+        <div>
+          <h4 class="footer__col-title">Tentang</h4>
+          <div class="footer__links">
+            <a href="tentang.html" class="footer__link">Tentang ALIRIN</a>
+            <a href="#" class="footer__link">GEMASTIK XVIII</a>
+            <a href="#" class="footer__link">Tim Pengembang</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer__bottom">
+        <span>&copy; 2026 ALIRIN — Smart City Bandar Lampung</span>
+        <div class="footer__sdg">
+          <span class="footer__sdg-badge">SDG 6</span>
+          <span class="footer__sdg-badge">SDG 11</span>
+          <span class="footer__sdg-badge">SDG 13</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JS (non-module for file:// compatibility) -->
+  <script src="js/animations.js"></script>
+  <script src="js/landing.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => lucide.createIcons());</script>
+</body>
+</html>

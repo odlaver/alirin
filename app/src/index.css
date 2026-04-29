@@ -1,0 +1,183 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
+:root {
+  --color-primary: #0b3a5b;
+  --color-primary-dark: #06263d;
+  --color-primary-rgb: 11, 58, 91;
+  --color-secondary: #22b8cf;
+  --color-secondary-dark: #0b7285;
+  --color-secondary-rgb: 34, 184, 207;
+
+  --color-background: #f4fafc;
+  --color-surface: #ffffff;
+  --color-surface-muted: #eef7fa;
+  --color-border: #d9eaf2;
+  --color-border-strong: #b8d4e3;
+
+  --color-text-primary: #102a43;
+  --color-text-secondary: #486581;
+  --color-text-muted: #829ab1;
+
+  --color-success: #2f9e44;
+  --color-success-soft: #e6f4ea;
+  --color-warning: #f59f00;
+  --color-warning-soft: #fff4d6;
+  --color-risk-high: #f76707;
+  --color-risk-high-soft: #fff0e2;
+  --color-danger: #e03131;
+  --color-danger-soft: #ffe3e3;
+
+  --font-heading: 'Plus Jakarta Sans', Inter, system-ui, -apple-system, sans-serif;
+  --font-body: Inter, system-ui, -apple-system, sans-serif;
+
+  --radius-button: 12px;
+  --radius-card: 20px;
+  --radius-modal: 24px;
+  --radius-badge: 999px;
+
+  --shadow-card: 0 8px 24px rgba(var(--color-primary-rgb), 0.08);
+  --shadow-floating: 0 16px 40px rgba(var(--color-primary-rgb), 0.12);
+  --shadow-button: 0 8px 16px rgba(var(--color-primary-rgb), 0.16);
+  --shadow-map: 0 24px 70px rgba(4, 28, 47, 0.3);
+
+  --motion-fast: 150ms;
+  --motion-base: 250ms;
+  --motion-slow: 400ms;
+  --motion-page: 600ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-water: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --container: 1180px;
+  --container-pad: clamp(16px, 4vw, 48px);
+  --header-height: 72px;
+
+  color: var(--color-text-primary);
+  background: var(--color-background);
+  font-family: var(--font-body);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--header-height) + 20px);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100svh;
+  color: var(--color-text-primary);
+  background:
+    radial-gradient(circle at top left, rgba(var(--color-secondary-rgb), 0.12), transparent 32rem),
+    var(--color-background);
+  overflow-x: hidden;
+}
+
+body.drawer-lock {
+  overflow: hidden;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  border: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+svg,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+h1,
+h2,
+h3 {
+  color: var(--color-text-primary);
+  font-family: var(--font-heading);
+  letter-spacing: 0;
+}
+
+p {
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  border-radius: 10px;
+  outline: 3px solid rgba(var(--color-secondary-rgb), 0.5);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: rgba(var(--color-secondary-rgb), 0.22);
+  color: var(--color-text-primary);
+}
+
+#root {
+  min-height: 100svh;
+}
+
+.container {
+  width: min(100%, calc(var(--container) + (var(--container-pad) * 2)));
+  margin-inline: auto;
+  padding-inline: var(--container-pad);
+}
+
+.section {
+  overflow-x: clip;
+  padding-block: clamp(72px, 10vw, 116px);
+}
+
+.surface-section {
+  background: var(--color-surface);
+}
+
+.mist-section {
+  background:
+    linear-gradient(180deg, rgba(238, 247, 250, 0.75), rgba(244, 250, 252, 0.95)),
+    var(--color-background);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
