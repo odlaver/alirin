@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { motion, useReducedMotion } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
+import { Routes, Route, Link, useLocation } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import {
-  Activity,
   AlertTriangle,
   BarChart3,
   Camera,
-  CheckCircle2,
   ChevronRight,
   ClipboardCheck,
   Clock3,
@@ -16,7 +15,6 @@ import {
   GitBranch,
   Image as ImageIcon,
   Layers3,
-  LayoutDashboard,
   ListChecks,
   LocateFixed,
   LockKeyhole,
@@ -25,8 +23,7 @@ import {
   Menu,
   Navigation,
   RadioTower,
-  Route,
-  Search,
+  Route as RouteIcon,
   Send,
   ShieldCheck,
   Target,
@@ -36,6 +33,11 @@ import {
   X,
 } from 'lucide-react'
 import './App.css'
+import LaporPage from './pages/LaporPage.jsx'
+import PetaPage from './pages/PetaPage.jsx'
+import AdminLoginPage from './pages/AdminLoginPage.jsx'
+import AdminDashboard from './pages/AdminDashboard.jsx'
+import RiskMap from './components/RiskMap.jsx'
 
 const navItems = [
   { label: 'Masalah', href: '#masalah' },
@@ -46,29 +48,23 @@ const navItems = [
   { label: 'Dampak', href: '#dampak' },
 ]
 
-const heroStats = [
-  { value: '128+', label: 'Laporan masuk' },
-  { value: '20', label: 'Kelurahan terpantau' },
-  { value: '87%', label: 'Ditindaklanjuti' },
-]
-
 const problemCards = [
   {
     icon: Waves,
     title: 'Genangan berulang',
-    body: 'Titik yang sama sering tergenang karena sumbatan mikro baru terlihat setelah hujan deras.',
+    body: 'Titik rawan muncul lebih cepat di peta.',
     tone: 'danger',
   },
   {
     icon: Clock3,
     title: 'Pelaporan lambat',
-    body: 'Warga punya bukti lapangan, tetapi kanal laporan sering tidak ringkas dan sulit dilacak.',
+    body: 'Laporan masuk singkat, lengkap, dan terlacak.',
     tone: 'warning',
   },
   {
     icon: ListChecks,
     title: 'Prioritas kabur',
-    body: 'Laporan masuk tanpa skor risiko membuat tim lapangan sulit memilih titik yang paling mendesak.',
+    body: 'Skor risiko membantu menentukan urutan kerja.',
     tone: 'neutral',
   },
 ]
@@ -77,17 +73,17 @@ const solutionCards = [
   {
     icon: Map,
     title: 'Peta risiko sebagai pusat kerja',
-    body: 'Titik laporan tampil dengan level Normal, Waspada, Tinggi, dan Kritis agar keputusan dimulai dari lokasi.',
+    body: 'Semua titik laporan terbaca dari satu tampilan.',
   },
   {
     icon: Gauge,
     title: 'Risk scoring 0-100',
-    body: 'Skor dibentuk dari tingkat genangan, frekuensi laporan sekitar, lokasi strategis, riwayat rawan, dan bukti foto.',
+    body: 'Prioritas dibuat dari lokasi, frekuensi, dampak, dan bukti.',
   },
   {
     icon: GitBranch,
     title: 'Status transparan',
-    body: 'Warga melihat laporan dari verifikasi, jadwal penanganan, proses lapangan, sampai selesai dengan dokumentasi.',
+    body: 'Status laporan jelas dari masuk sampai selesai.',
   },
 ]
 
@@ -96,19 +92,19 @@ const workflowSteps = [
     icon: Camera,
     kicker: 'Langkah 1',
     title: 'Warga melapor cepat',
-    body: 'Pilih titik, unggah foto, pilih kategori, lalu kirim laporan drainase dalam alur tiga langkah.',
+    body: 'Titik, foto, kategori, kirim.',
   },
   {
     icon: ShieldCheck,
     kicker: 'Langkah 2',
     title: 'Sistem memberi skor',
-    body: 'ALIRIN membaca konteks wilayah, frekuensi laporan, tingkat genangan, dan bukti visual untuk menyusun prioritas.',
+    body: 'Risiko dihitung otomatis.',
   },
   {
     icon: ClipboardCheck,
     kicker: 'Langkah 3',
     title: 'Admin menindaklanjuti',
-    body: 'Kelurahan atau dinas melihat peta, daftar prioritas, dan timeline kerja sebelum memperbarui status laporan.',
+    body: 'Petugas bekerja dari daftar prioritas.',
   },
 ]
 
@@ -116,102 +112,32 @@ const featureCards = [
   {
     icon: LocateFixed,
     title: 'Laporan berbasis lokasi',
-    body: 'Setiap laporan terhubung ke koordinat, kecamatan, kelurahan, kategori masalah, dan bukti foto.',
+    body: 'Koordinat, wilayah, kategori, foto.',
   },
   {
     icon: BarChart3,
     title: 'Prioritas otomatis',
-    body: 'Dashboard menonjolkan titik dengan skor tertinggi agar tim tidak memulai dari daftar laporan mentah.',
+    body: 'Titik paling urgent tampil lebih dulu.',
   },
   {
     icon: Filter,
     title: 'Filter wilayah dan status',
-    body: 'Admin dapat melihat pola berdasarkan wilayah, kategori, status verifikasi, dan level risiko.',
+    body: 'Saring berdasarkan wilayah, status, dan risiko.',
   },
   {
     icon: ImageIcon,
     title: 'Dokumentasi before-after',
-    body: 'Foto sebelum dan sesudah penanganan menjaga akuntabilitas serta memudahkan rekap pekerjaan.',
+    body: 'Bukti lapangan sebelum dan sesudah.',
   },
   {
     icon: RadioTower,
     title: 'Siap integrasi IoT',
-    body: 'Struktur produk dapat berkembang ke sensor tinggi air, curah hujan, dan notifikasi rawan genangan.',
+    body: 'Siap berkembang ke sensor dan notifikasi.',
   },
   {
     icon: LockKeyhole,
     title: 'Cocok untuk tata kelola',
-    body: 'Bahasa, komponen status, dan alur verifikasi disiapkan untuk kerja warga, RT, kelurahan, dan dinas.',
-  },
-]
-
-const riskMarkers = [
-  {
-    id: 'kedaton',
-    x: 29,
-    y: 24,
-    score: 86,
-    level: 'Kritis',
-    area: 'Kedaton',
-    issue: 'Drainase tersumbat sampah',
-    status: 'Menunggu Verifikasi',
-  },
-  {
-    id: 'sukarame',
-    x: 63,
-    y: 36,
-    score: 72,
-    level: 'Tinggi',
-    area: 'Sukarame',
-    issue: 'Genangan menutup badan jalan',
-    status: 'Dijadwalkan',
-  },
-  {
-    id: 'tanjungkarang',
-    x: 46,
-    y: 64,
-    score: 54,
-    level: 'Waspada',
-    area: 'Tanjung Karang Pusat',
-    issue: 'Aliran melambat setelah hujan',
-    status: 'Sudah Diverifikasi',
-  },
-  {
-    id: 'telukbetung',
-    x: 75,
-    y: 68,
-    score: 31,
-    level: 'Normal',
-    area: 'Teluk Betung Selatan',
-    issue: 'Pantauan rutin drainase',
-    status: 'Selesai',
-  },
-]
-
-const priorityRows = [
-  {
-    code: 'ALR-2026-00128',
-    area: 'Kedaton',
-    category: 'Sumbatan sampah',
-    score: 86,
-    level: 'Kritis',
-    status: 'Menunggu Verifikasi',
-  },
-  {
-    code: 'ALR-2026-00124',
-    area: 'Sukarame',
-    category: 'Genangan jalan',
-    score: 72,
-    level: 'Tinggi',
-    status: 'Dijadwalkan',
-  },
-  {
-    code: 'ALR-2026-00119',
-    area: 'Tanjung Karang',
-    category: 'Aliran lambat',
-    score: 54,
-    level: 'Waspada',
-    status: 'Sudah Diverifikasi',
+    body: 'Alur verifikasi untuk kerja pemerintah.',
   },
 ]
 
@@ -219,17 +145,17 @@ const impactItems = [
   {
     icon: TimerReset,
     title: 'Respons lebih cepat',
-    body: 'Laporan yang sudah tersusun berdasarkan risiko membantu petugas menemukan titik prioritas tanpa memilah manual.',
+    body: 'Petugas langsung melihat titik prioritas.',
   },
   {
     icon: Target,
     title: 'Pemeliharaan lebih tepat',
-    body: 'Pola genangan per wilayah bisa dipakai untuk merencanakan pembersihan drainase sebelum dampaknya meluas.',
+    body: 'Pola rawan terlihat per wilayah.',
   },
   {
     icon: FileCheck2,
     title: 'Akuntabilitas lapangan',
-    body: 'Timeline status dan dokumentasi foto membuat warga tahu apakah laporan sudah diverifikasi dan ditangani.',
+    body: 'Status dan bukti kerja tersimpan rapi.',
   },
 ]
 
@@ -242,10 +168,6 @@ const statusPipeline = [
 ]
 
 const revealViewport = { once: true, amount: 0.22 }
-
-function getLevelClass(level) {
-  return level.toLowerCase()
-}
 
 function smoothScrollToHash(event, href) {
   if (!href.startsWith('#')) return
@@ -260,12 +182,33 @@ function smoothScrollToHash(event, href) {
 function Header() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const scrolledRef = useRef(false)
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 16)
-    onScroll()
+    let frameId = 0
+
+    const updateScrolled = () => {
+      frameId = 0
+      const nextScrolled = window.scrollY > 16
+
+      if (scrolledRef.current !== nextScrolled) {
+        scrolledRef.current = nextScrolled
+        setScrolled(nextScrolled)
+      }
+    }
+
+    const onScroll = () => {
+      if (frameId) return
+      frameId = window.requestAnimationFrame(updateScrolled)
+    }
+
+    updateScrolled()
     window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+
+    return () => {
+      if (frameId) window.cancelAnimationFrame(frameId)
+      window.removeEventListener('scroll', onScroll)
+    }
   }, [])
 
   useEffect(() => {
@@ -303,13 +246,13 @@ function Header() {
         </nav>
 
         <div className="desktop-actions">
-          <a className="btn btn-ghost" href="/admin/login">
+          <Link className="btn btn-ghost" to="/admin/login">
             Masuk Dashboard
-          </a>
-          <a className="btn btn-primary" href="/lapor">
+          </Link>
+          <Link className="btn btn-primary" to="/lapor">
             <Send size={17} />
             Laporkan Drainase
-          </a>
+          </Link>
         </div>
 
         <button
@@ -363,17 +306,17 @@ function Header() {
           </nav>
 
           <div className="drawer-actions">
-            <a className="btn btn-primary" href="/lapor">
+            <Link className="btn btn-primary" to="/lapor">
               <Send size={17} />
               Laporkan Drainase
-            </a>
-            <a className="btn btn-outline" href="/peta">
+            </Link>
+            <Link className="btn btn-outline" to="/peta">
               <Map size={17} />
               Lihat Peta Risiko
-            </a>
-            <a className="btn btn-ghost drawer-login" href="/admin/login">
+            </Link>
+            <Link className="btn btn-ghost drawer-login" to="/admin/login">
               Masuk Dashboard
-            </a>
+            </Link>
           </div>
         </aside>
       </div>
@@ -383,65 +326,77 @@ function Header() {
 
 function WaveCanvas() {
   const canvasRef = useRef(null)
-  const prefersReducedMotion = useReducedMotion()
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas || prefersReducedMotion) return undefined
+    if (!canvas) return undefined
 
     const context = canvas.getContext('2d')
-    let frame = 0
-    let animationFrame = 0
-    let width = 0
-    let height = 0
-    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2)
+    if (!context) return undefined
 
-    const resize = () => {
-      width = canvas.offsetWidth
-      height = canvas.offsetHeight
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5)
+    let frameId = 0
+    let resizeObserver
+
+    const draw = () => {
+      frameId = 0
+      const width = canvas.offsetWidth
+      const height = canvas.offsetHeight
+
+      if (!width || !height) return
+
       canvas.width = Math.floor(width * pixelRatio)
       canvas.height = Math.floor(height * pixelRatio)
       context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
-    }
-
-    const drawWave = (offset, amplitude, color, alpha, baseline) => {
-      context.beginPath()
-      context.moveTo(0, height)
-      for (let x = 0; x <= width; x += 8) {
-        const y =
-          Math.sin((x / width) * Math.PI * 2 + offset) * amplitude +
-          Math.sin((x / width) * Math.PI * 4 + offset * 0.8) *
-            (amplitude * 0.36) +
-          height * baseline
-        context.lineTo(x, y)
-      }
-      context.lineTo(width, height)
-      context.closePath()
-      context.globalAlpha = alpha
-      context.fillStyle = color
-      context.fill()
-      context.globalAlpha = 1
-    }
-
-    const render = () => {
       context.clearRect(0, 0, width, height)
-      const time = frame * 0.012
-      drawWave(time, height * 0.12, '#22B8CF', 0.28, 0.46)
-      drawWave(time * 0.65 + 1.3, height * 0.08, '#0B7285', 0.19, 0.56)
-      drawWave(time * 1.1 + 2.2, height * 0.06, '#FFFFFF', 0.08, 0.66)
-      frame += 1
-      animationFrame = requestAnimationFrame(render)
+
+      const drawWave = (offset, amplitude, color, alpha, baseline) => {
+        context.beginPath()
+        context.moveTo(0, height)
+        for (let x = 0; x <= width; x += 12) {
+          const y =
+            Math.sin((x / width) * Math.PI * 2 + offset) * amplitude +
+            Math.sin((x / width) * Math.PI * 4 + offset * 0.8) *
+            (amplitude * 0.36) +
+            height * baseline
+          context.lineTo(x, y)
+        }
+        context.lineTo(width, height)
+        context.closePath()
+        context.globalAlpha = alpha
+        context.fillStyle = color
+        context.fill()
+        context.globalAlpha = 1
+      }
+
+      drawWave(0.45, height * 0.12, '#22B8CF', 0.26, 0.46)
+      drawWave(1.85, height * 0.08, '#0B7285', 0.18, 0.56)
+      drawWave(2.6, height * 0.06, '#FFFFFF', 0.07, 0.66)
     }
 
-    resize()
-    render()
-    window.addEventListener('resize', resize, { passive: true })
+    const scheduleDraw = () => {
+      if (frameId) return
+      frameId = window.requestAnimationFrame(draw)
+    }
+
+    scheduleDraw()
+
+    if ('ResizeObserver' in window) {
+      resizeObserver = new ResizeObserver(scheduleDraw)
+      resizeObserver.observe(canvas)
+    } else {
+      window.addEventListener('resize', scheduleDraw, { passive: true })
+    }
 
     return () => {
-      cancelAnimationFrame(animationFrame)
-      window.removeEventListener('resize', resize)
+      if (frameId) window.cancelAnimationFrame(frameId)
+      if (resizeObserver) {
+        resizeObserver.disconnect()
+      } else {
+        window.removeEventListener('resize', scheduleDraw)
+      }
     }
-  }, [prefersReducedMotion])
+  }, [])
 
   return <canvas ref={canvasRef} className="wave-canvas" aria-hidden="true" />
 }
@@ -463,163 +418,76 @@ function SectionIntro({ label, title, body, align = 'left' }) {
 }
 
 function RiskMapPreview({ compact = false }) {
-  const [activeMarker, setActiveMarker] = useState(riskMarkers[0])
+  return <RiskMap compact={compact} />
+}
 
-  return (
-    <div className={`risk-map-card ${compact ? 'is-compact' : ''}`}>
-      <div className="map-card-head">
-        <div>
-          <span className="micro-label">Peta Risiko</span>
-          <strong>Bandar Lampung</strong>
-        </div>
-        <span className="live-pill">
-          <span aria-hidden="true" />
-          Live MVP
-        </span>
-      </div>
+const STAGGER = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.1, delayChildren: 0.05 } },
+}
 
-      <div className="map-viewport" aria-label="Preview peta risiko Bandar Lampung">
-        <div className="map-grid" aria-hidden="true" />
-        <div className="map-water map-water-one" aria-hidden="true" />
-        <div className="map-water map-water-two" aria-hidden="true" />
-        <div className="map-road map-road-one" aria-hidden="true" />
-        <div className="map-road map-road-two" aria-hidden="true" />
-        <div className="map-road map-road-three" aria-hidden="true" />
-
-        {riskMarkers.map((marker) => (
-          <button
-            key={marker.id}
-            type="button"
-            className={`risk-marker risk-${getLevelClass(marker.level)} ${
-              activeMarker.id === marker.id ? 'is-active' : ''
-            }`}
-            style={{ left: `${marker.x}%`, top: `${marker.y}%` }}
-            onClick={() => setActiveMarker(marker)}
-            aria-label={`${marker.area}, skor ${marker.score}, risiko ${marker.level}`}
-          >
-            <span className="marker-pulse" aria-hidden="true" />
-            <span className="marker-pin">{marker.score}</span>
-          </button>
-        ))}
-
-        <motion.div
-          key={activeMarker.id}
-          className="map-popup"
-          initial={{ opacity: 0, y: 12, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.28 }}
-        >
-          <div>
-            <span className={`risk-badge risk-${getLevelClass(activeMarker.level)}`}>
-              {activeMarker.level}
-            </span>
-            <strong>{activeMarker.area}</strong>
-          </div>
-          <p>{activeMarker.issue}</p>
-          <span>{activeMarker.status}</span>
-        </motion.div>
-      </div>
-
-      <div className="map-legend" aria-label="Legenda risiko">
-        {['Normal', 'Waspada', 'Tinggi', 'Kritis'].map((level) => (
-          <span key={level}>
-            <i className={`legend-dot risk-${getLevelClass(level)}`} />
-            {level}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
+const CHILD = {
+  hidden: { opacity: 0, y: 28 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.72, ease: [0.22, 1, 0.36, 1] },
+  },
 }
 
 function Hero() {
-  const heroMotion = useMemo(
-    () => ({
-      initial: { opacity: 0, y: 24 },
-      animate: { opacity: 1, y: 0 },
-      transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
-    }),
-    [],
-  )
-
   return (
     <section className="hero-section" id="top">
       <div className="hero-background" aria-hidden="true">
         <WaveCanvas />
         <div className="signal-line signal-line-one" />
         <div className="signal-line signal-line-two" />
+        <div className="hero-scanline" />
         <div className="hero-noise" />
       </div>
 
       <div className="container hero-grid">
-        <motion.div className="hero-copy" {...heroMotion}>
-          <span className="hero-eyebrow">
+        <motion.div
+          className="hero-copy"
+          variants={STAGGER}
+          initial="hidden"
+          animate="show"
+        >
+          <motion.span className="hero-eyebrow" variants={CHILD}>
             <span aria-hidden="true" />
-            Smart City Drainase Bandar Lampung
-          </span>
-          <h1>Ubah laporan drainase menjadi prioritas aksi preventif.</h1>
-          <p>
-            ALIRIN membantu warga melaporkan titik drainase bermasalah,
-            menghitung risiko genangan, dan memberi pemerintah urutan
-            penanganan yang lebih jelas.
-          </p>
+            Smart drainage intelligence
+          </motion.span>
 
-          <div className="hero-actions">
-            <a className="btn btn-primary btn-large" href="/lapor">
+          <motion.h1 variants={CHILD} className="hero-headline">
+            ALIRIN
+          </motion.h1>
+
+          <motion.p variants={CHILD}>
+            Peta risiko drainase mikro untuk membaca laporan warga, titik rawan,
+            dan prioritas lapangan dalam satu kanvas kerja.
+          </motion.p>
+
+          <motion.div className="hero-actions" variants={CHILD}>
+            <Link className="btn btn-primary btn-large" to="/lapor">
               <Send size={18} />
               Laporkan Drainase
-            </a>
-            <a className="btn btn-on-dark btn-large" href="/peta">
+            </Link>
+            <Link className="btn btn-on-dark btn-large" to="/peta">
               <Map size={18} />
               Lihat Peta Risiko
-            </a>
-          </div>
+            </Link>
+          </motion.div>
 
-          <div className="hero-stat-row" aria-label="Statistik MVP ALIRIN">
-            {heroStats.map((item) => (
-              <div key={item.label}>
-                <strong>{item.value}</strong>
-                <span>{item.label}</span>
-              </div>
-            ))}
-          </div>
         </motion.div>
 
         <motion.div
           className="hero-visual"
-          initial={{ opacity: 0, y: 34, rotateX: 8 }}
-          animate={{ opacity: 1, y: 0, rotateX: 0 }}
-          transition={{ duration: 0.82, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ opacity: 0, x: 42, rotateY: -5 }}
+          animate={{ opacity: 1, x: 0, rotateY: 0 }}
+          transition={{ duration: 1, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
         >
+          <div className="hero-visual-glow" aria-hidden="true" />
           <RiskMapPreview compact />
-
-          <motion.div
-            className="floating-card floating-card-top"
-            animate={{ y: [0, -8, 0] }}
-            transition={{ duration: 5.6, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <span className="floating-icon danger-soft">
-              <AlertTriangle size={19} />
-            </span>
-            <div>
-              <span>Risiko Kritis</span>
-              <strong>3 titik hari ini</strong>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="floating-card floating-card-bottom"
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 6.2, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <span className="floating-icon success-soft">
-              <CheckCircle2 size={19} />
-            </span>
-            <div>
-              <span>Selesai Ditangani</span>
-              <strong>24 minggu ini</strong>
-            </div>
-          </motion.div>
         </motion.div>
       </div>
 
@@ -638,8 +506,8 @@ function ProblemSection() {
       <div className="container">
         <SectionIntro
           label="Masalah yang diselesaikan"
-          title="Genangan kecil sering terlambat terlihat sampai dampaknya membesar."
-          body="Drainase mikro yang tersumbat biasanya tersebar di gang, jalan lingkungan, dan dekat fasilitas publik. ALIRIN membuat sinyal lapangan itu masuk ke peta dan daftar prioritas."
+          title="Drainase bermasalah perlu terlihat lebih cepat."
+          body="Dari laporan warga menjadi sinyal risiko wilayah."
         />
 
         <div className="card-grid three">
@@ -671,8 +539,8 @@ function SolutionSection() {
       <div className="container split-section">
         <SectionIntro
           label="Solusi ALIRIN"
-          title="Satu alur dari laporan warga ke keputusan lapangan."
-          body="Landing page ini menonjolkan inti produk: peta, risk score, validasi, dan status yang bisa dilacak oleh warga maupun admin."
+          title="Satu peta untuk melihat, memilah, dan menindaklanjuti."
+          body="Peta, skor, status, dan bukti lapangan."
         />
 
         <div className="solution-stack">
@@ -707,8 +575,8 @@ function WorkflowSection() {
         <SectionIntro
           align="center"
           label="Cara kerja"
-          title="Tiga langkah ringkas, cukup untuk demo MVP yang utuh."
-          body="Alurnya dibuat sederhana untuk warga, tetapi tetap menyimpan konteks yang dibutuhkan admin saat mengambil keputusan."
+          title="Lapor cepat. Prioritas jelas."
+          body="Alur sederhana untuk warga dan petugas."
         />
 
         <div className="workflow-grid">
@@ -743,8 +611,8 @@ function RiskSection() {
         <div>
           <SectionIntro
             label="Peta dan prioritas"
-            title="Risk score terlihat sebagai angka, bukan sekadar warna marker."
-            body="Admin dapat langsung melihat titik kritis, alasan risiko, status laporan, dan daftar prioritas terdekat dari peta."
+            title="Risiko terlihat dari lokasi dan angka."
+            body="Titik kritis, status, dan prioritas dalam satu tampilan."
           />
 
           <div className="score-panel">
@@ -755,10 +623,7 @@ function RiskSection() {
             <div className="score-copy">
               <span className="risk-badge risk-kritis">Prioritas utama</span>
               <h3>Kedaton - Drainase tersumbat sampah</h3>
-              <p>
-                Skor tinggi karena genangan menutup akses jalan, laporan
-                berulang dalam radius sekitar, dan dekat fasilitas publik.
-              </p>
+              <p>Genangan berulang dekat akses utama.</p>
             </div>
           </div>
 
@@ -768,6 +633,12 @@ function RiskSection() {
                 {status}
               </span>
             ))}
+          </div>
+          <div style={{ marginTop: 20 }}>
+            <Link className="btn btn-on-dark btn-large" to="/peta">
+              <Map size={18} />
+              Lihat Peta Risiko
+            </Link>
           </div>
         </div>
 
@@ -784,201 +655,39 @@ function RiskSection() {
   )
 }
 
-function PrioritySection() {
+function FeaturesSection() {
   return (
-    <section className="section command-section" id="fitur">
+    <section className="section features-section" id="fitur">
       <div className="container">
-        <div className="command-heading">
-          <SectionIntro
-            label="Fitur utama"
-            title="Command center ringan untuk prioritas drainase."
-            body="ALIRIN tidak berhenti di form laporan. Setiap laporan langsung dibaca sebagai sinyal lokasi, diberi skor risiko, lalu masuk ke ruang kerja admin untuk diprioritaskan."
-          />
+        <SectionIntro
+          align="center"
+          label="Fitur Utama"
+          title="Fitur inti untuk kerja lapangan."
+          body="Ringkas, berbasis lokasi, dan mudah dipantau."
+        />
 
-          <div className="command-proof" aria-label="Keunggulan ALIRIN">
-            <span>
-              <Gauge size={16} />
-              Risk scoring 0-100
-            </span>
-            <span>
-              <MapPin size={16} />
-              Map-first workflow
-            </span>
-            <span>
-              <GitBranch size={16} />
-              Status tracking
-            </span>
-          </div>
+        <div className="features-grid">
+          {featureCards.map((feature, index) => (
+            <motion.article
+              className="feature-tile"
+              key={feature.title}
+              initial={{ opacity: 0, y: 28 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={revealViewport}
+              transition={{ duration: 0.48, delay: index * 0.07 }}
+            >
+              <span className="feature-tile-icon">
+                <feature.icon size={22} />
+              </span>
+              <h3>{feature.title}</h3>
+              <p>{feature.body}</p>
+            </motion.article>
+          ))}
         </div>
-
-        <motion.div
-          className="command-shell"
-          initial={{ opacity: 0, y: 36 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={revealViewport}
-          transition={{ duration: 0.58, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <aside className="command-sidebar" aria-label="Navigasi dashboard contoh">
-            <div className="command-brand">
-              <span className="brand-mark" aria-hidden="true">
-                <Droplets size={19} />
-              </span>
-              <div>
-                <strong>ALIRIN</strong>
-                <span>Admin Kota</span>
-              </div>
-            </div>
-            <nav>
-              <span className="is-active">
-                <LayoutDashboard size={17} />
-                Dashboard
-              </span>
-              <span>
-                <Map size={17} />
-                Peta Risiko
-              </span>
-              <span>
-                <ListChecks size={17} />
-                Prioritas
-              </span>
-              <span>
-                <ImageIcon size={17} />
-                Dokumentasi
-              </span>
-            </nav>
-          </aside>
-
-          <div className="command-main">
-            <div className="command-topbar">
-              <div>
-                <span className="micro-label">Dashboard Admin</span>
-                <strong>Drainase Mikro Bandar Lampung</strong>
-              </div>
-              <div className="command-tools">
-                <span>
-                  <Search size={15} />
-                  Cari lokasi atau kode
-                </span>
-                <span>
-                  <Filter size={15} />
-                  Semua status
-                </span>
-              </div>
-            </div>
-
-            <div className="command-kpis" aria-label="Ringkasan dashboard">
-              <div className="kpi-card critical">
-                <span>Risiko kritis</span>
-                <strong>3</strong>
-                <small>Perlu verifikasi lapangan</small>
-              </div>
-              <div className="kpi-card warning">
-                <span>Menunggu validasi</span>
-                <strong>18</strong>
-                <small>RT dan kelurahan terkait</small>
-              </div>
-              <div className="kpi-card success">
-                <span>Selesai minggu ini</span>
-                <strong>24</strong>
-                <small>Dengan foto after</small>
-              </div>
-              <div className="kpi-card aqua">
-                <span>Kelurahan terpantau</span>
-                <strong>20</strong>
-                <small>Data demo MVP</small>
-              </div>
-            </div>
-
-            <div className="command-workspace">
-              <div className="ops-map-panel">
-                <div className="ops-panel-head">
-                  <div>
-                    <span className="micro-label">Live map</span>
-                    <strong>Titik risiko aktif</strong>
-                  </div>
-                  <span className="live-pill">
-                    <span aria-hidden="true" />
-                    Updated 2m ago
-                  </span>
-                </div>
-
-                <div className="ops-map" aria-label="Peta operasional contoh">
-                  <div className="ops-map-grid" aria-hidden="true" />
-                  <div className="ops-drain-line one" aria-hidden="true" />
-                  <div className="ops-drain-line two" aria-hidden="true" />
-                  {riskMarkers.map((marker) => (
-                    <span
-                      className={`ops-marker risk-${getLevelClass(marker.level)}`}
-                      key={marker.id}
-                      style={{ left: `${marker.x}%`, top: `${marker.y}%` }}
-                    >
-                      <i aria-hidden="true" />
-                      {marker.score}
-                    </span>
-                  ))}
-                  <div className="ops-popup">
-                    <span className="risk-badge risk-kritis">Kritis</span>
-                    <strong>ALR-2026-00128</strong>
-                    <p>Kedaton - sumbatan sampah dekat akses jalan utama.</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="ops-priority-panel">
-                <div className="ops-panel-head">
-                  <div>
-                    <span className="micro-label">Prioritas tindakan</span>
-                    <strong>Urutan lapangan hari ini</strong>
-                  </div>
-                  <span className="dashboard-chip">
-                    <Activity size={14} />
-                    5 update baru
-                  </span>
-                </div>
-
-                <div className="ops-priority-list">
-                  {priorityRows.map((row, index) => (
-                    <article className="ops-priority-item" key={row.code}>
-                      <div className="priority-rank">{String(index + 1).padStart(2, '0')}</div>
-                      <div>
-                        <strong>{row.area}</strong>
-                        <span>{row.code} - {row.category}</span>
-                      </div>
-                      <div className="priority-score">
-                        <span>{row.score}</span>
-                        <i className={`legend-dot risk-${getLevelClass(row.level)}`} />
-                      </div>
-                    </article>
-                  ))}
-                </div>
-
-                <div className="recommendation-card">
-                  <span>
-                    <Target size={18} />
-                  </span>
-                  <div>
-                    <strong>Rekomendasi aksi</strong>
-                    <p>Verifikasi Kedaton lebih dulu, lalu jadwalkan pembersihan drainase di koridor Sukarame.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="command-feature-strip">
-              {featureCards.map((feature) => (
-                <span key={feature.title}>
-                  <feature.icon size={16} />
-                  {feature.title}
-                </span>
-              ))}
-            </div>
-          </div>
-        </motion.div>
       </div>
     </section>
   )
 }
-
 function StatsBand() {
   const stats = [
     { value: '128+', label: 'Laporan masuk', icon: FileCheck2 },
@@ -1016,8 +725,8 @@ function ImpactSection() {
         <SectionIntro
           align="center"
           label="Dampak untuk Bandar Lampung"
-          title="Data warga dipakai sebagai sinyal preventif, bukan hanya arsip keluhan."
-          body="Setiap laporan menjadi bagian dari pola wilayah, prioritas perawatan, dan bukti tindak lanjut pemerintah."
+          title="Laporan warga menjadi sinyal preventif."
+          body="Lebih cepat dibaca, lebih mudah ditindaklanjuti."
         />
 
         <div className="impact-grid">
@@ -1047,7 +756,7 @@ function FinalCta() {
   return (
     <section className="final-cta">
       <div className="cta-watermark" aria-hidden="true">
-        <Route />
+        <RouteIcon />
         <Layers3 />
         <Navigation />
       </div>
@@ -1062,20 +771,17 @@ function FinalCta() {
             <span aria-hidden="true" />
             Mulai dari satu titik drainase
           </span>
-          <h2>Bantu kota melihat risiko sebelum genangan menjadi masalah besar.</h2>
-          <p>
-            Kirim laporan, lihat peta risiko, dan ikuti status penanganannya.
-            ALIRIN membuat data lapangan lebih siap dipakai untuk aksi.
-          </p>
+          <h2>Lihat risiko lebih cepat. Tindaklanjuti lebih tepat.</h2>
+          <p>Kirim laporan dan pantau statusnya.</p>
           <div className="cta-actions">
-            <a className="btn btn-primary btn-large" href="/lapor">
+            <Link className="btn btn-primary btn-large" to="/lapor">
               <Send size={18} />
               Laporkan Drainase
-            </a>
-            <a className="btn btn-on-dark btn-large" href="/peta">
+            </Link>
+            <Link className="btn btn-on-dark btn-large" to="/peta">
               <Map size={18} />
               Lihat Peta Risiko
-            </a>
+            </Link>
           </div>
         </motion.div>
       </div>
@@ -1094,24 +800,19 @@ function Footer() {
             </span>
             ALIRIN
           </span>
-          <p>
-            Sistem kota cerdas berbasis peta untuk monitoring dan prioritas
-            preventif drainase mikro di Bandar Lampung.
-          </p>
+          <p>Peta risiko drainase mikro untuk Bandar Lampung.</p>
         </div>
 
         <div>
           <h2>Platform</h2>
-          <a href="/lapor">Laporkan Drainase</a>
-          <a href="/peta">Peta Risiko</a>
-          <a href="/status">Cek Status Laporan</a>
+          <Link to="/lapor">Laporkan Drainase</Link>
+          <Link to="/peta">Peta Risiko</Link>
         </div>
 
         <div>
           <h2>Admin</h2>
-          <a href="/admin/login">Masuk Dashboard</a>
-          <a href="/admin/prioritas">Daftar Prioritas</a>
-          <a href="/admin/statistik">Statistik</a>
+          <Link to="/admin/login">Masuk Dashboard</Link>
+          <Link to="/admin/dashboard">Dashboard Admin</Link>
         </div>
 
         <div>
@@ -1124,13 +825,13 @@ function Footer() {
 
       <div className="container footer-bottom">
         <span>2026 ALIRIN - Smart City Bandar Lampung</span>
-        <span>Clean civic-tech dashboard with purposeful water motion.</span>
+        <span>Peta, laporan, prioritas.</span>
       </div>
     </footer>
   )
 }
 
-function App() {
+function LandingPage() {
   return (
     <>
       <Header />
@@ -1140,12 +841,54 @@ function App() {
         <SolutionSection />
         <WorkflowSection />
         <RiskSection />
-        <PrioritySection />
+        <FeaturesSection />
         <StatsBand />
         <ImpactSection />
         <FinalCta />
       </main>
       <Footer />
+    </>
+  )
+}
+
+function ScrollToTop() {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+
+  return null
+}
+
+function NotFoundPage() {
+  return (
+    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, background: 'var(--color-background)', textAlign: 'center', padding: 24 }}>
+      <span style={{ fontSize: 72, fontWeight: 800, color: 'var(--color-secondary)', fontFamily: 'var(--font-heading)', lineHeight: 1 }}>404</span>
+      <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Halaman tidak ditemukan</h1>
+      <p style={{ color: 'var(--color-text-secondary)', fontSize: 14, margin: 0, maxWidth: 360 }}>
+        Halaman yang kamu cari tidak tersedia atau sudah dipindahkan.
+      </p>
+      <Link to="/" className="btn btn-primary" style={{ marginTop: 8 }}>
+        <Droplets size={17} />
+        Kembali ke Beranda
+      </Link>
+    </div>
+  )
+}
+
+function App() {
+  return (
+    <>
+      <ScrollToTop />
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/lapor" element={<LaporPage />} />
+        <Route path="/peta" element={<PetaPage />} />
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
     </>
   )
 }
