@@ -33,7 +33,7 @@ async function syncFromSupabase() {
         id: b.id, label: b.label, points: b.points, weight: b.weight, detail: b.detail
       })),
       statusHistory: (row.report_status_history || []).map(h => ({
-        status: h.status, actor: h.actor, note: 'Update via Supabase', at: h.at
+        status: h.status, actor: h.actor, note: h.note || '', at: h.at
       })).sort((a,b) => new Date(a.at) - new Date(b.at)),
       fieldNotes: [],
       completionPhotos: []
