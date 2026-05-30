@@ -50,6 +50,16 @@ const PetugasTasksPage = lazy(() => import('./pages/PetugasTasksPage.jsx'))
 
 const LandingPage = lazy(() => import('./pages/LandingPage.jsx'))
 
+function ScrollToTop() {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+
+  return null
+}
+
 function NotFoundPage() {
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, background: 'var(--color-background)', textAlign: 'center', padding: 24 }}>
