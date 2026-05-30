@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   AlertTriangle,
@@ -22,6 +22,9 @@ import {
 } from 'lucide-react'
 import './LaporPage.css'
 import ReportMapPicker from '../components/ReportMapPicker.jsx'
+import { KECAMATAN_DATA } from '../data/bandarLampungAreas.js'
+import { createReport } from '../services/reportsStore.js'
+import { MAX_REPORT_PHOTOS, prepareReportPhoto } from '../services/imageFiles.js'
 
 const CATEGORIES = [
   { id: 'sumbatan', label: 'Sumbatan sampah', icon: Trash2 },
@@ -40,29 +43,6 @@ const SEVERITY = [
 ]
 
 const STEPS = ['Lokasi', 'Detail', 'Kirim']
-
-const KECAMATAN_DATA = {
-  'Bumi Waras': ['Bumi Raya', 'Bumi Waras', 'Garuntang', 'Kangkung', 'Sukaraja'],
-  'Enggal': ['Enggal', 'Gunung Sari', 'Pahoman', 'Pelita', 'Rawa Laut', 'Tanjung Karang'],
-  'Kedamaian': ['Bumi Kedamaian', 'Kalibalau Kencana', 'Kedamaian', 'Tanjung Agung Raya', 'Tanjung Baru', 'Tanjung Raya'],
-  'Kedaton': ['Kedaton', 'Penengahan', 'Penengahan Raya', 'Sidodadi', 'Sukamenanti', 'Sukamenanti Baru', 'Surabaya'],
-  'Kemiling': ['Beringin Jaya', 'Beringin Raya', 'Kedaung', 'Kemiling Permai', 'Kemiling Raya', 'Pinang Jaya', 'Sumber Agung', 'Sumber Rejo', 'Sumber Rejo Sejahtera'],
-  'Labuhan Ratu': ['Kampung Baru', 'Kampung Baru Raya', 'Kota Sepang', 'Labuhan Ratu', 'Labuhan Ratu Raya', 'Sepang Jaya'],
-  'Langkapura': ['Bilabong Jaya', 'Gunung Agung', 'Gunung Terang', 'Langkapura', 'Langkapura Baru'],
-  'Panjang': ['Karang Maritim', 'Ketapang', 'Ketapang Kuala', 'Panjang Selatan', 'Panjang Utara', 'Pidada', 'Srengsem', 'Way Lunik'],
-  'Rajabasa': ['Nyunyai', 'Rajabasa', 'Rajabasa Jaya', 'Rajabasa Nunyai', 'Rajabasa Pemuka', 'Rajabasa Raya'],
-  'Sukabumi': ['Campang Jaya', 'Campang Raya', 'Nusantara Permai', 'Sukabumi', 'Sukabumi Indah', 'Way Gubak', 'Way Laga'],
-  'Sukarame': ['Korpri Jaya', 'Korpri Raya', 'Sukarame', 'Sukarame Baru', 'Way Dadi', 'Way Dadi Baru'],
-  'Tanjung Karang Barat': ['Gedong Air', 'Kelapa Tiga Permai', 'Segala Mider', 'Sukadanaham', 'Sukajawa', 'Sukajawa Baru', 'Susunan Baru'],
-  'Tanjung Karang Pusat': ['Durian Payung', 'Gotong Royong', 'Kaliawi', 'Kaliawi Persada', 'Kelapa Tiga', 'Palapa'],
-  'Tanjung Karang Timur': ['Kota Baru', 'Sawah Brebes', 'Sawah Lama', 'Tanjung Agung', 'Kebon Jeruk'],
-  'Tanjung Senang': ['Labuhan Dalam', 'Pematang Wangi', 'Perumnas Way Kandis', 'Tanjung Senang', 'Way Kandis'],
-  'Teluk Betung Barat': ['Bakung', 'Batu Putuk', 'Kuripan', 'Negeri Olok Gading', 'Sukarame II'],
-  'Teluk Betung Selatan': ['Gedong Pakuon', 'Gunung Mas', 'Pesawahan', 'Sumur Putri', 'Talang', 'Tukik'],
-  'Teluk Betung Timur': ['Keteguhan', 'Kota Karang', 'Kota Karang Raya', 'Perwata', 'Sukamaju', 'Way Tataan'],
-  'Teluk Betung Utara': ['Kupang Kota', 'Kupang Raya', 'Kupang Teba', 'Pengajaran', 'Sumur Batu'],
-  'Way Halim': ['Gunung Sulah', 'Jagabaya I', 'Jagabaya II', 'Jagabaya III', 'Perumnas Way Halim', 'Way Halim Permai'],
-}
 
 const INITIAL_DATA = {
   lat: -5.3971,
@@ -138,13 +118,15 @@ function StepDot({ step, current, label }) {
 
 function Step1({ data, setData }) {
   const [isLocating, setIsLocating] = useState(false)
+  const [locError, setLocError] = useState('')
 
   function handleGetCurrentLocation() {
     if (!navigator.geolocation) {
-      alert('Geolocation tidak didukung oleh browser Anda')
+      setLocError('Geolocation tidak didukung browser ini. Geser pin peta secara manual.')
       return
     }
 
+    setLocError('')
     setIsLocating(true)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -156,7 +138,7 @@ function Step1({ data, setData }) {
       },
       () => {
         setIsLocating(false)
-        alert('Gagal mengambil lokasi. Pastikan izin lokasi aktif.')
+        setLocError('Gagal mengambil lokasi. Pastikan izin lokasi aktif atau geser pin manual.')
       }
     )
   }
@@ -198,6 +180,7 @@ function Step1({ data, setData }) {
           </button>
         </div>
       </div>
+      {locError && <p className="location-error" role="alert">{locError}</p>}
 
       <div className="form-row">
         <div className="form-group">
@@ -318,15 +301,29 @@ function Step2({ data, setData }) {
 
 function PhotoUploader({ photos, onChange }) {
   const inputRef = useRef(null)
+  const [error, setError] = useState('')
+  const [processing, setProcessing] = useState(false)
 
-  function handleFiles(files) {
+  async function handleFiles(files) {
     const next = [...photos]
+    const incoming = Array.from(files || [])
+    setError('')
 
-    for (const file of files) {
-      if (next.length >= 3) break
-      if (!file.type.startsWith('image/')) continue
-      next.push({ file, url: URL.createObjectURL(file) })
+    if (next.length + incoming.length > MAX_REPORT_PHOTOS) {
+      setError(`Maksimal ${MAX_REPORT_PHOTOS} foto untuk satu laporan.`)
     }
+
+    setProcessing(true)
+    for (const file of incoming) {
+      if (next.length >= MAX_REPORT_PHOTOS) break
+      try {
+        const photo = await prepareReportPhoto(file)
+        next.push(photo)
+      } catch (err) {
+        setError(err.message || 'Gagal memproses foto.')
+      }
+    }
+    setProcessing(false)
 
     onChange(next)
   }
@@ -349,7 +346,6 @@ function PhotoUploader({ photos, onChange }) {
                 type="button"
                 className="photo-remove"
                 onClick={() => {
-                  URL.revokeObjectURL(photos[index].url)
                   onChange(photos.filter((_, idx) => idx !== index))
                 }}
                 aria-label={`Hapus foto ${index + 1}`}
@@ -360,17 +356,18 @@ function PhotoUploader({ photos, onChange }) {
           ))}
         </AnimatePresence>
 
-        {photos.length < 3 && (
+        {photos.length < MAX_REPORT_PHOTOS && (
           <motion.button
             type="button"
             className="photo-add"
             onClick={() => inputRef.current?.click()}
+            disabled={processing}
             whileHover={{ y: -4, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
             <Camera size={24} />
-            <span>Tambah foto</span>
-            <small>Maks. 3</small>
+            <span>{processing ? 'Memproses...' : 'Tambah foto'}</span>
+            <small>Maks. {MAX_REPORT_PHOTOS}</small>
           </motion.button>
         )}
       </div>
@@ -381,7 +378,10 @@ function PhotoUploader({ photos, onChange }) {
         accept="image/*"
         multiple
         style={{ display: 'none' }}
-        onChange={(event) => handleFiles(event.target.files)}
+        onChange={(event) => {
+          void handleFiles(event.target.files)
+          event.target.value = ''
+        }}
       />
 
       {photos.length === 0 && (
@@ -391,17 +391,18 @@ function PhotoUploader({ photos, onChange }) {
           onDragOver={(event) => event.preventDefault()}
           onDrop={(event) => {
             event.preventDefault()
-            handleFiles(event.dataTransfer.files)
+            void handleFiles(event.dataTransfer.files)
           }}
           onClick={() => inputRef.current?.click()}
         >
           <Upload size={28} />
           <span>
             <strong>Upload bukti</strong>
-            <small>JPG, PNG, WEBP</small>
+            <small>JPG, PNG, WEBP, maks. 5 MB</small>
           </span>
         </button>
       )}
+      {error && <p className="photo-error">{error}</p>}
     </div>
   )
 }
@@ -423,7 +424,8 @@ function Step3({ data, setData }) {
       </div>
 
       <div className="form-group">
-        <label>Foto bukti <span>Opsional</span></label>
+        <label>Foto bukti <span>Wajib</span></label>
+        <small className="photo-required-note">Minimal 1 foto. Maksimal 3 foto, 5 MB per file.</small>
         <PhotoUploader photos={data.photos} onChange={(photos) => setData({ ...data, photos })} />
       </div>
 
@@ -473,7 +475,7 @@ function Step3({ data, setData }) {
   )
 }
 
-function SuccessScreen() {
+function SuccessScreen({ report, onNew }) {
   return (
     <motion.div
       className="success-screen"
@@ -490,15 +492,18 @@ function SuccessScreen() {
         <CheckCircle2 size={50} />
       </motion.div>
       <span className="success-kicker">Laporan masuk</span>
-      <h2>ALR-2026-00129</h2>
-      <p>Simpan kode ini untuk cek status.</p>
+      <h2>{report.code}</h2>
+      <p>Simpan kode ini untuk cek status. Skor awal: {report.riskScore} ({report.riskLevel}).</p>
 
       <div className="success-actions">
         <Link to="/" className="btn btn-outline">
           <ArrowLeft size={18} />
           Beranda
         </Link>
-        <button className="btn btn-primary" type="button" onClick={() => window.location.reload()}>
+        <Link to={`/status/${report.code}`} className="btn btn-primary">
+          Cek Status Laporan
+        </Link>
+        <button className="btn btn-ghost" type="button" onClick={onNew}>
           Laporan baru
         </button>
       </div>
@@ -507,36 +512,60 @@ function SuccessScreen() {
 }
 
 export default function LaporPage() {
+  const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [dir, setDir] = useState(1)
   const [data, setData] = useState(INITIAL_DATA)
-  const [submitted, setSubmitted] = useState(false)
+  const [submittedReport, setSubmittedReport] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [submitError, setSubmitError] = useState('')
 
   function canNext() {
     if (step === 1) return data.kecamatan !== '' && data.kelurahan.trim() !== ''
     if (step === 2) return data.category !== '' && data.severity !== '' && data.deskripsi.trim().length >= 10
-    return true
+    return data.photos.length > 0
   }
 
   function goNext() {
+    setSubmitError('')
     setDir(1)
     setStep((current) => current + 1)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function goPrev() {
+    setSubmitError('')
     setDir(-1)
     setStep((current) => current - 1)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   async function handleSubmit() {
+    if (!canNext()) return
+    setSubmitError('')
     setLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 1100))
-    setLoading(false)
-    setSubmitted(true)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    try {
+      const report = createReport({
+        ...data,
+        description: data.deskripsi,
+        address: data.alamat,
+        reporterName: data.nama || 'Anonim',
+        reporterContact: data.kontak || '-',
+      })
+      setSubmittedReport(report)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } catch (error) {
+      setSubmitError(error.message || 'Laporan belum bisa dikirim. Periksa kembali data laporan.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function handleNewReport() {
+    setData({ ...INITIAL_DATA })
+    setSubmittedReport(null)
+    setStep(1)
+    navigate('/lapor', { replace: true })
   }
 
   return (
@@ -563,8 +592,8 @@ export default function LaporPage() {
       </header>
 
       <main className="lapor-main">
-        {submitted ? (
-          <SuccessScreen />
+        {submittedReport ? (
+          <SuccessScreen report={submittedReport} onNew={handleNewReport} />
         ) : (
           <motion.div
             className="lapor-container"
@@ -620,6 +649,12 @@ export default function LaporPage() {
                   </motion.div>
                 </AnimatePresence>
 
+                {submitError && (
+                  <p className="submit-error" role="alert">
+                    {submitError}
+                  </p>
+                )}
+
                 <div className="lapor-nav-sticky">
                   {step > 1 ? (
                     <motion.button
@@ -651,7 +686,7 @@ export default function LaporPage() {
                       type="button"
                       className="btn btn-submit"
                       onClick={handleSubmit}
-                      disabled={loading}
+                      disabled={loading || !canNext()}
                       whileHover={!loading ? { y: -4, scale: 1.02 } : undefined}
                       whileTap={!loading ? { scale: 0.97 } : undefined}
                     >

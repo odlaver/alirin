@@ -1,10 +1,10 @@
 export const REPORTS = [
   { id:'ALR-006', title:'Sumbatan dekat pasar', loc:'Enggal, Pelita', severity:'kritis', score:91, status:'masuk', time:'4 jam lalu', desc:'Saluran tertutup penuh oleh sampah pasar. Air meluap ke jalan utama.', pelapor:'Andi S.', kontak:'0812xxx' },
   { id:'ALR-001', title:'Drainase tersumbat sampah', loc:'Kedaton, Sidodadi', severity:'kritis', score:86, status:'masuk', time:'5 mnt lalu', desc:'Sampah menumpuk di inlet drainase. Genangan meluas saat hujan.', pelapor:'Budi R.', kontak:'0813xxx' },
-  { id:'ALR-002', title:'Genangan jalan raya', loc:'Tanjung Karang, Palapa', severity:'parah', score:74, status:'verifikasi', time:'18 mnt lalu', desc:'Genangan setinggi 15cm menutup separuh jalan.', pelapor:'Siti M.', kontak:'0821xxx' },
+  { id:'ALR-002', title:'Genangan jalan raya', loc:'Tanjung Karang, Palapa', severity:'parah', score:74, status:'diverifikasi', time:'18 mnt lalu', desc:'Genangan setinggi 15cm menutup separuh jalan.', pelapor:'Siti M.', kontak:'0821xxx' },
   { id:'ALR-005', title:'Drainase rusak sisi barat', loc:'Panjang, Panjang Utara', severity:'parah', score:68, status:'masuk', time:'3 jam lalu', desc:'Dinding saluran retak dan amblas sekitar 2 meter.', pelapor:'Hendra', kontak:'-' },
-  { id:'ALR-003', title:'Aliran lambat inlet timur', loc:'Sukarame, Way Dadi', severity:'sedang', score:55, status:'proses', time:'1 jam lalu', desc:'Debit aliran sangat lambat meski tidak ada sumbatan terlihat.', pelapor:'Wati', kontak:'0856xxx' },
-  { id:'ALR-004', title:'Bau tidak sedap saluran', loc:'Kemiling, Sumber Rejo', severity:'sedang', score:48, status:'proses', time:'2 jam lalu', desc:'Bau menyengat dari saluran, kemungkinan limbah rumah tangga.', pelapor:'Anonim', kontak:'-' },
+  { id:'ALR-003', title:'Aliran lambat inlet timur', loc:'Sukarame, Way Dadi', severity:'sedang', score:55, status:'ditangani', time:'1 jam lalu', desc:'Debit aliran sangat lambat meski tidak ada sumbatan terlihat.', pelapor:'Wati', kontak:'0856xxx' },
+  { id:'ALR-004', title:'Bau tidak sedap saluran', loc:'Kemiling, Sumber Rejo', severity:'sedang', score:48, status:'ditangani', time:'2 jam lalu', desc:'Bau menyengat dari saluran, kemungkinan limbah rumah tangga.', pelapor:'Anonim', kontak:'-' },
   { id:'ALR-007', title:'Genangan kecil RT 04', loc:'Rajabasa, Rajabasa Jaya', severity:'ringan', score:28, status:'selesai', time:'Kemarin', desc:'Genangan kecil di gang sempit, cepat surut.', pelapor:'Pak RT 04', kontak:'0857xxx' },
 ]
 
@@ -20,9 +20,9 @@ export const MONTHLY_DATA = [
 
 export const RISK_DIST = [
   { label:'Kritis', count:8, pct:6, color:'var(--color-danger)' },
-  { label:'Parah', count:19, pct:15, color:'var(--color-risk-high)' },
-  { label:'Sedang', count:34, pct:27, color:'var(--color-warning)' },
-  { label:'Ringan', count:67, pct:52, color:'var(--color-success)' },
+  { label:'Tinggi', count:19, pct:15, color:'var(--color-risk-high)' },
+  { label:'Waspada', count:34, pct:27, color:'var(--color-warning)' },
+  { label:'Normal', count:67, pct:52, color:'var(--color-success)' },
 ]
 
 export const ACTIVITY = [
@@ -49,9 +49,23 @@ export const SETTINGS_ITEMS = [
   { id:'export', label:'Export CSV otomatis', desc:'Kirim rekap harian ke email admin', default:false },
 ]
 
-export const STATUS_OPTIONS = ['masuk','verifikasi','proses','selesai']
-export const STATUS_LABEL = { masuk:'Masuk', verifikasi:'Verifikasi', proses:'Diproses', selesai:'Selesai' }
-export const STATUS_CLASS = { masuk:'tag-masuk', verifikasi:'tag-verifikasi', proses:'tag-proses', selesai:'tag-selesai' }
+export const STATUS_OPTIONS = ['masuk','diverifikasi','dijadwalkan','ditangani','selesai','ditolak']
+export const STATUS_LABEL = {
+  masuk:'Masuk',
+  diverifikasi:'Diverifikasi',
+  dijadwalkan:'Dijadwalkan',
+  ditangani:'Ditangani',
+  selesai:'Selesai',
+  ditolak:'Ditolak',
+}
+export const STATUS_CLASS = {
+  masuk:'tag-masuk',
+  diverifikasi:'tag-verifikasi',
+  dijadwalkan:'tag-proses',
+  ditangani:'tag-proses',
+  selesai:'tag-selesai',
+  ditolak:'tag-ditolak',
+}
 
 export const DONUT_DATA = [
   { label:'Sumbatan', val:38, color:'var(--color-danger)' },

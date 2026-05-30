@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Layers3, LocateFixed, Search } from 'lucide-react'
@@ -6,7 +6,6 @@ import {
   BANDAR_LAMPUNG_CENTER,
   TILE_LAYERS,
   getLevelClass,
-  getMarkerById,
   riskMarkers,
 } from './mapData.js'
 import './RiskMap.css'
@@ -35,6 +34,7 @@ export default function RiskMap({
   onSelectedMarkerChange,
   showHead = true,
   previewMode = false,
+  markers,
 }) {
   const mapNodeRef = useRef(null)
   const mapRef = useRef(null)
@@ -43,8 +43,15 @@ export default function RiskMap({
   const callbackRef = useRef(onSelectedMarkerChange)
   const [activeLayer, setActiveLayer] = useState('osm')
   const [internalActiveId, setInternalActiveId] = useState(riskMarkers[0].id)
+  const safeMarkers = useMemo(
+    () => (Array.isArray(markers) ? markers : riskMarkers),
+    [markers],
+  )
 
-  const activeMarker = getMarkerById(selectedMarkerId ?? internalActiveId)
+  const activeMarker =
+    safeMarkers.find((marker) => marker.id === (selectedMarkerId ?? internalActiveId)) ??
+    safeMarkers[0] ??
+    riskMarkers[0]
   const mapVars = height
     ? { '--risk-map-height': typeof height === 'number' ? `${height}px` : height }
     : undefined
@@ -66,28 +73,9 @@ export default function RiskMap({
     })
 
     mapRef.current = map
+    const markerMap = markerRefs.current
     L.control.zoom({ position: 'bottomleft' }).addTo(map)
     L.control.attribution({ position: 'bottomleft', prefix: false }).addTo(map)
-
-    const bounds = L.latLngBounds(riskMarkers.map((marker) => marker.position))
-    map.fitBounds(bounds.pad(compact ? 0.42 : 0.26), { animate: false })
-
-    const markerMap = markerRefs.current
-
-    riskMarkers.forEach((marker) => {
-      const leafletMarker = L.marker(marker.position, {
-        icon: createRiskIcon(marker, marker.id === riskMarkers[0].id),
-        keyboard: true,
-        title: `${marker.area} - risiko ${marker.level}`,
-      }).addTo(map)
-
-      leafletMarker.on('click', () => {
-        setInternalActiveId(marker.id)
-        callbackRef.current?.(marker)
-      })
-
-      markerMap.set(marker.id, leafletMarker)
-    })
 
     window.setTimeout(() => map.invalidateSize(), 0)
 
@@ -116,9 +104,39 @@ export default function RiskMap({
 
   useEffect(() => {
     const map = mapRef.current
+    if (!map) return
+
+    const markerMap = markerRefs.current
+    markerMap.forEach((leafletMarker) => leafletMarker.remove())
+    markerMap.clear()
+
+    safeMarkers.forEach((marker) => {
+      const leafletMarker = L.marker(marker.position, {
+        icon: createRiskIcon(marker, false),
+        keyboard: true,
+        title: `${marker.area} - risiko ${marker.level}`,
+      }).addTo(map)
+
+      leafletMarker.on('click', () => {
+        setInternalActiveId(marker.id)
+        callbackRef.current?.(marker)
+      })
+
+      markerMap.set(marker.id, leafletMarker)
+    })
+
+    if (safeMarkers.length > 0) {
+      const bounds = L.latLngBounds(safeMarkers.map((marker) => marker.position))
+      map.fitBounds(bounds.pad(compact ? 0.42 : 0.26), { animate: false })
+    }
+  }, [compact, safeMarkers])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!activeMarker) return
 
     markerRefs.current.forEach((leafletMarker, markerId) => {
-      const marker = getMarkerById(markerId)
+      const marker = safeMarkers.find((item) => item.id === markerId) ?? riskMarkers[0]
       const isActive = markerId === activeMarker.id
 
       leafletMarker.setIcon(createRiskIcon(marker, isActive))
@@ -128,7 +146,7 @@ export default function RiskMap({
     if (map) {
       map.panTo(activeMarker.position, { animate: true, duration: 0.45 })
     }
-  }, [activeMarker])
+  }, [activeMarker, safeMarkers])
 
   function focusActiveMarker() {
     const map = mapRef.current
@@ -190,18 +208,25 @@ export default function RiskMap({
               <LocateFixed size={18} />
             </button>
 
-            <div className="map-popup map-detail-panel" aria-live="polite">
-              <div>
-                <span className={`risk-badge risk-${getLevelClass(activeMarker.level)}`}>
-                  {activeMarker.level}
+            {safeMarkers.length > 0 ? (
+              <div className="map-popup map-detail-panel" aria-live="polite">
+                <div>
+                  <span className={`risk-badge risk-${getLevelClass(activeMarker.level)}`}>
+                    {activeMarker.level}
+                  </span>
+                  <strong>{activeMarker.area}</strong>
+                </div>
+                <p>{activeMarker.issue}</p>
+                <span>
+                  {activeMarker.status} - {activeMarker.updatedAt}
                 </span>
-                <strong>{activeMarker.area}</strong>
               </div>
-              <p>{activeMarker.issue}</p>
-              <span>
-                {activeMarker.status} - {activeMarker.updatedAt}
-              </span>
-            </div>
+            ) : (
+              <div className="map-popup map-detail-panel" aria-live="polite">
+                <div><strong>Tidak ada titik</strong></div>
+                <p>Filter tidak menemukan laporan pada peta.</p>
+              </div>
+            )}
           </>
         )}
       </div>

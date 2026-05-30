@@ -1,17 +1,27 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  BarChart3, Bell, Droplets, FileCheck2, LayoutDashboard,
-  ListChecks, LogOut, Map, Menu, RefreshCw, Search, Settings,
-  TrendingUp, Users
+  Bell, Droplets, FileCheck2, LayoutDashboard,
+  Archive, Download, ListChecks, LogOut, Map, Menu, RefreshCw, RotateCcw, Search,
+  TrendingUp
 } from 'lucide-react'
 import './AdminDashboard.css'
-import { REPORTS, STATUS_LABEL } from './adminData.js'
+import { STATUS_LABEL, REPORT_STATUSES } from '../domain/status.js'
+import { matchesReportSearch, sortReportsByPriority } from '../domain/reports.js'
+import {
+  getReports,
+  createReportsCsv,
+  assignReportOfficer,
+  isArchivedReport,
+  logoutDemoAdmin,
+  resetDemoReports,
+  subscribeReports,
+  updateReportStatus,
+} from '../services/reportsStore.js'
 import {
   KpiCards, ReportModal, ReportList, TrendChart,
   RiskDist, ActivityFeed, MapPreview,
-  StatistikView, PetugasView, PengaturanView,
 } from './AdminParts.jsx'
 
 const NAV_MAIN = [
@@ -19,26 +29,21 @@ const NAV_MAIN = [
   { id: 'laporan', label: 'Laporan Masuk', icon: FileCheck2, badge: 6 },
   { id: 'prioritas', label: 'Daftar Prioritas', icon: ListChecks },
   { id: 'peta', label: 'Peta Risiko', icon: Map },
+  { id: 'arsip', label: 'Arsip', icon: Archive },
 ]
 
-const NAV_EXTRA = [
-  { id: 'statistik', label: 'Statistik', icon: BarChart3 },
-  { id: 'petugas', label: 'Petugas', icon: Users },
-  { id: 'pengaturan', label: 'Pengaturan', icon: Settings },
-]
+const NAV_EXTRA = []
 
 const PAGE_TITLE = {
   dashboard: ['Dashboard', 'Ringkasan semua data laporan'],
   laporan: ['Laporan Masuk', 'Kelola semua laporan warga'],
   prioritas: ['Daftar Prioritas', 'Laporan diurutkan berdasarkan skor risiko'],
   peta: ['Peta Risiko', 'Visualisasi titik rawan drainase'],
-  statistik: ['Statistik', 'Analisis data laporan'],
-  petugas: ['Petugas', 'Manajemen petugas lapangan'],
-  pengaturan: ['Pengaturan', 'Konfigurasi sistem dashboard'],
+  arsip: ['Arsip', 'Laporan selesai dan ditolak'],
 }
 
 /* ── Sidebar ───────────────────────────────────────────────────────────── */
-function Sidebar({ nav, setNav, mobileOpen, setMobileOpen }) {
+function Sidebar({ nav, setNav, mobileOpen, setMobileOpen, pendingCount, onLogout }) {
   return (
     <>
       {mobileOpen && <div className="sidebar-overlay" onClick={() => setMobileOpen(false)} />}
@@ -53,23 +58,29 @@ function Sidebar({ nav, setNav, mobileOpen, setMobileOpen }) {
             <button key={id} className={`admin-nav-item ${nav === id ? 'active' : ''}`}
               onClick={() => { setNav(id); setMobileOpen(false) }}>
               <I size={18} />{label}
-              {badge && <span className="admin-nav-badge">{badge}</span>}
+              {(id === 'laporan' ? pendingCount : badge) > 0 && (
+                <span className="admin-nav-badge">{id === 'laporan' ? pendingCount : badge}</span>
+              )}
             </button>
           ))}
-          <span className="admin-nav-section" style={{ marginTop: 8 }}>Lainnya</span>
-          {NAV_EXTRA.map(({ id, label, icon: I }) => (
-            <button key={id} className={`admin-nav-item ${nav === id ? 'active' : ''}`}
-              onClick={() => { setNav(id); setMobileOpen(false) }}>
-              <I size={18} />{label}
-            </button>
-          ))}
+          {NAV_EXTRA.length > 0 && (
+            <>
+              <span className="admin-nav-section" style={{ marginTop: 8 }}>Lainnya</span>
+              {NAV_EXTRA.map(({ id, label, icon: I }) => (
+                <button key={id} className={`admin-nav-item ${nav === id ? 'active' : ''}`}
+                  onClick={() => { setNav(id); setMobileOpen(false) }}>
+                  <I size={18} />{label}
+                </button>
+              ))}
+            </>
+          )}
         </nav>
         <div className="admin-sidebar-footer">
-          <div className="admin-user-pill">
+          <button className="admin-user-pill admin-user-button" type="button" onClick={onLogout}>
             <div className="admin-avatar">A</div>
-            <div className="admin-user-info"><strong>Admin ALIRIN</strong><small>admin@alirin.id</small></div>
+            <div className="admin-user-info"><strong>Demo Admin</strong><small>admin@alirin.local</small></div>
             <LogOut size={16} className="logout-icon" />
-          </div>
+          </button>
         </div>
       </aside>
     </>
@@ -79,18 +90,44 @@ function Sidebar({ nav, setNav, mobileOpen, setMobileOpen }) {
 /* ── Dashboard View (home) ─────────────────────────────────────────────── */
 function DashboardView({ reports, animated, onSelect }) {
   const [filter, setFilter] = useState('semua')
-  const FILTERS = ['semua', 'masuk', 'verifikasi', 'proses', 'selesai']
+  const [now] = useState(() => Date.now())
+  const FILTERS = ['semua', ...REPORT_STATUSES]
+  const weeklyCount = reports.filter((report) => now - new Date(report.createdAt).getTime() <= 7 * 24 * 36e5).length
+  const criticalCount = reports.filter((report) => report.riskLevel === 'Kritis').length
+  const fieldCount = reports.filter((report) => ['dijadwalkan', 'ditangani'].includes(report.status)).length
+  const assignedCount = reports.filter((report) => Boolean(report.assignedOfficerId)).length
+  const criticalPct = reports.length ? Math.round((criticalCount / reports.length) * 100) : 0
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
       {/* Baris 1: KPI Cards */}
-      <KpiCards animated={animated} />
+      <KpiCards reports={reports} animated={animated} />
+
+      <motion.div
+        className="admin-command-strip"
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25 }}
+      >
+        <div className="command-strip-copy">
+          <span>Pantauan aktif</span>
+          <strong>{criticalCount} titik kritis dari {reports.length} laporan</strong>
+          <p>{fieldCount} laporan sudah masuk jadwal/penanganan, {assignedCount} sudah memiliki petugas.</p>
+        </div>
+        <div className="command-meter" aria-label={`Risiko kritis ${criticalPct} persen`}>
+          <span style={{ width: `${criticalPct}%` }} />
+        </div>
+        <button type="button" className="command-chip" onClick={() => setFilter('dijadwalkan')}>
+          <ListChecks size={16} />
+          Cek jadwal
+        </button>
+      </motion.div>
 
       {/* Baris 2: Split Layout (Mirip Referensi Gambar: Listing & Map) */}
       <div className="split-layout">
 
         {/* Kolom Kiri: Listing Laporan */}
         <motion.div className="admin-panel" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-          <div className="panel-head">
+          <div className="panel-head panel-head-stacked">
             <div>
               <h2>Laporan Terbaru</h2>
               <p>Diurutkan berdasarkan waktu & risiko</p>
@@ -104,7 +141,7 @@ function DashboardView({ reports, animated, onSelect }) {
             </div>
           </div>
           <div className="panel-body">
-            <ReportList reports={reports} filter={filter} onSelect={onSelect} />
+            <ReportList reports={sortReportsByPriority(reports)} filter={filter} onSelect={onSelect} />
           </div>
         </motion.div>
 
@@ -122,7 +159,7 @@ function DashboardView({ reports, animated, onSelect }) {
             </Link>
           </div>
           <div className="panel-body map-body">
-            <MapPreview />
+            <MapPreview reports={reports} />
           </div>
         </motion.div>
       </div>
@@ -132,23 +169,23 @@ function DashboardView({ reports, animated, onSelect }) {
         <motion.div className="admin-panel" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
           <div className="panel-head">
             <div><h2>Tren Laporan</h2><p>7 hari terakhir</p></div>
-            <span className="panel-badge info"><TrendingUp size={12} /> +22%</span>
+            <span className="panel-badge info"><TrendingUp size={12} /> {weeklyCount} aktif</span>
           </div>
-          <TrendChart />
+          <TrendChart reports={reports} />
         </motion.div>
 
         <motion.div className="admin-panel" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
           <div className="panel-head">
             <div><h2>Distribusi Risiko</h2><p>Berdasarkan skor ancaman</p></div>
           </div>
-          <RiskDist />
+          <RiskDist reports={reports} />
         </motion.div>
 
         <motion.div className="admin-panel" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
           <div className="panel-head">
             <div><h2>Aktivitas Terkini</h2><p>Update real-time</p></div>
           </div>
-          <ActivityFeed />
+          <ActivityFeed reports={reports} />
         </motion.div>
       </div>
     </div>
@@ -156,25 +193,24 @@ function DashboardView({ reports, animated, onSelect }) {
 }
 
 /* ── Laporan View ──────────────────────────────────────────────────────── */
-function LaporanView({ reports, onSelect }) {
+function LaporanView({ reports, onSelect, search, onSearchChange, title = 'Semua Laporan', emptyLabel = 'laporan aktif' }) {
   const [filter, setFilter] = useState('semua')
-  const [search, setSearch] = useState('')
-  const FILTERS = ['semua', 'masuk', 'verifikasi', 'proses', 'selesai']
+  const FILTERS = ['semua', ...REPORT_STATUSES]
   const filtered = reports.filter(r => {
     if (filter !== 'semua' && r.status !== filter) return false
-    if (search && !r.title.toLowerCase().includes(search.toLowerCase()) && !r.loc.toLowerCase().includes(search.toLowerCase())) return false
+    if (!matchesReportSearch(r, search)) return false
     return true
   })
   return (
     <motion.div className="admin-panel" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
       <div className="panel-head" style={{ flexWrap: 'wrap', gap: 12 }}>
-        <div><h2>Semua Laporan</h2><p>{reports.length} laporan terdaftar</p></div>
+        <div><h2>{title}</h2><p>{reports.length} {emptyLabel} terdaftar</p></div>
         <div className="admin-search">
           <Search size={16} />
-          <input placeholder="Cari laporan..." value={search} onChange={e => setSearch(e.target.value)} />
+          <input placeholder="Cari laporan..." value={search} onChange={e => onSearchChange(e.target.value)} />
         </div>
       </div>
-      <div className="filter-pills" style={{ padding: '0 32px 16px' }}>
+      <div className="filter-pills report-filter-strip">
         {FILTERS.map(f => (
           <button key={f} className={`pill-btn ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
             {STATUS_LABEL[f] || 'Semua'}
@@ -186,9 +222,22 @@ function LaporanView({ reports, onSelect }) {
   )
 }
 
+function ArsipView({ reports, onSelect, search, onSearchChange }) {
+  return (
+    <LaporanView
+      reports={reports}
+      onSelect={onSelect}
+      search={search}
+      onSearchChange={onSearchChange}
+      title="Arsip Laporan"
+      emptyLabel="laporan arsip"
+    />
+  )
+}
+
 /* ── Prioritas View ────────────────────────────────────────────────────── */
-function PrioritasView({ reports, onSelect }) {
-  const sorted = [...reports].sort((a, b) => b.score - a.score)
+function PrioritasView({ reports, onSelect, search }) {
+  const sorted = sortReportsByPriority(reports.filter((report) => matchesReportSearch(report, search)))
   return (
     <motion.div className="admin-panel" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
       <div className="panel-head"><div><h2>Daftar Prioritas</h2><p>Diurutkan berdasarkan tingkat risiko bahaya</p></div></div>
@@ -198,53 +247,140 @@ function PrioritasView({ reports, onSelect }) {
 }
 
 /* ── Peta View ─────────────────────────────────────────────────────────── */
-function PetaView() {
+function PetaView({ reports, onSelect }) {
+  const topReports = sortReportsByPriority(reports).slice(0, 5)
+  const criticalCount = reports.filter((report) => report.riskLevel === 'Kritis').length
+  const highCount = reports.filter((report) => report.riskLevel === 'Tinggi').length
   return (
-    <motion.div className="admin-panel" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-      <div className="panel-head"><div><h2>Peta Risiko Wilayah Lengkap</h2><p>Pantauan langsung seluruh area</p></div></div>
-      <div className="panel-body" style={{ padding: 32 }}>
-        <div className="admin-map-panel" style={{ height: 500 }}>
-          <MapPreview />
+    <div className="admin-map-layout">
+      <motion.div className="admin-panel map-focus-panel" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="panel-head">
+          <div><h2>Peta Risiko Wilayah Lengkap</h2><p>{reports.length} titik aktif dipantau dari dashboard</p></div>
         </div>
-      </div>
-    </motion.div>
+        <div className="panel-body map-focus-body">
+          <div className="admin-map-panel">
+            <MapPreview reports={reports} />
+          </div>
+        </div>
+      </motion.div>
+
+      <motion.aside className="admin-panel map-side-panel" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.08 }}>
+        <div className="panel-head">
+          <div><h2>Ringkasan Peta</h2><p>Prioritas yang perlu dipantau</p></div>
+        </div>
+        <div className="map-side-stats">
+          <div><strong>{criticalCount}</strong><span>Kritis</span></div>
+          <div><strong>{highCount}</strong><span>Tinggi</span></div>
+          <div><strong>{reports.length}</strong><span>Aktif</span></div>
+        </div>
+        <div className="map-side-list">
+          {topReports.map((report) => (
+            <button key={report.id} type="button" className="map-side-item" onClick={() => onSelect(report)}>
+              <span className={`report-score score-${report.severity}`}>{report.riskScore}</span>
+              <div>
+                <strong>{report.code}</strong>
+                <small>{report.kecamatan || report.address || 'Lokasi belum lengkap'}</small>
+              </div>
+              <em>{report.riskLevel}</em>
+            </button>
+          ))}
+        </div>
+      </motion.aside>
+    </div>
   )
 }
 
 /* ── Main Dashboard ────────────────────────────────────────────────────── */
 export default function AdminDashboard() {
+  const navigate = useNavigate()
   const [nav, setNav] = useState('dashboard')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [animated, setAnimated] = useState(false)
-  const [reports, setReports] = useState(REPORTS)
+  const [reports, setReports] = useState(() => getReports())
   const [selected, setSelected] = useState(null)
+  const [quickSearch, setQuickSearch] = useState('')
+  const [exportMode, setExportMode] = useState('semua')
 
-  useEffect(() => { setTimeout(() => setAnimated(true), 100) }, [])
+  useEffect(() => {
+    const timer = window.setTimeout(() => setAnimated(true), 100)
+    return () => window.clearTimeout(timer)
+  }, [])
+  useEffect(() => subscribeReports(setReports), [])
 
-  function handleRefresh() { setRefreshing(true); setTimeout(() => setRefreshing(false), 1200) }
-  function handleStatusChange(id, newStatus) {
-    setReports(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r))
-    setSelected(prev => prev && prev.id === id ? { ...prev, status: newStatus } : prev)
+  function handleRefresh() {
+    setRefreshing(true)
+    setReports(getReports())
+    setTimeout(() => setRefreshing(false), 400)
+  }
+
+  function handleStatusChange(id, newStatus, note) {
+    const updated = updateReportStatus(id, newStatus, note)
+    setReports(getReports())
+    if (updated) setSelected(updated)
+  }
+
+  function handleAssignOfficer(id, officerId) {
+    const updated = assignReportOfficer(id, officerId)
+    setReports(getReports())
+    if (updated) setSelected(updated)
+  }
+
+  function handleExportCsv() {
+    const exportReports = reports.filter((report) => {
+      if (exportMode === 'aktif') return !isArchivedReport(report)
+      if (exportMode === 'arsip') return isArchivedReport(report)
+      return true
+    })
+    const csv = createReportsCsv(exportReports)
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `alirin-laporan-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+  }
+
+  function handleResetDemo() {
+    const ok = window.confirm('Reset semua laporan lokal dan isi ulang data demo ALIRIN? Laporan yang dibuat di browser ini akan tertimpa.')
+    if (!ok) return
+    const seeded = resetDemoReports()
+    setReports(seeded)
+    setSelected(null)
+  }
+
+  function handleLogout() {
+    logoutDemoAdmin()
+    navigate('/admin/login', { replace: true })
   }
 
   const [title, subtitle] = PAGE_TITLE[nav] || ['Dashboard', '']
+  const activeReports = reports.filter((report) => !isArchivedReport(report))
+  const archivedReports = reports.filter(isArchivedReport)
 
   function renderView() {
     switch (nav) {
-      case 'laporan': return <LaporanView reports={reports} onSelect={setSelected} />
-      case 'prioritas': return <PrioritasView reports={reports} onSelect={setSelected} />
-      case 'peta': return <PetaView />
-      case 'statistik': return <StatistikView />
-      case 'petugas': return <PetugasView />
-      case 'pengaturan': return <PengaturanView />
-      default: return <DashboardView reports={reports} animated={animated} onSelect={setSelected} />
+      case 'laporan': return <LaporanView reports={activeReports} onSelect={setSelected} search={quickSearch} onSearchChange={setQuickSearch} />
+      case 'prioritas': return <PrioritasView reports={activeReports} onSelect={setSelected} search={quickSearch} />
+      case 'peta': return <PetaView reports={activeReports} onSelect={setSelected} />
+      case 'arsip': return <ArsipView reports={archivedReports} onSelect={setSelected} search={quickSearch} onSearchChange={setQuickSearch} />
+      default: return <DashboardView reports={activeReports} animated={animated} onSelect={setSelected} />
     }
   }
 
   return (
     <div className="admin-page">
-      <Sidebar nav={nav} setNav={setNav} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+      <Sidebar
+        nav={nav}
+        setNav={setNav}
+        mobileOpen={mobileOpen}
+        setMobileOpen={setMobileOpen}
+        pendingCount={activeReports.filter((report) => report.status === 'masuk').length}
+        onLogout={handleLogout}
+      />
 
       <div className="admin-main">
         <div className="admin-topbar">
@@ -259,13 +395,42 @@ export default function AdminDashboard() {
           <div className="admin-topbar-actions">
             <div className="admin-search desktop-only">
               <Search size={16} />
-              <input type="text" placeholder="Cari..." />
+              <input
+                type="text"
+                placeholder="Cari laporan..."
+                value={quickSearch}
+                onChange={(event) => {
+                  setQuickSearch(event.target.value)
+                  if (event.target.value.trim()) setNav('laporan')
+                }}
+              />
             </div>
-            <button className="icon-btn"><Bell size={18} /><span className="notif-dot"></span></button>
-            <button className="refresh-btn" onClick={handleRefresh} disabled={refreshing}>
-              <RefreshCw size={16} className={refreshing ? 'spin' : ''} />
-              <span>{refreshing ? 'Memuat...' : 'Perbarui'}</span>
-            </button>
+            <div className="topbar-tools">
+              <div className="admin-export-control">
+                <select
+                  className="export-mode-select"
+                  value={exportMode}
+                  onChange={(event) => setExportMode(event.target.value)}
+                  aria-label="Mode export CSV"
+                >
+                  <option value="semua">Semua</option>
+                  <option value="aktif">Aktif</option>
+                  <option value="arsip">Arsip</option>
+                </select>
+                <button className="topbar-tool-btn" type="button" onClick={handleExportCsv}>
+                  <Download size={16} />
+                  <span>Export</span>
+                </button>
+              </div>
+              <button className="topbar-tool-btn subtle topbar-icon-only" type="button" onClick={handleResetDemo} aria-label="Reset demo" title="Reset demo">
+                <RotateCcw size={16} />
+              </button>
+              <button className="icon-btn" type="button" aria-label="Notifikasi demo"><Bell size={18} /><span className="notif-dot"></span></button>
+              <button className="refresh-btn" onClick={handleRefresh} disabled={refreshing}>
+                <RefreshCw size={16} className={refreshing ? 'spin' : ''} />
+                <span>{refreshing ? 'Memuat...' : 'Perbarui'}</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -279,7 +444,7 @@ export default function AdminDashboard() {
       </div>
 
       <AnimatePresence>
-        {selected && <ReportModal report={selected} onClose={() => setSelected(null)} onStatusChange={handleStatusChange} />}
+        {selected && <ReportModal key={selected.id} report={selected} onClose={() => setSelected(null)} onStatusChange={handleStatusChange} onAssignOfficer={handleAssignOfficer} />}
       </AnimatePresence>
     </div>
   )

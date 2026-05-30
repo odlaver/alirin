@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { Routes, Route, Link, useLocation } from 'react-router-dom'
+import { Suspense, lazy, useEffect, useRef, useState } from 'react'
+import { Routes, Route, Link, Navigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   AlertTriangle,
@@ -33,11 +33,17 @@ import {
   X,
 } from 'lucide-react'
 import './App.css'
-import LaporPage from './pages/LaporPage.jsx'
-import PetaPage from './pages/PetaPage.jsx'
-import AdminLoginPage from './pages/AdminLoginPage.jsx'
-import AdminDashboard from './pages/AdminDashboard.jsx'
-import RiskMap from './components/RiskMap.jsx'
+import { isRoleSessionActive } from './services/reportsStore.js'
+
+const RiskMap = lazy(() => import('./components/RiskMap.jsx'))
+const LaporPage = lazy(() => import('./pages/LaporPage.jsx'))
+const PetaPage = lazy(() => import('./pages/PetaPage.jsx'))
+const AdminLoginPage = lazy(() => import('./pages/AdminLoginPage.jsx'))
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard.jsx'))
+const StatusPage = lazy(() => import('./pages/StatusPage.jsx'))
+const MetodologiPage = lazy(() => import('./pages/MetodologiPage.jsx'))
+const PetugasLoginPage = lazy(() => import('./pages/PetugasLoginPage.jsx'))
+const PetugasTasksPage = lazy(() => import('./pages/PetugasTasksPage.jsx'))
 
 const navItems = [
   { label: 'Masalah', href: '#masalah' },
@@ -126,18 +132,18 @@ const featureCards = [
   },
   {
     icon: ImageIcon,
-    title: 'Dokumentasi before-after',
-    body: 'Bukti lapangan sebelum dan sesudah.',
+    title: 'Foto bukti wajib',
+    body: 'Minimal satu foto tersimpan bersama laporan.',
   },
   {
     icon: RadioTower,
-    title: 'Siap integrasi IoT',
-    body: 'Siap berkembang ke sensor dan notifikasi.',
+    title: 'Ruang riset IoT',
+    body: 'Sensor air bisa ditambahkan setelah core flow stabil.',
   },
   {
     icon: LockKeyhole,
-    title: 'Cocok untuk tata kelola',
-    body: 'Alur verifikasi untuk kerja pemerintah.',
+    title: 'Demo admin lokal',
+    body: 'Login demo untuk simulasi, bukan keamanan produksi.',
   },
 ]
 
@@ -418,7 +424,18 @@ function SectionIntro({ label, title, body, align = 'left' }) {
 }
 
 function RiskMapPreview({ compact = false }) {
-  return <RiskMap compact={compact} />
+  return (
+    <Suspense
+      fallback={(
+        <div className={`risk-map-card osm-map-card ${compact ? 'is-compact' : ''} map-preview-loading`}>
+          <Droplets size={22} />
+          <span>Memuat peta...</span>
+        </div>
+      )}
+    >
+      <RiskMap compact={compact} />
+    </Suspense>
+  )
 }
 
 const STAGGER = {
@@ -807,11 +824,13 @@ function Footer() {
           <h2>Platform</h2>
           <Link to="/lapor">Laporkan Drainase</Link>
           <Link to="/peta">Peta Risiko</Link>
+          <Link to="/metodologi">Metodologi</Link>
         </div>
 
         <div>
           <h2>Admin</h2>
           <Link to="/admin/login">Masuk Dashboard</Link>
+          <Link to="/petugas/login">Masuk Petugas</Link>
           <Link to="/admin/dashboard">Dashboard Admin</Link>
         </div>
 
@@ -877,18 +896,45 @@ function NotFoundPage() {
   )
 }
 
+function PageLoader() {
+  return (
+    <div className="page-loader" role="status" aria-live="polite">
+      <span className="brand-mark" aria-hidden="true">
+        <Droplets size={21} strokeWidth={2.4} />
+      </span>
+      <strong>Memuat ALIRIN...</strong>
+    </div>
+  )
+}
+
+function AdminRoute() {
+  if (isRoleSessionActive('admin')) return <AdminDashboard />
+  return <Navigate to="/admin/login" replace state={{ from: '/admin/dashboard' }} />
+}
+
+function PetugasRoute() {
+  if (isRoleSessionActive('petugas')) return <PetugasTasksPage />
+  return <Navigate to="/petugas/login" replace state={{ from: '/petugas/tugas' }} />
+}
+
 function App() {
   return (
     <>
       <ScrollToTop />
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/lapor" element={<LaporPage />} />
-        <Route path="/peta" element={<PetaPage />} />
-        <Route path="/admin/login" element={<AdminLoginPage />} />
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/lapor" element={<LaporPage />} />
+          <Route path="/status/:code" element={<StatusPage />} />
+          <Route path="/peta" element={<PetaPage />} />
+          <Route path="/metodologi" element={<MetodologiPage />} />
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route path="/admin/dashboard" element={<AdminRoute />} />
+          <Route path="/petugas/login" element={<PetugasLoginPage />} />
+          <Route path="/petugas/tugas" element={<PetugasRoute />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </Suspense>
     </>
   )
 }

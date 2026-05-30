@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   AlertTriangle,
@@ -10,22 +10,44 @@ import {
   SlidersHorizontal,
 } from 'lucide-react'
 import RiskMap from '../components/RiskMap.jsx'
-import { getLevelClass, riskMarkers } from '../components/mapData.js'
+import { getLevelClass } from '../components/mapData.js'
+import { reportsToMarkers } from '../domain/reports.js'
+import { KECAMATAN_DATA } from '../data/bandarLampungAreas.js'
+import { REPORT_STATUSES, STATUS_LABEL } from '../domain/status.js'
+import { getActiveReports, subscribeReports } from '../services/reportsStore.js'
 import './PetaPage.css'
 
 const FILTERS = ['Semua', 'Kritis', 'Tinggi', 'Waspada', 'Normal']
+const STATUS_FILTERS = ['semua', ...REPORT_STATUSES]
 
 export default function PetaPage() {
-  const [selectedMarkerId, setSelectedMarkerId] = useState(riskMarkers[0].id)
+  const [reports, setReports] = useState(() => getActiveReports())
+  const markers = useMemo(() => reportsToMarkers(reports), [reports])
+  const [selectedMarkerId, setSelectedMarkerId] = useState(markers[0]?.id ?? '')
   const [activeFilter, setActiveFilter] = useState('Semua')
+  const [activeStatus, setActiveStatus] = useState('semua')
+  const [activeKecamatan, setActiveKecamatan] = useState('semua')
+  const [search, setSearch] = useState('')
+
+  useEffect(() => subscribeReports(() => setReports(getActiveReports())), [])
 
   const filteredMarkers = useMemo(() => {
-    if (activeFilter === 'Semua') return riskMarkers
-    return riskMarkers.filter((marker) => marker.level === activeFilter)
-  }, [activeFilter])
+    const query = search.trim().toLowerCase()
+    return markers.filter((marker) => {
+      if (activeFilter !== 'Semua' && marker.level !== activeFilter) return false
+      if (activeStatus !== 'semua' && marker.report?.status !== activeStatus) return false
+      if (activeKecamatan !== 'semua' && marker.report?.kecamatan !== activeKecamatan) return false
+      if (!query) return true
+      return [marker.area, marker.issue, marker.code, marker.status, marker.report?.address]
+        .some((value) => String(value || '').toLowerCase().includes(query))
+    })
+  }, [activeFilter, activeKecamatan, activeStatus, markers, search])
 
+  const resolvedSelectedMarkerId = filteredMarkers.some((marker) => marker.id === selectedMarkerId)
+    ? selectedMarkerId
+    : filteredMarkers[0]?.id ?? ''
   const selectedMarker =
-    riskMarkers.find((marker) => marker.id === selectedMarkerId) ?? riskMarkers[0]
+    filteredMarkers.find((marker) => marker.id === resolvedSelectedMarkerId) ?? filteredMarkers[0]
 
   return (
     <div className="peta-page">
@@ -55,7 +77,13 @@ export default function PetaPage() {
               <Search size={16} />
               <span>Cari area</span>
             </label>
-            <input id="peta-search" type="search" placeholder="Kedaton, Sukarame..." />
+            <input
+              id="peta-search"
+              type="search"
+              placeholder="Kedaton, Sukarame..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
           </div>
 
           <div className="peta-filter-block">
@@ -78,19 +106,45 @@ export default function PetaPage() {
                 </button>
               ))}
             </div>
-          </div>
-
-          <div className="selected-risk-card">
-            <span className={`risk-badge risk-${getLevelClass(selectedMarker.level)}`}>
-              {selectedMarker.level}
-            </span>
-            <strong>{selectedMarker.area}</strong>
-            <p>{selectedMarker.issue}</p>
-            <div>
-              <AlertTriangle size={16} />
-              Skor {selectedMarker.score}
+            <div className="peta-select-grid">
+              <label>
+                Status
+                <select value={activeStatus} onChange={(event) => setActiveStatus(event.target.value)}>
+                  {STATUS_FILTERS.map((status) => (
+                    <option key={status} value={status}>{STATUS_LABEL[status] || 'Semua status'}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Kecamatan
+                <select value={activeKecamatan} onChange={(event) => setActiveKecamatan(event.target.value)}>
+                  <option value="semua">Semua kecamatan</option>
+                  {Object.keys(KECAMATAN_DATA).map((kecamatan) => (
+                    <option key={kecamatan} value={kecamatan}>{kecamatan}</option>
+                  ))}
+                </select>
+              </label>
             </div>
           </div>
+
+          {selectedMarker ? (
+            <div className="selected-risk-card">
+              <span className={`risk-badge risk-${getLevelClass(selectedMarker.level)}`}>
+                {selectedMarker.level}
+              </span>
+              <strong>{selectedMarker.area}</strong>
+              <p>{selectedMarker.issue}</p>
+              <div>
+                <AlertTriangle size={16} />
+                Skor {selectedMarker.score}
+              </div>
+            </div>
+          ) : (
+            <div className="selected-risk-card">
+              <strong>Tidak ada titik</strong>
+              <p>Filter saat ini tidak menemukan laporan.</p>
+            </div>
+          )}
 
           <div className="risk-list">
             {filteredMarkers.map((marker) => (
@@ -98,7 +152,7 @@ export default function PetaPage() {
                 key={marker.id}
                 type="button"
                 className={`risk-list-item ${
-                  marker.id === selectedMarkerId ? 'is-selected' : ''
+                  marker.id === resolvedSelectedMarkerId ? 'is-selected' : ''
                 }`}
                 onClick={() => setSelectedMarkerId(marker.id)}
               >
@@ -114,6 +168,9 @@ export default function PetaPage() {
                 </span>
               </button>
             ))}
+            {filteredMarkers.length === 0 && (
+              <div className="peta-empty-list">Tidak ada laporan sesuai filter.</div>
+            )}
           </div>
         </aside>
 
@@ -121,7 +178,8 @@ export default function PetaPage() {
           <RiskMap
             className="peta-main-map"
             height="100%"
-            selectedMarkerId={selectedMarkerId}
+            markers={filteredMarkers}
+            selectedMarkerId={resolvedSelectedMarkerId}
             onSelectedMarkerChange={(marker) => setSelectedMarkerId(marker.id)}
             showHead={false}
           />
