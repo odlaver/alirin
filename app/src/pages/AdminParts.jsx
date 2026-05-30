@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from 'sonner'
 import {
   AlertTriangle, CheckCircle2, Clock, FileCheck2,
   MapPin, TrendingUp, TrendingDown, X,
@@ -102,8 +103,10 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
       setIsSavingStatus(true)
       await onStatusChange(report.id, status, note)
       setNote('')
+      toast.success('Status berhasil diperbarui!')
     } catch (err) {
       setStatusError(err.message || 'Transisi status tidak valid.')
+      toast.error('Gagal memperbarui status.')
     } finally {
       setIsSavingStatus(false)
     }
@@ -115,8 +118,10 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
       setStatusError('')
       setIsAssigningOfficer(true)
       await onAssignOfficer?.(report.id, officerId)
+      toast.success('Petugas berhasil ditugaskan!')
     } catch (err) {
       setStatusError(err.message || 'Gagal menugaskan petugas.')
+      toast.error('Gagal menugaskan petugas.')
     } finally {
       setIsAssigningOfficer(false)
     }

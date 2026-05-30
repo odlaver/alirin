@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { Routes, Route, Link, Navigate, useLocation } from 'react-router-dom'
+import { Toaster } from 'sonner'
 import { useSEO } from './hooks/useSEO.js'
 import { motion } from 'framer-motion'
 import {
@@ -100,6 +101,7 @@ function PetugasRoute() {
 function App() {
   return (
     <ErrorBoundary>
+      <Toaster position="top-center" richColors expand={true} />
       <ScrollToTop />
       <Suspense fallback={<PageLoader />}>
         <Routes>
