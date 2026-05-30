@@ -1,5 +1,4 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/droplets.svg" width="80" height="80" alt="ALIRIN Logo"/>
   <h1>🌊 ALIRIN</h1>
   <p><strong>Smart Drainage & Micro-Risk Mapping System</strong></p>
 
