@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSEO } from '../hooks/useSEO.js'
 import { Link, useParams } from 'react-router-dom'
 import {
   AlertTriangle,
@@ -37,6 +38,10 @@ function NotFoundStatus({ code }) {
 }
 
 export default function StatusPage() {
+  useSEO({
+    title: 'Cek Status Laporan',
+    description: 'Lacak perkembangan laporan drainase Anda dengan memasukkan nomor laporan atau nomor HP.'
+  })
   const { code } = useParams()
   const [, setStoreVersion] = useState(0)
 

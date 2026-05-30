@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { Routes, Route, Link, Navigate, useLocation } from 'react-router-dom'
+import { useSEO } from './hooks/useSEO.js'
 import { motion } from 'framer-motion'
 import {
   AlertTriangle,
@@ -851,6 +852,11 @@ function Footer() {
 }
 
 function LandingPage() {
+  useSEO({
+    title: 'Beranda',
+    description: 'ALIRIN - Sistem pelaporan dan pemetaan risiko drainase mikro untuk warga Kota Bandar Lampung.'
+  })
+
   return (
     <>
       <Header />

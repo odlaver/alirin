@@ -50,3 +50,30 @@ export function normalizeStatus(status) {
 export function isFinalStatus(status) {
   return status === 'selesai' || status === 'ditolak'
 }
+
+// State transition validation rules
+const TRANSITIONS = {
+  masuk: ['diverifikasi', 'ditolak'],
+  diverifikasi: ['dijadwalkan', 'ditolak', 'masuk'],
+  dijadwalkan: ['ditangani', 'dijadwalkan', 'diverifikasi', 'ditolak'],
+  ditangani: ['selesai', 'dijadwalkan', 'diverifikasi'],
+  selesai: [], // Final state, no transitions allowed
+  ditolak: [], // Final state, no transitions allowed
+}
+
+/**
+ * Validates whether a state transition from `fromStatus` to `toStatus` is permitted.
+ * @param {string} fromStatus - The current status
+ * @param {string} toStatus - The target status
+ * @returns {boolean}
+ */
+export function canTransitionTo(fromStatus, toStatus) {
+  const from = normalizeStatus(fromStatus)
+  const to = normalizeStatus(toStatus)
+  
+  // Transitioning to the same status is always valid
+  if (from === to) return true
+  
+  const allowed = TRANSITIONS[from]
+  return allowed ? allowed.includes(to) : false
+}

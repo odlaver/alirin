@@ -68,9 +68,23 @@ export function getDistanceKm(a, b) {
 
 function getNearbyScore(report, existingReports = []) {
   const current = { lat: Number(report.lat), lng: Number(report.lng) }
+  
+  // Bounding box pre-filtering for ~350 meters to avoid expensive trigonometric calculations.
+  // 0.35 km is approx 0.00315 degrees of latitude/longitude near Bandar Lampung (~ -5.4 degrees lat).
+  // We use a safe boundary of 0.0035 degrees to ensure no false negatives.
+  const BOUNDING_BOX_DELTA = 0.0035
+  
   const nearby = existingReports.filter((item) => {
     if (item.id && item.id === report.id) return false
-    return getDistanceKm(current, { lat: Number(item.lat), lng: Number(item.lng) }) <= NEARBY_RADIUS_KM
+    
+    const itemLat = Number(item.lat)
+    const itemLng = Number(item.lng)
+    
+    // Fast bounding box check (fast arithmetic)
+    if (Math.abs(itemLat - current.lat) > BOUNDING_BOX_DELTA) return false
+    if (Math.abs(itemLng - current.lng) > BOUNDING_BOX_DELTA) return false
+    
+    return getDistanceKm(current, { lat: itemLat, lng: itemLng }) <= NEARBY_RADIUS_KM
   })
 
   return {
@@ -111,7 +125,23 @@ function getAgeScore(report, now = new Date()) {
 }
 
 export function calculateRiskScore(report, context = {}) {
-  const now = context.now ? new Date(context.now) : new Date()
+  let now = context.now ? new Date(context.now) : new Date()
+  
+  // Mitigate client clock drift to the past:
+  // If the client's current clock is set to the past (prior to existing reports),
+  // we adjust 'now' to match the latest report's createdAt date.
+  if (context.reports && context.reports.length > 0) {
+    const latestTimestamp = context.reports.reduce((latest, r) => {
+      if (!r.createdAt) return latest
+      const t = new Date(r.createdAt).getTime()
+      return Number.isFinite(t) ? Math.max(latest, t) : latest
+    }, 0)
+    
+    if (latestTimestamp > now.getTime()) {
+      now = new Date(latestTimestamp)
+    }
+  }
+
   const severityRaw = SEVERITY_SCORE[report.severity] ?? 35
   const categoryRaw = CATEGORY_SCORE[report.category] ?? CATEGORY_SCORE.lainnya
   const nearby = getNearbyScore(report, context.reports ?? [])

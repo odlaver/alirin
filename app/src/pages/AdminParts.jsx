@@ -10,7 +10,7 @@ import {
 } from './adminData.js'
 import { DEMO_OFFICERS } from '../data/officers.js'
 import RiskMap from '../components/RiskMap.jsx'
-import { REPORT_STATUSES, STATUS_CLASS, STATUS_LABEL } from '../domain/status.js'
+import { REPORT_STATUSES, STATUS_CLASS, STATUS_LABEL, canTransitionTo } from '../domain/status.js'
 import {
   formatDateTime,
   formatRelativeTime,
@@ -88,14 +88,20 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
   const [status, setStatus] = useState(report?.status ?? 'masuk')
   const [note, setNote] = useState('')
   const [officerId, setOfficerId] = useState(report?.assignedOfficerId ?? '')
+  const [statusError, setStatusError] = useState('')
 
   if (!report) return null
   const row = reportToAdminRow(report)
   const marker = reportToMarker(report)
 
   function handleSaveStatus() {
-    onStatusChange(report.id, status, note)
-    setNote('')
+    try {
+      setStatusError('')
+      onStatusChange(report.id, status, note)
+      setNote('')
+    } catch (err) {
+      setStatusError(err.message || 'Transisi status tidak valid.')
+    }
   }
 
   function handleAssignOfficer() {
@@ -117,7 +123,7 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
           <div className="cover-overlay">
             <span className="modal-badge">
               <span className={`report-severity-dot dot-${report.severity}`}/>
-              {report.severity.toUpperCase()} • SKOR {report.score}
+              {report.severity.toUpperCase()} • SKOR {report.riskScore}
             </span>
             <div className="cover-title">
               <span className="cover-id">{report.code}</span>
@@ -143,12 +149,28 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
               </div>
             </div>
             <div className="modal-breakdown">
-              {report.riskBreakdown.map((item) => (
-                <div className="modal-breakdown-row" key={item.id}>
-                  <span>{item.label}</span>
-                  <strong>{item.points}/{item.weight}</strong>
-                </div>
-              ))}
+              <small style={{display:'block',marginBottom:8,color:'var(--color-text-muted)',fontWeight:600,fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase'}}>Faktor Risiko</small>
+              {report.riskBreakdown.map((item) => {
+                const fillPct = Math.round((item.points / item.weight) * 100)
+                return (
+                  <div className="modal-breakdown-row" key={item.id}>
+                    <div className="breakdown-row-header">
+                      <span>{item.label}</span>
+                      <strong>{item.points}<span style={{fontWeight:400,color:'var(--color-text-muted)'}}>/{item.weight}</span></strong>
+                    </div>
+                    <div className="breakdown-bar-track">
+                      <div
+                        className="breakdown-bar-fill"
+                        style={{
+                          width: `${Math.min(fillPct, 100)}%`,
+                          background: fillPct >= 70 ? 'var(--color-danger)' : fillPct >= 40 ? 'var(--color-warning)' : 'var(--color-secondary)'
+                        }}
+                      />
+                    </div>
+                    <small className="breakdown-row-detail">{item.detail}</small>
+                  </div>
+                )
+              })}
             </div>
             <div className="info-grid-2">
               <div className="info-block">
@@ -180,8 +202,11 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
             
             <div className="status-update-box">
               <label>Update Status Laporan</label>
-              <select className="status-select-premium" value={status} onChange={(event) => setStatus(event.target.value)}>
-                {REPORT_STATUSES.map(s=><option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+              <select className="status-select-premium" value={status} onChange={(event) => { setStatus(event.target.value); setStatusError('') }}>
+                {REPORT_STATUSES
+                  .filter((s) => canTransitionTo(report.status, s) || s === report.status)
+                  .map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)
+                }
               </select>
               <textarea
                 className="status-note-input"
@@ -193,6 +218,7 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
               <button className="btn-action primary" type="button" onClick={handleSaveStatus}>
                 <TrendingUp size={16}/> Simpan Status
               </button>
+              {statusError && <p className="status-error-msg" role="alert">{statusError}</p>}
             </div>
 
             <div className="status-update-box">
@@ -252,7 +278,7 @@ export function ReportList({ reports, filter, onSelect }) {
               <strong>{r.title}</strong>
               <small><MapPin size={11} style={{display:'inline',verticalAlign:'middle'}}/> {r.loc} · {r.time}</small>
             </div>
-            <span className={`report-score score-${r.severity}`}>{r.score}</span>
+            <span className={`report-score score-${r.severity}`}>{r.riskScore}</span>
             <span className={`report-status-tag ${STATUS_CLASS[r.status]}`}>{STATUS_LABEL[r.status]}</span>
           </motion.button>
         ))}
@@ -392,7 +418,7 @@ export function MapPreview({ reports = [] }) {
 }
 
 /* ── Statistik View ────────────────────────────────────────────────────── */
-export function StatistikView() {
+export function StatistikView({ reports = [] }) {
   const max = Math.max(...MONTHLY_DATA.map(d=>d.val)) || 100
   const total = DONUT_DATA.reduce((a,b)=>a+b.val,0) || 1
 
@@ -415,11 +441,13 @@ export function StatistikView() {
   }).join(' ')
   const areaFill = `${areaPath} L100,100 L0,100 Z`
 
+  const completionRate = reports.length > 0 ? Math.round((reports.filter(r => r.status === 'selesai').length / reports.length) * 100) : 0
+
   const summaryCards = [
     { label: 'Total bulan ini', value: '128', sub: '+22% vs lalu', accent: 'var(--color-secondary)' },
     { label: 'Rata-rata harian', value: '4.1', sub: 'laporan/hari', accent: 'var(--color-primary)' },
     { label: 'Waktu respons', value: '3.2j', sub: '-18% vs target', accent: 'var(--color-success)' },
-    { label: 'Tingkat selesai', value: '87%', sub: 'kinerja stabil', accent: 'var(--color-warning)' },
+    { label: 'Tingkat selesai', value: `${completionRate}%`, sub: 'kinerja stabil', accent: 'var(--color-warning)' },
   ]
 
   return (

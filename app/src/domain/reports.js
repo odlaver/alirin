@@ -86,7 +86,6 @@ export function buildReport(input, existingReports = [], now = new Date(), overr
   return {
     ...baseReport,
     riskScore: risk.score,
-    score: risk.score,
     riskLevel: risk.level,
     riskBreakdown: risk.breakdown,
   }
@@ -101,7 +100,6 @@ export function recalculateReportRisk(report, allReports = [], now = new Date())
   return {
     ...report,
     riskScore: risk.score,
-    score: risk.score,
     riskLevel: risk.level,
     riskBreakdown: risk.breakdown,
   }

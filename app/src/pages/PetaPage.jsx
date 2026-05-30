@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSEO } from '../hooks/useSEO.js'
 import { Link } from 'react-router-dom'
 import {
   AlertTriangle,
@@ -21,6 +22,10 @@ const FILTERS = ['Semua', 'Kritis', 'Tinggi', 'Waspada', 'Normal']
 const STATUS_FILTERS = ['semua', ...REPORT_STATUSES]
 
 export default function PetaPage() {
+  useSEO({
+    title: 'Peta Risiko Drainase',
+    description: 'Pantau laporan dan status penanganan masalah drainase di berbagai wilayah secara real-time.'
+  })
   const [reports, setReports] = useState(() => getActiveReports())
   const markers = useMemo(() => reportsToMarkers(reports), [reports])
   const [selectedMarkerId, setSelectedMarkerId] = useState(markers[0]?.id ?? '')

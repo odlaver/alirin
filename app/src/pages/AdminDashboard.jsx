@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useSEO } from '../hooks/useSEO.js'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -292,6 +293,10 @@ function PetaView({ reports, onSelect }) {
 
 /* ── Main Dashboard ────────────────────────────────────────────────────── */
 export default function AdminDashboard() {
+  useSEO({
+    title: 'Dashboard Admin',
+    description: 'Kelola laporan dan titik risiko genangan drainase Kota Bandar Lampung.'
+  })
   const navigate = useNavigate()
   const [nav, setNav] = useState('dashboard')
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -315,15 +320,23 @@ export default function AdminDashboard() {
   }
 
   function handleStatusChange(id, newStatus, note) {
-    const updated = updateReportStatus(id, newStatus, note)
-    setReports(getReports())
-    if (updated) setSelected(updated)
+    try {
+      const updated = updateReportStatus(id, newStatus, note)
+      setReports(getReports())
+      if (updated) setSelected(updated)
+    } catch (err) {
+      throw err // Re-throw so ReportModal can catch and display inline
+    }
   }
 
   function handleAssignOfficer(id, officerId) {
-    const updated = assignReportOfficer(id, officerId)
-    setReports(getReports())
-    if (updated) setSelected(updated)
+    try {
+      const updated = assignReportOfficer(id, officerId)
+      setReports(getReports())
+      if (updated) setSelected(updated)
+    } catch (err) {
+      throw err // Re-throw so ReportModal can catch and display inline
+    }
   }
 
   function handleExportCsv() {

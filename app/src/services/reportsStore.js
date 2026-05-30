@@ -2,7 +2,7 @@ import { DEMO_PHOTO, DEMO_REPORT_INPUTS } from '../data/demoReports.js'
 import { KECAMATAN_DATA } from '../data/bandarLampungAreas.js'
 import { DEMO_OFFICERS, getOfficerById } from '../data/officers.js'
 import { CATEGORY_LABEL, SEVERITY_LABEL, buildReport, formatReportLocation, getReportTitle, recalculateReportsRisk } from '../domain/reports.js'
-import { INITIAL_STATUS_HISTORY, REPORT_STATUSES, STATUS_LABEL, isFinalStatus, normalizeStatus } from '../domain/status.js'
+import { INITIAL_STATUS_HISTORY, REPORT_STATUSES, STATUS_LABEL, isFinalStatus, normalizeStatus, canTransitionTo } from '../domain/status.js'
 
 export const REPORTS_STORAGE_KEY = 'alirin_reports_v1'
 export const ADMIN_SESSION_KEY = 'alirin_admin_session_v1'
@@ -405,10 +405,19 @@ export function getArchivedReports() {
 export function updateReportStatus(reportId, status, note = '', actor = 'Admin Demo') {
   if (!isKnownStatusInput(status)) return null
   const nextStatus = normalizeStatus(status)
-  const now = new Date().toISOString()
+  
   let updatedReport = null
+  let transitionError = null
+
   const reports = getReports().map((report) => {
     if (report.id !== reportId) return report
+    
+    if (!canTransitionTo(report.status, nextStatus)) {
+      transitionError = `Transisi status tidak valid: dari ${STATUS_LABEL[report.status]} ke ${STATUS_LABEL[nextStatus]}.`
+      return report
+    }
+
+    const now = new Date().toISOString()
     updatedReport = {
       ...report,
       status: nextStatus,
@@ -427,7 +436,13 @@ export function updateReportStatus(reportId, status, note = '', actor = 'Admin D
     return updatedReport
   })
 
-  saveReports(reports)
+  if (transitionError) {
+    throw new Error(transitionError)
+  }
+
+  if (updatedReport) {
+    saveReports(reports)
+  }
   return updatedReport
 }
 
@@ -435,11 +450,19 @@ export function assignReportOfficer(reportId, officerId, actor = 'Admin Demo') {
   const officer = getOfficerById(officerId)
   if (!officer) return null
 
-  const now = new Date().toISOString()
   let updatedReport = null
+  let transitionError = null
+
   const reports = getReports().map((report) => {
     if (report.id !== reportId) return report
+    
     const nextStatus = report.status === 'diverifikasi' ? 'dijadwalkan' : report.status
+    if (!canTransitionTo(report.status, nextStatus)) {
+      transitionError = `Transisi status tidak valid saat penugasan: dari ${STATUS_LABEL[report.status]} ke ${STATUS_LABEL[nextStatus]}.`
+      return report
+    }
+
+    const now = new Date().toISOString()
     const assignmentNote = nextStatus === 'dijadwalkan' && report.status !== 'dijadwalkan'
       ? `Ditugaskan ke ${officer.name} (${officer.area}) dan dijadwalkan untuk penanganan.`
       : `Ditugaskan ke ${officer.name} (${officer.area}).`
@@ -462,7 +485,13 @@ export function assignReportOfficer(reportId, officerId, actor = 'Admin Demo') {
     return updatedReport
   })
 
-  saveReports(reports)
+  if (transitionError) {
+    throw new Error(transitionError)
+  }
+
+  if (updatedReport) {
+    saveReports(reports)
+  }
   return updatedReport
 }
 
@@ -471,6 +500,7 @@ export function updateFieldProgress(reportId, action, payload = {}, actorSession
   const officerId = cleanText(actorSession.officerId, TEXT_LIMITS.short)
   const now = new Date().toISOString()
   let updatedReport = null
+  let transitionError = null
 
   const reports = getReports().map((report) => {
     if (report.id !== reportId) return report
@@ -481,6 +511,10 @@ export function updateFieldProgress(reportId, action, payload = {}, actorSession
 
     if (action === 'start') {
       if (currentStatus !== 'dijadwalkan') return report
+      if (!canTransitionTo(currentStatus, 'ditangani')) {
+        transitionError = `Transisi status tidak valid: dari ${STATUS_LABEL[currentStatus]} ke Ditangani.`
+        return report
+      }
       updatedReport = {
         ...report,
         status: 'ditangani',
@@ -514,6 +548,10 @@ export function updateFieldProgress(reportId, action, payload = {}, actorSession
 
     if (action === 'complete') {
       if (currentStatus !== 'ditangani') return report
+      if (!canTransitionTo(currentStatus, 'selesai')) {
+        transitionError = `Transisi status tidak valid: dari ${STATUS_LABEL[currentStatus]} ke Selesai.`
+        return report
+      }
       const photos = cleanPhotos(payload.photos)
       if (photos.length < 1) {
         throw new Error('Minimal 1 foto penyelesaian wajib diunggah.')
@@ -539,7 +577,13 @@ export function updateFieldProgress(reportId, action, payload = {}, actorSession
     return report
   })
 
-  saveReports(reports)
+  if (transitionError) {
+    throw new Error(transitionError)
+  }
+
+  if (updatedReport) {
+    saveReports(reports)
+  }
   return updatedReport
 }
 

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useSEO } from '../hooks/useSEO.js'
 import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -512,6 +513,10 @@ function SuccessScreen({ report, onNew }) {
 }
 
 export default function LaporPage() {
+  useSEO({
+    title: 'Lapor Masalah Drainase',
+    description: 'Bantu cegah banjir dengan melaporkan kondisi drainase tersumbat atau rusak di sekitar Anda.'
+  })
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [dir, setDir] = useState(1)
@@ -555,7 +560,14 @@ export default function LaporPage() {
       setSubmittedReport(report)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (error) {
-      setSubmitError(error.message || 'Laporan belum bisa dikirim. Periksa kembali data laporan.')
+      const isQuota = error.message?.toLowerCase().includes('penuh') ||
+                      error.message?.toLowerCase().includes('quota') ||
+                      error.name === 'QuotaExceededError'
+      setSubmitError(
+        isQuota
+          ? 'Penyimpanan browser penuh karena terlalu banyak foto terkompresi. Kurangi jumlah foto atau gunakan tombol Reset Demo di halaman admin (admin@alirin.local).'
+          : (error.message || 'Laporan belum bisa dikirim. Periksa kembali data laporan.')
+      )
     } finally {
       setLoading(false)
     }
