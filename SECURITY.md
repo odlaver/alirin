@@ -28,7 +28,7 @@ Harap **jangan membuka GitHub Issue publik** untuk melaporkan celah keamanan yan
 
 Silakan ikuti langkah-langkah pelaporan berikut:
 
-1. Kirimkan laporan detail mengenai kerentanan tersebut melalui email pengembang utama di: **aldo1@gemini.local** (atau melalui kontak pemilik repositori GitHub).
+1. Kirimkan laporan detail mengenai kerentanan tersebut melalui email pengembang utama di: **aldo110606@gmail.com** (atau melalui kontak pemilik repositori GitHub).
 2. Di dalam email Anda, harap sertakan:
    - Deskripsi lengkap tentang jenis kerentanan (misalnya: *cross-site scripting*, kebocoran state, dll.).
    - Langkah-langkah untuk mereproduksi celah keamanan tersebut (*Proof of Concept*).
