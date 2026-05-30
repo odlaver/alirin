@@ -137,10 +137,15 @@ function Step1({ data, setData }) {
         setIsLocating(false)
         setData({ ...data, lat, lng: lon, alamat: 'Lokasi terkini Anda' })
       },
-      () => {
+      (err) => {
         setIsLocating(false)
-        setLocError('Gagal mengambil lokasi. Pastikan izin lokasi aktif atau geser pin manual.')
-      }
+        if (err.code === err.TIMEOUT) {
+          setLocError('Waktu pencarian lokasi habis. Pastikan GPS aktif atau geser pin peta secara manual.')
+        } else {
+          setLocError('Gagal mendapatkan lokasi. Pastikan izin akses lokasi diberikan.')
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     )
   }
 

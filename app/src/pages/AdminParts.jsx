@@ -94,19 +94,24 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
   const row = reportToAdminRow(report)
   const marker = reportToMarker(report)
 
-  function handleSaveStatus() {
+  async function handleSaveStatus() {
     try {
       setStatusError('')
-      onStatusChange(report.id, status, note)
+      await onStatusChange(report.id, status, note)
       setNote('')
     } catch (err) {
       setStatusError(err.message || 'Transisi status tidak valid.')
     }
   }
 
-  function handleAssignOfficer() {
+  async function handleAssignOfficer() {
     if (!officerId) return
-    onAssignOfficer?.(report.id, officerId)
+    try {
+      setStatusError('')
+      await onAssignOfficer?.(report.id, officerId)
+    } catch (err) {
+      setStatusError(err.message || 'Gagal menugaskan petugas.')
+    }
   }
 
   const canAssignOfficer = ['diverifikasi', 'dijadwalkan'].includes(report.status)

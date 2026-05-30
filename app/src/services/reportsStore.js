@@ -44,10 +44,14 @@ async function syncFromSupabase() {
     emit(withRisk)
   }
   
+  let syncTimeout = null
   supabase.channel('public:reports')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, () => {
-      isSupabaseInit = false
-      syncFromSupabase()
+      if (syncTimeout) clearTimeout(syncTimeout)
+      syncTimeout = setTimeout(() => {
+        isSupabaseInit = false
+        syncFromSupabase()
+      }, 3000)
     }).subscribe()
 }
 // Trigger background sync on load
@@ -436,7 +440,7 @@ export async function createReport(input) {
 
   // Push to Supabase
   try {
-    const { data: inserted, error } = await supabase.from('reports').insert({
+    const { data: inserted, error: insertError } = await supabase.from('reports').insert({
       code: calculatedReport.code,
       category: calculatedReport.category,
       description: calculatedReport.description,
@@ -451,26 +455,32 @@ export async function createReport(input) {
       reporter_contact: calculatedReport.reporterContact
     }).select().single()
 
+    if (insertError) throw new Error(insertError.message)
+
     if (inserted) {
       calculatedReport.id = inserted.id // Use DB UUID
       if (calculatedReport.photos?.length) {
-        await supabase.from('report_photos').insert(
+        const { error: photoErr } = await supabase.from('report_photos').insert(
           calculatedReport.photos.map(p => ({ report_id: inserted.id, url: p.url }))
         )
+        if (photoErr) throw new Error(photoErr.message)
       }
       if (calculatedReport.riskBreakdown?.length) {
-        await supabase.from('risk_breakdowns').insert(
+        const { error: riskErr } = await supabase.from('risk_breakdowns').insert(
           calculatedReport.riskBreakdown.map(b => ({
             report_id: inserted.id, label: b.label, points: b.points, weight: b.weight, detail: b.detail
           }))
         )
+        if (riskErr) throw new Error(riskErr.message)
       }
-      await supabase.from('report_status_history').insert({
+      const { error: histErr } = await supabase.from('report_status_history').insert({
         report_id: inserted.id, status: 'masuk', actor: 'Pelapor (Warga)'
       })
+      if (histErr) throw new Error(histErr.message)
     }
   } catch (err) {
     console.error("Supabase error:", err)
+    throw new Error(err.message || 'Gagal menyimpan laporan ke database.')
   }
 
   // Finalize nextReports with the new DB ID
@@ -535,12 +545,15 @@ export async function updateReportStatus(reportId, status, note = '', actor = 'A
   }
 
   if (updatedReport) {
-    saveReports(reports)
     try {
-      await supabase.from('reports').update({ status: nextStatus }).eq('id', reportId)
-      await supabase.from('report_status_history').insert({ report_id: reportId, status: nextStatus, actor })
+      const { error: updateErr } = await supabase.from('reports').update({ status: nextStatus }).eq('id', reportId)
+      if (updateErr) throw new Error(updateErr.message)
+      const { error: histErr } = await supabase.from('report_status_history').insert({ report_id: reportId, status: nextStatus, actor })
+      if (histErr) throw new Error(histErr.message)
+      saveReports(reports)
     } catch(err) {
       console.error(err)
+      throw new Error(err.message || 'Gagal mengubah status laporan.')
     }
   }
   return updatedReport
@@ -590,19 +603,22 @@ export async function assignReportOfficer(reportId, officerId, actor = 'Admin De
   }
 
   if (updatedReport) {
-    saveReports(reports)
     try {
-      await supabase.from('reports').update({ 
+      const { error: updateErr } = await supabase.from('reports').update({ 
         status: updatedReport.status,
         assigned_officer_id: officer.id,
         assigned_officer_name: officer.name
       }).eq('id', reportId)
+      if (updateErr) throw new Error(updateErr.message)
       
       if (updatedReport.status !== 'masuk') {
-        await supabase.from('report_status_history').insert({ report_id: reportId, status: updatedReport.status, actor })
+        const { error: histErr } = await supabase.from('report_status_history').insert({ report_id: reportId, status: updatedReport.status, actor })
+        if (histErr) throw new Error(histErr.message)
       }
+      saveReports(reports)
     } catch(err) {
       console.error(err)
+      throw new Error(err.message || 'Gagal menugaskan petugas.')
     }
   }
   return updatedReport
