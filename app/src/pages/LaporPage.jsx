@@ -550,7 +550,7 @@ export default function LaporPage() {
     setSubmitError('')
     setLoading(true)
     try {
-      const report = createReport({
+      const report = await createReport({
         ...data,
         description: data.deskripsi,
         address: data.alamat,

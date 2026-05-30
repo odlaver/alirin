@@ -319,9 +319,9 @@ export default function AdminDashboard() {
     setTimeout(() => setRefreshing(false), 400)
   }
 
-  function handleStatusChange(id, newStatus, note) {
+  async function handleStatusChange(id, newStatus, note) {
     try {
-      const updated = updateReportStatus(id, newStatus, note)
+      const updated = await updateReportStatus(id, newStatus, note)
       setReports(getReports())
       if (updated) setSelected(updated)
     } catch (err) {
@@ -329,9 +329,9 @@ export default function AdminDashboard() {
     }
   }
 
-  function handleAssignOfficer(id, officerId) {
+  async function handleAssignOfficer(id, officerId) {
     try {
-      const updated = assignReportOfficer(id, officerId)
+      const updated = await assignReportOfficer(id, officerId)
       setReports(getReports())
       if (updated) setSelected(updated)
     } catch (err) {

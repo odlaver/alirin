@@ -3,6 +3,56 @@ import { KECAMATAN_DATA } from '../data/bandarLampungAreas.js'
 import { DEMO_OFFICERS, getOfficerById } from '../data/officers.js'
 import { CATEGORY_LABEL, SEVERITY_LABEL, buildReport, formatReportLocation, getReportTitle, recalculateReportsRisk } from '../domain/reports.js'
 import { INITIAL_STATUS_HISTORY, REPORT_STATUSES, STATUS_LABEL, isFinalStatus, normalizeStatus, canTransitionTo } from '../domain/status.js'
+import { supabase } from './supabaseClient.js'
+
+let isSupabaseInit = false
+async function syncFromSupabase() {
+  if (isSupabaseInit) return
+  isSupabaseInit = true
+  const { data } = await supabase.from('reports').select('*, report_photos(*), risk_breakdowns(*), report_status_history(*)')
+  if (data && data.length > 0) {
+    const mem = data.map(row => ({
+      id: row.id,
+      code: row.code,
+      category: row.category,
+      description: row.description,
+      address: row.address,
+      lat: row.lat,
+      lng: row.lng,
+      status: row.status,
+      severity: row.severity,
+      riskLevel: row.risk_level,
+      riskScore: row.risk_score,
+      reporterName: row.reporter_name,
+      reporterContact: row.reporter_contact,
+      assignedOfficerId: row.assigned_officer_id,
+      assignedOfficerName: row.assigned_officer_name,
+      createdAt: row.created_at,
+      photos: (row.report_photos || []).map(p => ({ id: p.id, url: p.url, name: 'foto.jpg', type: 'image/jpeg', size: 0 })),
+      riskBreakdown: (row.risk_breakdowns || []).map(b => ({
+        id: b.id, label: b.label, points: b.points, weight: b.weight, detail: b.detail
+      })),
+      statusHistory: (row.report_status_history || []).map(h => ({
+        status: h.status, actor: h.actor, note: 'Update via Supabase', at: h.at
+      })).sort((a,b) => new Date(a.at) - new Date(b.at)),
+      fieldNotes: [],
+      completionPhotos: []
+    }))
+    
+    const withRisk = recalculateReportsRisk(mem)
+    writeJson(REPORTS_STORAGE_KEY, withRisk)
+    emit(withRisk)
+  }
+  
+  supabase.channel('public:reports')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, () => {
+      isSupabaseInit = false
+      syncFromSupabase()
+    }).subscribe()
+}
+// Trigger background sync on load
+if (typeof window !== 'undefined') syncFromSupabase()
+
 
 export const REPORTS_STORAGE_KEY = 'alirin_reports_v1'
 export const ADMIN_SESSION_KEY = 'alirin_admin_session_v1'
@@ -356,7 +406,7 @@ function saveReports(reports) {
   emit(reports)
 }
 
-export function createReport(input) {
+export async function createReport(input) {
   validateReportInput(input)
   const reports = getReports()
   const safeInput = cleanReportInput(input)
@@ -380,6 +430,46 @@ export function createReport(input) {
     createdAt: now,
     updatedAt: now,
   }
+  
+  // Push to Supabase
+  try {
+    const { data: inserted, error } = await supabase.from('reports').insert({
+      code: withHistory.code,
+      category: withHistory.category,
+      description: withHistory.description,
+      address: withHistory.address,
+      lat: withHistory.lat,
+      lng: withHistory.lng,
+      status: withHistory.status,
+      severity: withHistory.severity,
+      risk_level: withHistory.riskLevel,
+      risk_score: withHistory.riskScore,
+      reporter_name: withHistory.reporterName,
+      reporter_contact: withHistory.reporterContact
+    }).select().single()
+
+    if (inserted) {
+      withHistory.id = inserted.id // Use DB UUID
+      if (withHistory.photos?.length) {
+        await supabase.from('report_photos').insert(
+          withHistory.photos.map(p => ({ report_id: inserted.id, url: p.url }))
+        )
+      }
+      if (withHistory.riskBreakdown?.length) {
+        await supabase.from('risk_breakdowns').insert(
+          withHistory.riskBreakdown.map(b => ({
+            report_id: inserted.id, label: b.label, points: b.points, weight: b.weight, detail: b.detail
+          }))
+        )
+      }
+      await supabase.from('report_status_history').insert({
+        report_id: inserted.id, status: 'masuk', actor: 'Pelapor (Warga)'
+      })
+    }
+  } catch (err) {
+    console.error("Supabase error:", err)
+  }
+
   const nextReports = recalculateReportsRisk([withHistory, ...reports])
   saveReports(nextReports)
   return nextReports.find((item) => item.id === withHistory.id) ?? withHistory
@@ -402,7 +492,7 @@ export function getArchivedReports() {
   return getReports().filter(isArchivedReport)
 }
 
-export function updateReportStatus(reportId, status, note = '', actor = 'Admin Demo') {
+export async function updateReportStatus(reportId, status, note = '', actor = 'Admin Demo') {
   if (!isKnownStatusInput(status)) return null
   const nextStatus = normalizeStatus(status)
   
@@ -442,11 +532,17 @@ export function updateReportStatus(reportId, status, note = '', actor = 'Admin D
 
   if (updatedReport) {
     saveReports(reports)
+    try {
+      await supabase.from('reports').update({ status: nextStatus }).eq('id', reportId)
+      await supabase.from('report_status_history').insert({ report_id: reportId, status: nextStatus, actor })
+    } catch(err) {
+      console.error(err)
+    }
   }
   return updatedReport
 }
 
-export function assignReportOfficer(reportId, officerId, actor = 'Admin Demo') {
+export async function assignReportOfficer(reportId, officerId, actor = 'Admin Demo') {
   const officer = getOfficerById(officerId)
   if (!officer) return null
 
@@ -491,6 +587,19 @@ export function assignReportOfficer(reportId, officerId, actor = 'Admin Demo') {
 
   if (updatedReport) {
     saveReports(reports)
+    try {
+      await supabase.from('reports').update({ 
+        status: updatedReport.status,
+        assigned_officer_id: officer.id,
+        assigned_officer_name: officer.name
+      }).eq('id', reportId)
+      
+      if (updatedReport.status !== 'masuk') {
+        await supabase.from('report_status_history').insert({ report_id: reportId, status: updatedReport.status, actor })
+      }
+    } catch(err) {
+      console.error(err)
+    }
   }
   return updatedReport
 }
