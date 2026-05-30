@@ -460,6 +460,28 @@ export async function createReport(input) {
     if (inserted) {
       calculatedReport.id = inserted.id // Use DB UUID
       if (calculatedReport.photos?.length) {
+        // Upload to Supabase Storage to prevent Base64 bloat
+        const uploadedPhotos = []
+        for (const p of calculatedReport.photos) {
+          if (p.url && p.url.startsWith('data:')) {
+            try {
+              const res = await fetch(p.url)
+              const blob = await res.blob()
+              const fileName = `laporan-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`
+              const { error: uploadErr } = await supabase.storage.from('reports').upload(fileName, blob)
+              if (uploadErr) throw uploadErr
+              const { data: { publicUrl } } = supabase.storage.from('reports').getPublicUrl(fileName)
+              uploadedPhotos.push({ ...p, url: publicUrl })
+            } catch (err) {
+              console.warn('Storage bucket "reports" tidak ditemukan atau error upload, fallback ke Base64:', err)
+              uploadedPhotos.push(p) // Fallback to base64 if bucket not created
+            }
+          } else {
+            uploadedPhotos.push(p)
+          }
+        }
+        calculatedReport.photos = uploadedPhotos
+
         const { error: photoErr } = await supabase.from('report_photos').insert(
           calculatedReport.photos.map(p => ({ report_id: inserted.id, url: p.url }))
         )

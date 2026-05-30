@@ -89,6 +89,8 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
   const [note, setNote] = useState('')
   const [officerId, setOfficerId] = useState(report?.assignedOfficerId ?? '')
   const [statusError, setStatusError] = useState('')
+  const [isSavingStatus, setIsSavingStatus] = useState(false)
+  const [isAssigningOfficer, setIsAssigningOfficer] = useState(false)
 
   if (!report) return null
   const row = reportToAdminRow(report)
@@ -97,10 +99,13 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
   async function handleSaveStatus() {
     try {
       setStatusError('')
+      setIsSavingStatus(true)
       await onStatusChange(report.id, status, note)
       setNote('')
     } catch (err) {
       setStatusError(err.message || 'Transisi status tidak valid.')
+    } finally {
+      setIsSavingStatus(false)
     }
   }
 
@@ -108,9 +113,12 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
     if (!officerId) return
     try {
       setStatusError('')
+      setIsAssigningOfficer(true)
       await onAssignOfficer?.(report.id, officerId)
     } catch (err) {
       setStatusError(err.message || 'Gagal menugaskan petugas.')
+    } finally {
+      setIsAssigningOfficer(false)
     }
   }
 
@@ -124,7 +132,7 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
         transition={{type:'spring',damping:24,stiffness:260}}>
         
         <div className="modal-cover">
-          <button className="modal-close-float" onClick={onClose}><X size={20}/></button>
+          <button className="modal-close-float" aria-label="Tutup" onClick={onClose}><X size={20}/></button>
           <div className="cover-overlay">
             <span className="modal-badge">
               <span className={`report-severity-dot dot-${report.severity}`}/>
@@ -220,8 +228,8 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
               />
-              <button className="btn-action primary" type="button" onClick={handleSaveStatus}>
-                <TrendingUp size={16}/> Simpan Status
+              <button className="btn-action primary" type="button" onClick={handleSaveStatus} disabled={isSavingStatus}>
+                <TrendingUp size={16}/> {isSavingStatus ? 'Menyimpan...' : 'Simpan Status'}
               </button>
               {statusError && <p className="status-error-msg" role="alert">{statusError}</p>}
             </div>
@@ -242,8 +250,8 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
               {report.assignedOfficerName && (
                 <p className="assignment-note">Ditugaskan ke {report.assignedOfficerName}</p>
               )}
-              <button className="btn-action primary" type="button" onClick={handleAssignOfficer} disabled={!canAssignOfficer || !officerId}>
-                <CheckCircle2 size={16}/> Simpan Petugas
+              <button className="btn-action primary" type="button" onClick={handleAssignOfficer} disabled={!canAssignOfficer || !officerId || isAssigningOfficer}>
+                <CheckCircle2 size={16}/> {isAssigningOfficer ? 'Menyimpan...' : 'Simpan Petugas'}
               </button>
             </div>
 
@@ -302,17 +310,19 @@ export function ReportList({ reports, filter, onSelect }) {
 /* ── Trend Chart ───────────────────────────────────────────────────────── */
 export function TrendChart({ reports = [] }) {
   const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
-  const chartData = Array.from({ length: 7 }, (_, offset) => {
-    const date = new Date()
-    date.setDate(date.getDate() - (6 - offset))
-    const key = date.toISOString().slice(0, 10)
-    return {
-      day: days[date.getDay()],
-      val: reports.filter((report) => report.createdAt?.slice(0, 10) === key).length,
-    }
-  })
-  const total = chartData.reduce((sum, item) => sum + item.val, 0)
-  const max = Math.max(...chartData.map(d=>d.val), 1)
+  const chartData = useMemo(() => {
+    return Array.from({ length: 7 }, (_, offset) => {
+      const date = new Date()
+      date.setDate(date.getDate() - (6 - offset))
+      const key = date.toISOString().slice(0, 10)
+      return {
+        day: days[date.getDay()],
+        val: reports.filter((report) => report.createdAt?.slice(0, 10) === key).length,
+      }
+    })
+  }, [reports])
+  const total = useMemo(() => chartData.reduce((sum, item) => sum + item.val, 0), [chartData])
+  const max = useMemo(() => Math.max(...chartData.map(d=>d.val), 1), [chartData])
   return (
     <div className="trend-chart">
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
@@ -342,15 +352,17 @@ export function RiskDist({ reports = [] }) {
     Waspada: 'var(--color-warning)',
     Normal: 'var(--color-success)',
   }
-  const dist = ['Kritis', 'Tinggi', 'Waspada', 'Normal'].map((label) => {
-    const count = reports.filter((report) => report.riskLevel === label).length
-    return {
-      label,
-      count,
-      pct: reports.length ? Math.round((count / reports.length) * 100) : 0,
-      color: riskColors[label],
-    }
-  })
+  const dist = useMemo(() => {
+    return ['Kritis', 'Tinggi', 'Waspada', 'Normal'].map((label) => {
+      const count = reports.filter((report) => report.riskLevel === label).length
+      return {
+        label,
+        count,
+        pct: reports.length ? Math.round((count / reports.length) * 100) : 0,
+        color: riskColors[label],
+      }
+    })
+  }, [reports])
   return (
     <div className="risk-dist-list">
       {dist.map((item,i)=>(
@@ -378,19 +390,21 @@ export function RiskDist({ reports = [] }) {
 
 /* ── Activity Feed ─────────────────────────────────────────────────────── */
 export function ActivityFeed({ reports = [] }) {
-  const feed = reports
-    .flatMap((report) => (report.statusHistory ?? []).map((item) => ({
-      text: `${report.code} - ${STATUS_LABEL[item.status]}`,
-      time: formatRelativeTime(item.at),
-      color: item.status === 'selesai'
-        ? 'var(--color-success)'
-        : item.status === 'masuk'
-          ? 'var(--color-danger)'
-          : 'var(--color-secondary)',
-      at: item.at,
-    })))
-    .sort((a, b) => new Date(b.at) - new Date(a.at))
-    .slice(0, 5)
+  const feed = useMemo(() => {
+    return reports
+      .flatMap((report) => (report.statusHistory ?? []).map((item) => ({
+        text: `${report.code} - ${STATUS_LABEL[item.status]}`,
+        time: formatRelativeTime(item.at),
+        color: item.status === 'selesai'
+          ? 'var(--color-success)'
+          : item.status === 'masuk'
+            ? 'var(--color-danger)'
+            : 'var(--color-secondary)',
+        at: item.at,
+      })))
+      .sort((a, b) => new Date(b.at) - new Date(a.at))
+      .slice(0, 5)
+  }, [reports])
   return (
     <div className="activity-feed">
       {feed.map((item,i)=>(
