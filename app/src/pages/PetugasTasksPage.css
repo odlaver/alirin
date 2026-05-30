@@ -41,7 +41,7 @@
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  font-weight: 800;
+  font-weight: var(--font-weight-bold);
 }
 
 .field-back,
@@ -110,8 +110,8 @@
 
 .field-hero-copy > span {
   color: var(--color-secondary-dark);
-  font-size: 12px;
-  font-weight: 900;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -152,15 +152,15 @@
 
 .field-hero-stats strong {
   font-family: var(--font-heading);
-  font-size: 34px;
+  font-size: var(--text-3xl);
   line-height: 1;
 }
 
 .field-hero-stats span,
 .field-mini-stat span {
   color: inherit;
-  font-size: 11px;
-  font-weight: 900;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
@@ -229,7 +229,7 @@
   background: var(--color-surface-muted);
   color: var(--color-text-secondary);
   cursor: pointer;
-  font-weight: 800;
+  font-weight: var(--font-weight-bold);
   transition: background var(--motion-fast), color var(--motion-fast), transform var(--motion-fast);
 }
 
@@ -279,7 +279,7 @@
   background: var(--color-surface-muted);
   color: var(--color-primary);
   font-family: var(--font-heading);
-  font-weight: 900;
+  font-weight: var(--font-weight-bold);
 }
 
 .field-score.risk-kritis {
@@ -305,13 +305,13 @@
 
 .field-task-card strong {
   color: var(--color-primary);
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
 .field-task-card small {
   margin-top: 4px;
   color: var(--color-text-secondary);
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 
 .field-task-card small:last-child {
@@ -328,9 +328,9 @@
   background: var(--color-surface-muted);
   color: var(--color-secondary-dark);
   padding: 4px 9px;
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-style: normal;
-  font-weight: 900;
+  font-weight: var(--font-weight-bold);
 }
 
 .field-detail-panel {
@@ -364,8 +364,8 @@
 
 .field-detail-head span {
   color: var(--color-secondary-dark);
-  font-size: 12px;
-  font-weight: 900;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
 }
 
 .field-detail-head h2 {
@@ -379,7 +379,7 @@
   background: var(--color-surface-muted);
   color: var(--color-primary);
   padding: 8px 12px;
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 
 .field-info-grid {
@@ -414,14 +414,14 @@
 
 .field-info-grid span {
   color: var(--color-text-secondary);
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
 }
 
 .field-info-grid strong {
   min-width: 0;
   color: var(--color-text-primary);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .field-description {
@@ -457,7 +457,7 @@
 }
 
 .field-completion h3 {
-  font-size: 16px;
+  font-size: var(--text-base);
 }
 
 .field-actions {
@@ -499,7 +499,7 @@
   background: var(--color-surface);
   color: var(--color-primary);
   cursor: pointer;
-  font-weight: 900;
+  font-weight: var(--font-weight-bold);
   padding: 0 16px;
 }
 
@@ -538,8 +538,8 @@
 
 .field-error {
   color: var(--color-danger);
-  font-size: 13px;
-  font-weight: 800;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
 }
 
 .field-timeline {
@@ -565,15 +565,15 @@
 
 .field-timeline-head span {
   color: var(--color-secondary-dark);
-  font-size: 11px;
-  font-weight: 900;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .field-timeline-head h3 {
   color: var(--color-primary);
-  font-size: 17px;
+  font-size: var(--text-md);
 }
 
 .field-timeline-list {
@@ -610,13 +610,13 @@
 }
 
 .field-history-item strong {
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .field-history-item span,
 .field-history-item small {
   color: var(--color-text-secondary);
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 
 .field-empty {
@@ -646,11 +646,11 @@
 .field-city-summary strong {
   color: var(--color-primary);
   font-family: var(--font-heading);
-  font-size: 16px;
+  font-size: var(--text-base);
 }
 
 .field-city-summary p {
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .field-city-summary span {
@@ -659,8 +659,8 @@
   background: rgba(var(--color-secondary-rgb), 0.12);
   color: var(--color-secondary-dark);
   padding: 7px 10px;
-  font-size: 12px;
-  font-weight: 900;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
 }
 
 .field-map-panel {
@@ -684,8 +684,8 @@
 
 .field-map-head span {
   color: var(--color-secondary-dark);
-  font-size: 12px;
-  font-weight: 900;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -697,7 +697,7 @@
 
 .field-map-head p {
   margin-top: 6px;
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
 .field-map-link {
@@ -708,7 +708,7 @@
   background: var(--color-surface);
   color: var(--color-primary);
   padding: 0 14px;
-  font-weight: 900;
+  font-weight: var(--font-weight-bold);
 }
 
 .field-map-stats {
@@ -741,8 +741,8 @@
 .field-map-stats span {
   margin-top: 6px;
   color: var(--color-text-secondary);
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
 }
 
 .field-map-shell {
@@ -796,13 +796,13 @@
 
 .field-priority-item strong {
   color: var(--color-primary);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .field-priority-item small {
   overflow: hidden;
   color: var(--color-text-secondary);
-  font-size: 12px;
+  font-size: var(--text-xs);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -812,9 +812,9 @@
   background: var(--color-surface-muted);
   color: var(--color-secondary-dark);
   padding: 5px 9px;
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-style: normal;
-  font-weight: 900;
+  font-weight: var(--font-weight-bold);
 }
 
 @media (max-width: 860px) {

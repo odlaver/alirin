@@ -63,9 +63,9 @@ function ScrollToTop() {
 function NotFoundPage() {
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, background: 'var(--color-background)', textAlign: 'center', padding: 24 }}>
-      <span style={{ fontSize: 72, fontWeight: 800, color: 'var(--color-secondary)', fontFamily: 'var(--font-heading)', lineHeight: 1 }}>404</span>
-      <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Halaman tidak ditemukan</h1>
-      <p style={{ color: 'var(--color-text-secondary)', fontSize: 14, margin: 0, maxWidth: 360 }}>
+      <span style={{ fontSize: 'var(--text-5xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-secondary)', fontFamily: 'var(--font-heading)', lineHeight: 1 }}>404</span>
+      <h1 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-weight-bold)', margin: 0 }}>Halaman tidak ditemukan</h1>
+      <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)', margin: 0, maxWidth: 360 }}>
         Halaman yang kamu cari tidak tersedia atau sudah dipindahkan.
       </p>
       <Link to="/" className="btn btn-primary" style={{ marginTop: 8 }}>

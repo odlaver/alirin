@@ -56,8 +56,8 @@
   gap: 14px;
   padding: 32px 24px 24px;
   font-family: var(--font-heading);
-  font-size: 24px;
-  font-weight: 800;
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-bold);
 }
 
 .logo-icon {
@@ -72,8 +72,8 @@
 
 .admin-sidebar-logo small {
   display: block;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
   letter-spacing: 1.5px;
   text-transform: uppercase;
   color: var(--color-secondary);
@@ -91,7 +91,7 @@
 
 .admin-nav-section {
   padding: 24px 12px 8px;
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: 1.5px;
   text-transform: uppercase;
@@ -104,8 +104,8 @@
   gap: 14px;
   padding: 14px 16px;
   border-radius: var(--radius-md);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
   color: rgba(255, 255, 255, 0.7);
   background: transparent;
   border: none;
@@ -132,8 +132,8 @@
   border-radius: 999px;
   background: var(--color-danger);
   color: #fff;
-  font-size: 11px;
-  font-weight: 800;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
 }
 
 .admin-sidebar-footer {
@@ -164,7 +164,7 @@
   display: grid;
   place-items: center;
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--text-sm);
   color: #fff;
 }
 
@@ -174,13 +174,13 @@
 
 .admin-user-info strong {
   display: block;
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: #fff;
 }
 
 .admin-user-info small {
   display: block;
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: rgba(255, 255, 255, 0.6);
 }
 
@@ -218,13 +218,13 @@
 
 .admin-topbar-title h1 {
   font-family: var(--font-heading);
-  font-size: 24px;
+  font-size: var(--text-xl);
   font-weight: 700;
   color: var(--color-text-main);
 }
 
 .admin-topbar-title p {
-  font-size: 14px;
+  font-size: var(--text-sm);
   color: var(--color-text-secondary);
   margin-top: 4px;
 }
@@ -277,7 +277,7 @@
   outline: none;
   width: 100%;
   min-width: 0;
-  font-size: 14px;
+  font-size: var(--text-sm);
   color: var(--color-text-main);
 }
 
@@ -312,8 +312,8 @@
   border-radius: var(--radius-button);
   background: var(--color-surface);
   color: var(--color-primary);
-  font-size: 13px;
-  font-weight: 800;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
   cursor: pointer;
   transition: var(--motion-fast);
 }
@@ -342,8 +342,8 @@
   background: var(--color-surface);
   color: var(--color-primary);
   padding: 0 12px;
-  font-size: 13px;
-  font-weight: 800;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
   outline: none;
 }
 
@@ -366,8 +366,8 @@
   background: var(--color-primary);
   color: #fff;
   border: none;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
   transition: var(--motion-fast);
 }
@@ -445,8 +445,8 @@
 
 .command-strip-copy span {
   color: var(--color-secondary-dark);
-  font-size: 12px;
-  font-weight: 900;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -456,12 +456,12 @@
   margin-top: 5px;
   color: var(--color-primary);
   font-family: var(--font-heading);
-  font-size: 18px;
+  font-size: var(--text-md);
 }
 
 .command-strip-copy p {
   margin-top: 4px;
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .command-meter {
@@ -491,7 +491,7 @@
   background: rgba(var(--color-secondary-rgb), 0.1);
   color: var(--color-secondary-dark);
   cursor: pointer;
-  font-weight: 900;
+  font-weight: var(--font-weight-bold);
   padding: 0 14px;
   transition:
     background var(--motion-fast),
@@ -573,7 +573,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 700;
   padding: 4px 10px;
   border-radius: 999px;
@@ -591,23 +591,23 @@
 
 .kpi-value {
   font-family: var(--font-heading);
-  font-size: 38px;
-  font-weight: 800;
+  font-size: var(--text-3xl);
+  font-weight: var(--font-weight-bold);
   color: var(--color-text-main);
   line-height: 1;
   margin-bottom: 6px;
 }
 
 .kpi-label {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-main);
 }
 
 .kpi-sub {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--color-text-muted);
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 
 /* ── Split Layout (Listing + Map) ────────────────────────────────────────── */
@@ -655,13 +655,13 @@
 
 .panel-head h2 {
   font-family: var(--font-heading);
-  font-size: 18px;
+  font-size: var(--text-md);
   font-weight: 700;
   color: var(--color-text-main);
 }
 
 .panel-head p {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--color-text-secondary);
   margin-top: 6px;
 }
@@ -673,8 +673,8 @@
 }
 
 .link-btn {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-secondary);
   text-decoration: none;
 }
@@ -698,8 +698,8 @@
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   color: var(--color-text-secondary);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
   transition: var(--motion-fast);
 }
@@ -758,13 +758,13 @@
 .empty-state strong {
   color: var(--color-primary);
   font-family: var(--font-heading);
-  font-size: 18px;
+  font-size: var(--text-md);
 }
 
 .empty-state p {
   max-width: 320px;
   margin: 0;
-  font-size: 14px;
+  font-size: var(--text-sm);
   line-height: 1.55;
 }
 
@@ -823,8 +823,8 @@
 .report-info strong {
   display: block;
   overflow: hidden;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-main);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -833,7 +833,7 @@
 .report-info small {
   display: block;
   overflow: hidden;
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--color-text-secondary);
   margin-top: 4px;
   text-overflow: ellipsis;
@@ -848,8 +848,8 @@
   width: 60px;
   min-height: 38px;
   font-family: var(--font-heading);
-  font-size: 16px;
-  font-weight: 800;
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-bold);
   padding: 6px 10px;
   border-radius: var(--radius-sm);
   background: var(--bg-base);
@@ -878,7 +878,7 @@
   justify-self: stretch;
   width: 100%;
   min-height: 34px;
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 700;
   padding: 6px 12px;
   border-radius: 999px;
@@ -988,14 +988,14 @@
 .map-side-stats strong {
   color: var(--color-primary);
   font-family: var(--font-heading);
-  font-size: 24px;
+  font-size: var(--text-xl);
   line-height: 1;
 }
 
 .map-side-stats span {
   color: var(--color-text-secondary);
-  font-size: 11px;
-  font-weight: 900;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
   text-transform: uppercase;
 }
 
@@ -1037,7 +1037,7 @@
 .map-side-item strong {
   overflow: hidden;
   color: var(--color-primary);
-  font-size: 13px;
+  font-size: var(--text-sm);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1045,7 +1045,7 @@
 .map-side-item small {
   overflow: hidden;
   color: var(--color-text-secondary);
-  font-size: 12px;
+  font-size: var(--text-xs);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1060,9 +1060,9 @@
   background: var(--color-surface-muted);
   color: var(--color-secondary-dark);
   padding: 5px 9px;
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-style: normal;
-  font-weight: 900;
+  font-weight: var(--font-weight-bold);
 }
 
 .map-grid-overlay {
@@ -1124,8 +1124,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-main);
   background: var(--color-surface);
   padding: 4px 10px;
@@ -1188,9 +1188,9 @@
 }
 
 .trend-bar-label {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 .activity-feed {
@@ -1235,15 +1235,15 @@
 
 .activity-text strong {
   display: block;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
   color: var(--color-text-main);
   line-height: 1.4;
 }
 
 .activity-text small {
   display: block;
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--color-text-secondary);
   margin-top: 4px;
 }
@@ -1319,7 +1319,7 @@
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 999px;
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: 0.5px;
   margin-bottom: 12px;
@@ -1332,14 +1332,14 @@
 }
 
 .cover-id {
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 700;
   opacity: 0.8;
 }
 
 .cover-title h2 {
   font-family: var(--font-heading);
-  font-size: 24px;
+  font-size: var(--text-xl);
   font-weight: 700;
   margin: 0;
   color: #fff;
@@ -1379,7 +1379,7 @@
 
 .info-content small {
   display: block;
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 700;
   color: var(--color-text-secondary);
   text-transform: uppercase;
@@ -1388,10 +1388,10 @@
 }
 
 .info-content p {
-  font-size: 14px;
+  font-size: var(--text-sm);
   color: var(--color-text-main);
   line-height: 1.5;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 
 .info-grid-2 {
@@ -1435,7 +1435,7 @@
 }
 
 .status-update-box label {
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 700;
   color: var(--color-text-secondary);
   text-transform: uppercase;
@@ -1449,8 +1449,8 @@
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   color: var(--color-text-main);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
   outline: none;
   cursor: pointer;
   transition: all 0.2s;
@@ -1475,8 +1475,8 @@
   flex: 1;
   padding: 14px;
   border-radius: 12px;
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-sm);
   border: none;
   cursor: pointer;
   transition: var(--motion-fast);
@@ -1527,7 +1527,7 @@
   }
 
   .cover-title h2 {
-    font-size: 20px;
+    font-size: var(--text-lg);
   }
 }
 
@@ -1573,8 +1573,8 @@
 
 .stat-summary-value {
   font-family: var(--font-heading);
-  font-size: 32px;
-  font-weight: 800;
+  font-size: var(--text-3xl);
+  font-weight: var(--font-weight-bold);
   color: var(--color-text-main);
   line-height: 1;
 }
@@ -1586,14 +1586,14 @@
 }
 
 .stat-summary-label {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-secondary);
 }
 
 .stat-summary-sub {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
   color: var(--color-text-secondary);
   opacity: 0.8;
 }
@@ -1624,8 +1624,8 @@
 }
 
 .stat-gridline span {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-secondary);
   opacity: 0.7;
   min-width: 30px;
@@ -1691,8 +1691,8 @@
   left: 50%;
   transform: translateX(-50%);
   font-family: var(--font-heading);
-  font-size: 14px;
-  font-weight: 800;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
   color: var(--color-text-main);
   background: var(--color-surface);
   padding: 2px 10px;
@@ -1708,8 +1708,8 @@
 }
 
 .stat-bar-lbl {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-secondary);
 }
 
@@ -1798,8 +1798,8 @@
   background: var(--color-text-main);
   color: #fff;
   font-family: var(--font-heading);
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
   padding: 4px 10px;
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -1813,7 +1813,7 @@
 
 .trend-node-label span {
   font-size: 10px;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   opacity: 0.8;
   font-family: var(--font-body);
 }
@@ -1830,8 +1830,8 @@
 }
 
 .trend-labels span {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-secondary);
 }
 
@@ -1867,17 +1867,17 @@
 
 .donut-center-label strong {
   font-family: var(--font-heading);
-  font-size: 32px;
-  font-weight: 800;
+  font-size: var(--text-3xl);
+  font-weight: var(--font-weight-bold);
   color: var(--color-text-main);
   line-height: 1;
   margin-bottom: 2px;
 }
 
 .donut-center-label small {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 .donut-legend {
@@ -1891,8 +1891,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-main);
 }
 
@@ -1909,9 +1909,9 @@
 
 .donut-legend-pct {
   font-family: var(--font-heading);
-  font-weight: 800;
+  font-weight: var(--font-weight-bold);
   color: var(--color-text-secondary);
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
 /* Risk Distribution */
@@ -1935,8 +1935,8 @@
 }
 
 .risk-dist-label {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-main);
 }
 
@@ -1948,14 +1948,14 @@
 
 .risk-dist-count {
   font-family: var(--font-heading);
-  font-weight: 800;
-  font-size: 16px;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--text-base);
   color: var(--color-text-main);
 }
 
 .risk-dist-pct {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
   color: var(--color-text-secondary);
 }
 
@@ -2024,8 +2024,8 @@
   place-items: center;
   color: #fff;
   font-family: var(--font-heading);
-  font-weight: 800;
-  font-size: 16px;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--text-base);
 }
 
 .petugas-info {
@@ -2037,13 +2037,13 @@
 
 .petugas-info strong {
   font-family: var(--font-heading);
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 700;
   color: var(--color-text-main);
 }
 
 .petugas-info small {
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--color-text-secondary);
 }
 
@@ -2057,13 +2057,13 @@
 
 .petugas-stat strong {
   font-family: var(--font-heading);
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 700;
   color: var(--color-text-main);
 }
 
 .petugas-stat small {
-  font-size: 11px;
+  font-size: var(--text-xs);
   color: var(--color-text-secondary);
   white-space: nowrap;
 }
@@ -2071,7 +2071,7 @@
 .petugas-status {
   padding: 5px 14px;
   border-radius: var(--radius-button);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 700;
   white-space: nowrap;
 }
@@ -2089,7 +2089,7 @@
 .panel-badge {
   padding: 5px 14px;
   border-radius: var(--radius-button);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 700;
 }
 
@@ -2130,13 +2130,13 @@
 
 .setting-text strong {
   font-family: var(--font-heading);
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 700;
   color: var(--color-text-main);
 }
 
 .setting-text small {
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--color-text-secondary);
 }
 
@@ -2198,7 +2198,7 @@
   border: 1px solid var(--color-border);
   border-radius: 12px;
   background: var(--color-surface-hover);
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 
 .modal-breakdown-row span {
@@ -2208,7 +2208,7 @@
 
 .modal-breakdown-row strong {
   color: var(--color-primary);
-  font-weight: 900;
+  font-weight: var(--font-weight-bold);
 }
 
 .modal-photo-strip {
@@ -2234,7 +2234,7 @@
   background: var(--color-surface);
   color: var(--color-text-main);
   font: inherit;
-  font-size: 13px;
+  font-size: var(--text-sm);
   resize: vertical;
 }
 
@@ -2250,8 +2250,8 @@
 .status-history-box label,
 .status-update-box label {
   color: var(--color-text-secondary);
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -2265,12 +2265,12 @@
 
 .history-mini-item strong {
   color: var(--color-text-main);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .history-mini-item small {
   color: var(--color-text-secondary);
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 
 .tag-ditolak {
@@ -2312,7 +2312,7 @@
 .premium-modal .modal-badge {
   margin-bottom: 12px;
   padding: 7px 12px;
-  font-size: 11px;
+  font-size: var(--text-xs);
 }
 
 .premium-modal .cover-title {
@@ -2328,7 +2328,7 @@
 }
 
 .premium-modal .cover-id {
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .premium-modal .modal-body-split {
@@ -2353,13 +2353,13 @@
 }
 
 .premium-modal .info-content small {
-  font-size: 12px;
+  font-size: var(--text-xs);
   margin-bottom: 5px;
 }
 
 .premium-modal .info-content p {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--text-base);
   line-height: 1.58;
 }
 
@@ -2400,8 +2400,8 @@
   background: var(--color-primary);
   color: #fff;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 800;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
 }
 
 .premium-modal .status-update-box .btn-action.primary:hover {
@@ -2416,7 +2416,7 @@
 .assignment-note {
   margin: 8px 0 0;
   color: var(--color-text-secondary);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 700;
 }
 
@@ -2616,7 +2616,7 @@
   }
 
   .admin-topbar-title h1 {
-    font-size: 20px;
+    font-size: var(--text-lg);
   }
 
   .admin-topbar-title p {
@@ -2687,7 +2687,7 @@
   }
 
   .stat-summary-value {
-    font-size: 22px;
+    font-size: var(--text-lg);
   }
 
   .stat-chart-area {
@@ -2753,7 +2753,7 @@
   .petugas-avatar {
     width: 40px;
     height: 40px;
-    font-size: 14px;
+    font-size: var(--text-sm);
   }
 
   .setting-row {
@@ -2776,14 +2776,14 @@
 }
 
 .status-error-msg {
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--color-danger);
   background: var(--color-danger-soft);
   border: 1px solid rgba(224, 49, 49, 0.25);
   border-radius: 8px;
   padding: 8px 12px;
   margin-top: 8px;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   line-height: 1.4;
 }
 
@@ -2791,7 +2791,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 13px;
+  font-size: var(--text-sm);
   margin-bottom: 4px;
 }
 
@@ -2810,7 +2810,7 @@
 }
 
 .breakdown-row-detail {
-  font-size: 11px;
+  font-size: var(--text-xs);
   color: var(--color-text-muted);
   display: block;
   margin-bottom: 10px;

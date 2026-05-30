@@ -38,8 +38,8 @@
   padding: 9px 12px;
   color: var(--color-text-secondary);
   border-radius: 12px;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
 }
 
 .peta-back:hover {
@@ -52,7 +52,7 @@
   justify-self: center;
   color: var(--color-primary);
   font-family: var(--font-heading);
-  font-size: 17px;
+  font-size: var(--text-md);
   font-weight: 700;
 }
 
@@ -75,8 +75,8 @@
   border: 1px solid rgba(var(--color-secondary-rgb), 0.22);
   border-radius: var(--radius-badge);
   background: rgba(var(--color-secondary-rgb), 0.08);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
 }
 
 .status-dot {
@@ -142,7 +142,7 @@
 .peta-search-panel label,
 .panel-title-row {
   color: var(--color-primary);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 700;
 }
 
@@ -155,7 +155,7 @@
   border-radius: 12px;
   background: var(--color-surface);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--text-sm);
   outline: none;
 }
 
@@ -193,8 +193,8 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-badge);
   background: var(--color-surface);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
 }
 
@@ -214,8 +214,8 @@
   display: grid;
   gap: 6px;
   color: var(--color-text-secondary);
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
 }
 
 .peta-select-grid select {
@@ -227,7 +227,7 @@
   background: var(--color-surface);
   color: var(--color-text-primary);
   font: inherit;
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 700;
   outline: none;
 }
@@ -251,18 +251,18 @@
 .selected-risk-card strong {
   color: var(--color-primary);
   font-family: var(--font-heading);
-  font-size: 18px;
+  font-size: var(--text-md);
 }
 
 .selected-risk-card p {
-  font-size: 13px;
+  font-size: var(--text-sm);
   line-height: 1.55;
 }
 
 .selected-risk-card div {
   color: var(--color-text-secondary);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
 }
 
 .risk-list {
@@ -307,7 +307,7 @@
   place-items: center;
   color: var(--color-surface);
   border-radius: var(--radius-badge);
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 700;
 }
 
@@ -334,8 +334,8 @@
 
 .risk-list-item strong {
   color: var(--color-text-primary);
-  font-size: 15px;
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
 }
 
 .risk-list-item small {
@@ -344,14 +344,14 @@
   gap: 5px;
   margin-top: 4px;
   color: var(--color-text-muted);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
 }
 
 .peta-empty-list {
   padding: 20px 16px;
   color: var(--color-text-muted);
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 700;
   text-align: center;
 }

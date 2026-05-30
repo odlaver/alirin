@@ -34,8 +34,8 @@
   min-height: 40px;
   padding: 8px 12px;
   border-radius: var(--radius-button);
-  font-size: 14px;
-  font-weight: 800;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
 }
 
 .method-back {
@@ -52,7 +52,7 @@
   justify-self: center;
   color: var(--color-primary);
   font-family: var(--font-heading);
-  font-weight: 800;
+  font-weight: var(--font-weight-bold);
 }
 
 .method-brand-mark {
@@ -81,8 +81,8 @@
 .method-card-head span,
 .method-section-title span {
   color: var(--color-secondary-dark);
-  font-size: 12px;
-  font-weight: 900;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -100,7 +100,7 @@
 .safety-card p,
 .method-note span {
   color: var(--color-text-secondary);
-  font-size: 15px;
+  font-size: var(--text-base);
   line-height: 1.7;
 }
 
@@ -165,7 +165,7 @@
 
 .score-method-row strong {
   color: var(--color-primary);
-  font-size: 20px;
+  font-size: var(--text-lg);
 }
 
 .score-method-row b,
