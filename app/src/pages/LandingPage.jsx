@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, Suspense } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useSEO } from '../hooks/useSEO.js'
 import { motion } from 'framer-motion'
