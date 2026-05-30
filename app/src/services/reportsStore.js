@@ -54,7 +54,7 @@ async function syncFromSupabase() {
       }, 3000)
     }).subscribe()
 }
-// Trigger background sync on load
+
 if (typeof window !== 'undefined') syncFromSupabase()
 
 
@@ -438,7 +438,7 @@ export async function createReport(input) {
   const nextReportsTemp = recalculateReportsRisk([withHistory, ...reports])
   const calculatedReport = nextReportsTemp.find(r => r.code === withHistory.code) || withHistory
 
-  // Push to Supabase
+  
   try {
     const { data: inserted, error: insertError } = await supabase.from('reports').insert({
       code: calculatedReport.code,
@@ -458,9 +458,9 @@ export async function createReport(input) {
     if (insertError) throw new Error(insertError.message)
 
     if (inserted) {
-      calculatedReport.id = inserted.id // Use DB UUID
+      calculatedReport.id = inserted.id 
       if (calculatedReport.photos?.length) {
-        // Upload to Supabase Storage to prevent Base64 bloat
+        
         const uploadedPhotos = []
         for (const p of calculatedReport.photos) {
           if (p.url && p.url.startsWith('data:')) {
@@ -474,7 +474,7 @@ export async function createReport(input) {
               uploadedPhotos.push({ ...p, url: publicUrl })
             } catch (err) {
               console.warn('Storage bucket "reports" tidak ditemukan atau error upload, fallback ke Base64:', err)
-              uploadedPhotos.push(p) // Fallback to base64 if bucket not created
+              uploadedPhotos.push(p) 
             }
           } else {
             uploadedPhotos.push(p)
@@ -505,7 +505,7 @@ export async function createReport(input) {
     throw new Error(err.message || 'Gagal menyimpan laporan ke database.')
   }
 
-  // Finalize nextReports with the new DB ID
+  
   const finalReports = nextReportsTemp.map(r => r.code === calculatedReport.code ? calculatedReport : r)
   saveReports(finalReports)
   return calculatedReport

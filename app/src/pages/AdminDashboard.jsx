@@ -41,7 +41,7 @@ const PAGE_TITLE = {
   arsip: ['Arsip', 'Laporan selesai dan ditolak'],
 }
 
-/* ── Sidebar ───────────────────────────────────────────────────────────── */
+
 function Sidebar({ nav, setNav, mobileOpen, setMobileOpen, pendingCount, onLogout }) {
   return (
     <>
@@ -75,7 +75,7 @@ function Sidebar({ nav, setNav, mobileOpen, setMobileOpen, pendingCount, onLogou
   )
 }
 
-/* ── Dashboard View (home) ─────────────────────────────────────────────── */
+
 function DashboardView({ reports, animated, onSelect }) {
   const [filter, setFilter] = useState('semua')
   const [now] = useState(() => Date.now())
@@ -87,7 +87,7 @@ function DashboardView({ reports, animated, onSelect }) {
   const criticalPct = reports.length ? Math.round((criticalCount / reports.length) * 100) : 0
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-      {/* Baris 1: KPI Cards */}
+      
       <KpiCards reports={reports} animated={animated} />
 
       <motion.div
@@ -110,10 +110,10 @@ function DashboardView({ reports, animated, onSelect }) {
         </button>
       </motion.div>
 
-      {/* Baris 2: Split Layout (Mirip Referensi Gambar: Listing & Map) */}
+      
       <div className="split-layout">
 
-        {/* Kolom Kiri: Listing Laporan */}
+        
         <motion.div className="admin-panel" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
           <div className="panel-head panel-head-stacked">
             <div>
@@ -133,7 +133,7 @@ function DashboardView({ reports, animated, onSelect }) {
           </div>
         </motion.div>
 
-        {/* Kolom Kanan: Peta Risiko */}
+        
         <motion.div className="admin-panel" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
           <div className="panel-head">
             <div>
@@ -152,7 +152,7 @@ function DashboardView({ reports, animated, onSelect }) {
         </motion.div>
       </div>
 
-      {/* Baris 3: Analytics & Activity (Konsep Asli ALIRIN) */}
+      
       <div className="bottom-grid">
         <motion.div className="admin-panel" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
           <div className="panel-head">
@@ -180,7 +180,7 @@ function DashboardView({ reports, animated, onSelect }) {
   )
 }
 
-/* ── Laporan View ──────────────────────────────────────────────────────── */
+
 function LaporanView({ reports, onSelect, search, onSearchChange, title = 'Semua Laporan', emptyLabel = 'laporan aktif' }) {
   const [filter, setFilter] = useState('semua')
   const FILTERS = ['semua', ...REPORT_STATUSES]
@@ -223,7 +223,7 @@ function ArsipView({ reports, onSelect, search, onSearchChange }) {
   )
 }
 
-/* ── Prioritas View ────────────────────────────────────────────────────── */
+
 function PrioritasView({ reports, onSelect, search }) {
   const sorted = sortReportsByPriority(reports.filter((report) => matchesReportSearch(report, search)))
   return (
@@ -234,7 +234,7 @@ function PrioritasView({ reports, onSelect, search }) {
   )
 }
 
-/* ── Peta View ─────────────────────────────────────────────────────────── */
+
 function PetaView({ reports, onSelect }) {
   const topReports = sortReportsByPriority(reports).slice(0, 5)
   const criticalCount = reports.filter((report) => report.riskLevel === 'Kritis').length
@@ -278,7 +278,7 @@ function PetaView({ reports, onSelect }) {
   )
 }
 
-/* ── Main Dashboard ────────────────────────────────────────────────────── */
+
 export default function AdminDashboard() {
   useSEO({
     title: 'Dashboard Admin',
@@ -312,7 +312,7 @@ export default function AdminDashboard() {
       setReports(getReports())
       if (updated) setSelected(updated)
     } catch (err) {
-      throw err // Re-throw so ReportModal can catch and display inline
+      throw err 
     }
   }
 
@@ -322,7 +322,7 @@ export default function AdminDashboard() {
       setReports(getReports())
       if (updated) setSelected(updated)
     } catch (err) {
-      throw err // Re-throw so ReportModal can catch and display inline
+      throw err 
     }
   }
 

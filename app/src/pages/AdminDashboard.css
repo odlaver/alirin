@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
 
 .admin-page {
-  /* ALIRIN Design System Tokens */
+  
   --bg-base: var(--color-background);
   --color-surface-hover: var(--color-surface-muted);
   --color-text-main: var(--color-text-primary);
@@ -29,13 +29,13 @@
   overflow-x: hidden;
 }
 
-/* ── Global Layout ───────────────────────────────────────────────────────── */
+
 .admin-page {
   min-height: 100vh;
   display: flex;
 }
 
-/* ── Sidebar (ALIRIN Concept) ────────────────────────────────────────────── */
+
 .admin-sidebar {
   position: fixed;
   top: 0;
@@ -184,7 +184,7 @@
   color: rgba(255, 255, 255, 0.6);
 }
 
-/* ── Main Content Area ───────────────────────────────────────────────────── */
+
 .admin-main {
   flex: 1;
   margin-left: 260px;
@@ -193,7 +193,7 @@
   flex-direction: column;
 }
 
-/* ── Topbar (Clean white like the reference header) ──────────────────────── */
+
 .admin-topbar {
   position: sticky;
   top: 0;
@@ -387,7 +387,7 @@
   }
 }
 
-/* ── Dashboard Grid Layout ───────────────────────────────────────────────── */
+
 .admin-content {
   padding: 44px;
   display: flex;
@@ -505,7 +505,7 @@
   transform: translateY(-1px);
 }
 
-/* ── KPI Cards (Top Row) ─────────────────────────────────────────────────── */
+
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -610,14 +610,14 @@
   font-weight: var(--font-weight-medium);
 }
 
-/* ── Split Layout (Listing + Map) ────────────────────────────────────────── */
+
 .split-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 34px;
 }
 
-/* ── Panels General ──────────────────────────────────────────────────────── */
+
 .admin-panel {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
@@ -683,7 +683,7 @@
   text-decoration: underline;
 }
 
-/* ── Filter Pills ────────────────────────────────────────────────────────── */
+
 .filter-pills {
   display: flex;
   gap: 10px;
@@ -719,7 +719,7 @@
   border-bottom: 1px solid var(--color-border);
 }
 
-/* ── Report List (Inside Split Layout) ───────────────────────────────────── */
+
 .report-list {
   display: grid;
   width: 100%;
@@ -907,7 +907,7 @@
   color: #16A34A;
 }
 
-/* ── Map Preview ─────────────────────────────────────────────────────────── */
+
 .map-body {
   padding: 28px;
 }
@@ -1140,14 +1140,14 @@
   background: currentColor;
 }
 
-/* ── Bottom Grid (Analytics) ─────────────────────────────────────────────── */
+
 .bottom-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 32px;
 }
 
-/* ── Components from AdminParts ──────────────────────────────────────────── */
+
 .trend-chart {
   padding: 34px;
   display: flex;
@@ -1248,7 +1248,7 @@
   margin-top: 4px;
 }
 
-/* ── Premium Modal ───────────────────────────────────────────────────────── */
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -1531,14 +1531,14 @@
   }
 }
 
-/* ── Statistik View ──────────────────────────────────────────────────────── */
+
 .statistik-layout {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
-/* Summary KPI cards */
+
 .stat-summary-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1598,7 +1598,7 @@
   opacity: 0.8;
 }
 
-/* Chart area wrapper with gridlines */
+
 .stat-chart-area {
   position: relative;
   padding: 32px 32px 24px;
@@ -1639,7 +1639,7 @@
   opacity: 0.6;
 }
 
-/* Bar chart */
+
 .stat-big-chart {
   display: flex;
   align-items: flex-end;
@@ -1713,14 +1713,14 @@
   color: var(--color-text-secondary);
 }
 
-/* Two column layout */
+
 .stat-two-col {
   display: grid;
   grid-template-columns: 1.2fr 1fr;
   gap: 24px;
 }
 
-/* SVG Area chart — Tren Mingguan */
+
 .trend-chart-wrap {
   padding: 32px 32px 24px;
 }
@@ -1835,7 +1835,7 @@
   color: var(--color-text-secondary);
 }
 
-/* Donut chart */
+
 .donut-wrap {
   display: flex;
   align-items: center;
@@ -1914,7 +1914,7 @@
   font-size: var(--text-sm);
 }
 
-/* Risk Distribution */
+
 .risk-dist-list {
   display: flex;
   flex-direction: column;
@@ -1992,7 +1992,7 @@
   }
 }
 
-/* ── Petugas View ────────────────────────────────────────────────────────── */
+
 .petugas-grid {
   display: flex;
   flex-direction: column;
@@ -2098,7 +2098,7 @@
   color: var(--color-secondary-dark);
 }
 
-/* ── Pengaturan / Settings View ──────────────────────────────────────────── */
+
 .settings-group {
   display: flex;
   flex-direction: column;
@@ -2140,7 +2140,7 @@
   color: var(--color-text-secondary);
 }
 
-/* Toggle switch */
+
 .toggle-switch {
   position: relative;
   width: 48px;
@@ -2278,7 +2278,7 @@
   color: var(--color-danger);
 }
 
-/* Compact modal override for report details */
+
 .modal-overlay {
   place-items: center;
   overflow-y: auto;
@@ -2443,7 +2443,7 @@
   padding: 11px 16px;
 }
 
-/* ── Responsive ──────────────────────────────────────────────────────────── */
+
 .sidebar-toggle {
   display: none;
 }

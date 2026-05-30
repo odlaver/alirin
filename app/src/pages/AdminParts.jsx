@@ -20,7 +20,7 @@ import {
   reportsToMarkers,
 } from '../domain/reports.js'
 
-/* ── Animated Counter ──────────────────────────────────────────────────── */
+
 export function Counter({ to, duration = 1200 }) {
   const [val, setVal] = useState(0)
   const ref = useRef(null)
@@ -38,7 +38,7 @@ export function Counter({ to, duration = 1200 }) {
   return <>{val}</>
 }
 
-/* ── KPI Cards ─────────────────────────────────────────────────────────── */
+
 export function KpiCards({ reports = [], animated }) {
   const [now] = useState(() => Date.now())
   const criticalCount = reports.filter((report) => report.riskLevel === 'Kritis').length
@@ -84,7 +84,7 @@ export function KpiCards({ reports = [], animated }) {
   )
 }
 
-/* ── Report Detail Modal ───────────────────────────────────────────────── */
+
 export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }) {
   const [status, setStatus] = useState(report?.status ?? 'masuk')
   const [note, setNote] = useState('')
@@ -280,7 +280,7 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
   )
 }
 
-/* ── Report List ───────────────────────────────────────────────────────── */
+
 export function ReportList({ reports, filter, onSelect }) {
   const filtered = (filter==='semua' ? reports : reports.filter(r=>r.status===filter))
     .map(reportToAdminRow)
@@ -312,7 +312,7 @@ export function ReportList({ reports, filter, onSelect }) {
   )
 }
 
-/* ── Trend Chart ───────────────────────────────────────────────────────── */
+
 export function TrendChart({ reports = [] }) {
   const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
   const chartData = useMemo(() => {
@@ -349,7 +349,7 @@ export function TrendChart({ reports = [] }) {
   )
 }
 
-/* ── Risk Distribution ─────────────────────────────────────────────────── */
+
 export function RiskDist({ reports = [] }) {
   const riskColors = {
     Kritis: 'var(--color-danger)',
@@ -393,7 +393,7 @@ export function RiskDist({ reports = [] }) {
   )
 }
 
-/* ── Activity Feed ─────────────────────────────────────────────────────── */
+
 export function ActivityFeed({ reports = [] }) {
   const feed = useMemo(() => {
     return reports
@@ -427,7 +427,7 @@ export function ActivityFeed({ reports = [] }) {
   )
 }
 
-/* ── Map Preview ───────────────────────────────────────────────────────── */
+
 export function MapPreview({ reports = [] }) {
   const markers = useMemo(() => reportsToMarkers(reports), [reports])
   return (
@@ -441,7 +441,7 @@ export function MapPreview({ reports = [] }) {
   )
 }
 
-/* ── Statistik View ────────────────────────────────────────────────────── */
+
 export function StatistikView({ reports = [] }) {
   const max = Math.max(...MONTHLY_DATA.map(d=>d.val)) || 100
   const total = DONUT_DATA.reduce((a,b)=>a+b.val,0) || 1
@@ -528,7 +528,7 @@ export function StatistikView({ reports = [] }) {
           <div className="panel-head"><div><h2>Tren Mingguan</h2><p>7 hari terakhir</p></div></div>
           <div className="trend-chart-wrap">
             <div className="trend-svg-container">
-              {/* Path uses viewBox to scale */}
+              
               <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="trend-area-svg">
                 <defs>
                   <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
@@ -540,7 +540,7 @@ export function StatistikView({ reports = [] }) {
                 <path d={areaPath} fill="none" stroke="var(--color-secondary)" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               
-              {/* Interactive HTML overlay */}
+              
               {TREND_DATA.map((d, i) => {
                 const leftPct = i * trendW
                 const topPct = 100 - (d.val / trendMax) * 80
@@ -598,7 +598,7 @@ export function StatistikView({ reports = [] }) {
   )
 }
 
-/* ── Petugas View ──────────────────────────────────────────────────────── */
+
 export function PetugasView() {
   return (
     <motion.div className="admin-panel" initial={{opacity:0,y:16}} animate={{opacity:1,y:0}}>
@@ -620,7 +620,7 @@ export function PetugasView() {
   )
 }
 
-/* ── Pengaturan View ───────────────────────────────────────────────────── */
+
 export function PengaturanView() {
   const [toggles, setToggles] = useState(Object.fromEntries(SETTINGS_ITEMS.map(s=>[s.id,s.default])))
   const toggle = id => setToggles(prev=>({...prev,[id]:!prev[id]}))
