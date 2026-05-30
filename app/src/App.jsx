@@ -35,6 +35,7 @@ import {
 } from 'lucide-react'
 import './App.css'
 import { isRoleSessionActive } from './services/reportsStore.js'
+import { ErrorBoundary } from './components/ErrorBoundary.jsx'
 
 const RiskMap = lazy(() => import('./components/RiskMap.jsx'))
 const LaporPage = lazy(() => import('./pages/LaporPage.jsx'))
@@ -925,7 +926,7 @@ function PetugasRoute() {
 
 function App() {
   return (
-    <>
+    <ErrorBoundary>
       <ScrollToTop />
       <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -941,7 +942,7 @@ function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
-    </>
+    </ErrorBoundary>
   )
 }
 

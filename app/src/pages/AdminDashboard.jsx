@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useSEO } from '../hooks/useSEO.js'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -33,8 +33,6 @@ const NAV_MAIN = [
   { id: 'arsip', label: 'Arsip', icon: Archive },
 ]
 
-const NAV_EXTRA = []
-
 const PAGE_TITLE = {
   dashboard: ['Dashboard', 'Ringkasan semua data laporan'],
   laporan: ['Laporan Masuk', 'Kelola semua laporan warga'],
@@ -64,18 +62,7 @@ function Sidebar({ nav, setNav, mobileOpen, setMobileOpen, pendingCount, onLogou
               )}
             </button>
           ))}
-          {NAV_EXTRA.length > 0 && (
-            <>
-              <span className="admin-nav-section" style={{ marginTop: 8 }}>Lainnya</span>
-              {NAV_EXTRA.map(({ id, label, icon: I }) => (
-                <button key={id} className={`admin-nav-item ${nav === id ? 'active' : ''}`}
-                  onClick={() => { setNav(id); setMobileOpen(false) }}>
-                  <I size={18} />{label}
-                </button>
-              ))}
-            </>
-          )}
-        </nav>
+          </nav>
         <div className="admin-sidebar-footer">
           <button className="admin-user-pill admin-user-button" type="button" onClick={onLogout}>
             <div className="admin-avatar">A</div>

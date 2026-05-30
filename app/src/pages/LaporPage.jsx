@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useSEO } from '../hooks/useSEO.js'
 import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -120,6 +120,13 @@ function StepDot({ step, current, label }) {
 function Step1({ data, setData }) {
   const [isLocating, setIsLocating] = useState(false)
   const [locError, setLocError] = useState('')
+  const isMounted = useRef(true)
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
 
   function handleGetCurrentLocation() {
     if (!navigator.geolocation) {
@@ -131,6 +138,7 @@ function Step1({ data, setData }) {
     setIsLocating(true)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        if (!isMounted.current) return
         const lat = pos.coords.latitude
         const lon = pos.coords.longitude
 
@@ -138,6 +146,7 @@ function Step1({ data, setData }) {
         setData({ ...data, lat, lng: lon, alamat: 'Lokasi terkini Anda' })
       },
       (err) => {
+        if (!isMounted.current) return
         setIsLocating(false)
         if (err.code === err.TIMEOUT) {
           setLocError('Waktu pencarian lokasi habis. Pastikan GPS aktif atau geser pin peta secara manual.')
