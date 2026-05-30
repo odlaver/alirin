@@ -431,33 +431,36 @@ export async function createReport(input) {
     updatedAt: now,
   }
   
+  const nextReportsTemp = recalculateReportsRisk([withHistory, ...reports])
+  const calculatedReport = nextReportsTemp.find(r => r.code === withHistory.code) || withHistory
+
   // Push to Supabase
   try {
     const { data: inserted, error } = await supabase.from('reports').insert({
-      code: withHistory.code,
-      category: withHistory.category,
-      description: withHistory.description,
-      address: withHistory.address,
-      lat: withHistory.lat,
-      lng: withHistory.lng,
-      status: withHistory.status,
-      severity: withHistory.severity,
-      risk_level: withHistory.riskLevel,
-      risk_score: withHistory.riskScore,
-      reporter_name: withHistory.reporterName,
-      reporter_contact: withHistory.reporterContact
+      code: calculatedReport.code,
+      category: calculatedReport.category,
+      description: calculatedReport.description,
+      address: calculatedReport.address,
+      lat: calculatedReport.lat,
+      lng: calculatedReport.lng,
+      status: calculatedReport.status,
+      severity: calculatedReport.severity,
+      risk_level: calculatedReport.riskLevel,
+      risk_score: calculatedReport.riskScore,
+      reporter_name: calculatedReport.reporterName,
+      reporter_contact: calculatedReport.reporterContact
     }).select().single()
 
     if (inserted) {
-      withHistory.id = inserted.id // Use DB UUID
-      if (withHistory.photos?.length) {
+      calculatedReport.id = inserted.id // Use DB UUID
+      if (calculatedReport.photos?.length) {
         await supabase.from('report_photos').insert(
-          withHistory.photos.map(p => ({ report_id: inserted.id, url: p.url }))
+          calculatedReport.photos.map(p => ({ report_id: inserted.id, url: p.url }))
         )
       }
-      if (withHistory.riskBreakdown?.length) {
+      if (calculatedReport.riskBreakdown?.length) {
         await supabase.from('risk_breakdowns').insert(
-          withHistory.riskBreakdown.map(b => ({
+          calculatedReport.riskBreakdown.map(b => ({
             report_id: inserted.id, label: b.label, points: b.points, weight: b.weight, detail: b.detail
           }))
         )
@@ -470,9 +473,10 @@ export async function createReport(input) {
     console.error("Supabase error:", err)
   }
 
-  const nextReports = recalculateReportsRisk([withHistory, ...reports])
-  saveReports(nextReports)
-  return nextReports.find((item) => item.id === withHistory.id) ?? withHistory
+  // Finalize nextReports with the new DB ID
+  const finalReports = nextReportsTemp.map(r => r.code === calculatedReport.code ? calculatedReport : r)
+  saveReports(finalReports)
+  return calculatedReport
 }
 
 export function getReportByCode(code) {
