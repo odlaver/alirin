@@ -1,7 +1,7 @@
 import { DEMO_PHOTO, DEMO_REPORT_INPUTS } from '../data/demoReports.js'
 import { KECAMATAN_DATA } from '../data/bandarLampungAreas.js'
 import { DEMO_OFFICERS, getOfficerById } from '../data/officers.js'
-import { CATEGORY_LABEL, SEVERITY_LABEL, buildReport, formatReportLocation, getReportTitle, recalculateReportsRisk } from '../domain/reports.js'
+import { CATEGORY_LABEL, SEVERITY_LABEL, buildReport, formatReportLocation, getReportTitle, getReportTrackingToken, recalculateReportsRisk } from '../domain/reports.js'
 import { INITIAL_STATUS_HISTORY, REPORT_STATUSES, STATUS_LABEL, isFinalStatus, normalizeStatus, canTransitionTo } from '../domain/status.js'
 import { isSupabaseConfigured } from './supabaseClient.js'
 import { getReportsDataMode, shouldFallbackToLocalReports } from './runtimeConfig.js'
@@ -203,6 +203,7 @@ function normalizeReportRecord(record, normalizedReports) {
   const rebuilt = buildReport(safeInput, normalizedReports, new Date(createdAt), {
     id: cleanText(record.id, TEXT_LIMITS.short) || undefined,
     code: cleanText(record.code, TEXT_LIMITS.short) || undefined,
+    publicTrackingToken: cleanText(record.publicTrackingToken ?? record.trackingToken ?? record.public_tracking_token, TEXT_LIMITS.short) || undefined,
     status: isKnownStatusInput(record.status) ? record.status : 'masuk',
     createdAt,
     updatedAt,
@@ -384,6 +385,12 @@ export async function createReport(input) {
 export function getReportByCode(code) {
   const normalized = String(code || '').trim().toUpperCase()
   return getReports().find((report) => report.code?.toUpperCase() === normalized) ?? null
+}
+
+export function getReportByTrackingToken(token) {
+  const normalized = String(token || '').trim()
+  if (!normalized) return null
+  return getReports().find((report) => getReportTrackingToken(report) === normalized) ?? null
 }
 
 export function isArchivedReport(report) {

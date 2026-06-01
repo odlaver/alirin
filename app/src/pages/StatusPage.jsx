@@ -12,12 +12,12 @@ import {
   ShieldCheck,
 } from 'lucide-react'
 import './StatusPage.css'
-import { getReportByCode, subscribeReports } from '../services/reportsStore.js'
+import { getReportByTrackingToken, subscribeReports } from '../services/reportsStore.js'
 import { CATEGORY_LABEL, SEVERITY_LABEL, formatDateTime, formatReportLocation } from '../domain/reports.js'
 import { getRiskLevelClass } from '../domain/scoring.js'
 import { STATUS_CLASS, STATUS_LABEL } from '../domain/status.js'
 
-function NotFoundStatus({ code }) {
+function NotFoundStatus({ token }) {
   return (
     <div className="status-page">
       <header className="status-topbar">
@@ -29,8 +29,8 @@ function NotFoundStatus({ code }) {
       </header>
       <main className="status-empty">
         <AlertTriangle size={46} />
-        <h1>Kode laporan tidak ditemukan</h1>
-        <p>Kode {code} belum ada di penyimpanan lokal browser ini.</p>
+        <h1>Link status tidak ditemukan</h1>
+        <p>Token status {token} belum cocok dengan laporan di perangkat ini.</p>
         <Link to="/lapor" className="btn btn-primary">Buat laporan baru</Link>
       </main>
     </div>
@@ -40,22 +40,22 @@ function NotFoundStatus({ code }) {
 export default function StatusPage() {
   useSEO({
     title: 'Cek Status Laporan',
-    description: 'Lacak perkembangan laporan drainase Anda dengan memasukkan nomor laporan atau nomor HP.'
+    description: 'Lacak perkembangan laporan drainase melalui link status pribadi.'
   })
-  const { code } = useParams()
+  const { token } = useParams()
   const [, setStoreVersion] = useState(0)
 
   useEffect(() => {
     return subscribeReports(() => setStoreVersion((version) => version + 1))
   }, [])
 
-  const report = getReportByCode(code)
+  const report = getReportByTrackingToken(token)
 
   const sortedHistory = useMemo(() => {
     return [...(report?.statusHistory ?? [])].sort((a, b) => new Date(a.at) - new Date(b.at))
   }, [report])
 
-  if (!report) return <NotFoundStatus code={code} />
+  if (!report) return <NotFoundStatus token={token} />
 
   const riskClass = getRiskLevelClass(report.riskLevel)
   const latestStatus = STATUS_LABEL[report.status] ?? 'Masuk'

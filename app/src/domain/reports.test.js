@@ -3,6 +3,7 @@ import {
   buildReport,
   createReportCode,
   formatReportLocation,
+  getReportTrackingToken,
   matchesReportSearch,
   reportToMarker,
   sortReportsByPriority,
@@ -47,11 +48,13 @@ describe('report domain', () => {
     }, [], new Date('2026-06-01T08:00:00.000Z'), {
       id: 'report-1',
       code: 'ALR-2026-0001',
+      publicTrackingToken: 'private-token-1',
     })
 
     expect(report).toMatchObject({
       id: 'report-1',
       code: 'ALR-2026-0001',
+      publicTrackingToken: 'private-token-1',
       status: 'diverifikasi',
       reporterName: 'Anonim',
       reporterContact: '-',
@@ -61,6 +64,8 @@ describe('report domain', () => {
     expect(report.photos).toHaveLength(3)
     expect(report.riskScore).toBeGreaterThan(0)
     expect(report.riskBreakdown).toHaveLength(5)
+    expect(getReportTrackingToken(report)).toBe('private-token-1')
+    expect(getReportTrackingToken(report)).not.toBe(report.code)
   })
 
   it('formats locations, markers, search, and priority sorting consistently', () => {

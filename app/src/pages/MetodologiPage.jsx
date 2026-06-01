@@ -117,7 +117,7 @@ export default function MetodologiPage() {
               </div>
             </div>
             <p>
-              Setiap perubahan status menambah riwayat. Warga bisa mengecek kode laporan
+              Setiap perubahan status menambah riwayat. Warga memakai link status pribadi
               untuk melihat progres dari masuk sampai selesai atau ditolak.
             </p>
           </article>

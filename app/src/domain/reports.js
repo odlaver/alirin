@@ -36,6 +36,15 @@ export function createReportCode(reports = [], date = new Date()) {
   return `${yearPrefix}${String(nextNumber).padStart(4, '0')}`
 }
 
+export function createReportTrackingToken() {
+  const randomId = createReportId().replace(/^report-/, '').replaceAll('-', '')
+  return `trk_${randomId.slice(0, 32)}`
+}
+
+export function getReportTrackingToken(report) {
+  return String(report?.publicTrackingToken || report?.trackingToken || report?.id || '').trim()
+}
+
 function normalizePhotos(photos = []) {
   const items = Array.isArray(photos) ? photos : []
   return items.slice(0, 3).map((photo, index) => ({
@@ -49,9 +58,16 @@ function normalizePhotos(photos = []) {
 
 export function buildReport(input, existingReports = [], now = new Date(), overrides = {}) {
   const createdAt = overrides.createdAt ?? input.createdAt ?? now.toISOString()
+  const id = overrides.id ?? input.id ?? createReportId()
   const baseReport = {
-    id: overrides.id ?? createReportId(),
+    id,
     code: overrides.code ?? createReportCode(existingReports, new Date(createdAt)),
+    publicTrackingToken: overrides.publicTrackingToken
+      ?? overrides.trackingToken
+      ?? input.publicTrackingToken
+      ?? input.trackingToken
+      ?? input.public_tracking_token
+      ?? createReportTrackingToken(),
     category: input.category || 'lainnya',
     severity: input.severity || 'ringan',
     description: input.description || input.deskripsi || '',

@@ -17,6 +17,7 @@ export function mapSupabaseReportRow(row) {
   return {
     id: row.id,
     code: row.code,
+    publicTrackingToken: row.public_tracking_token || row.id,
     category: row.category,
     description: row.description,
     address: row.address,
@@ -155,7 +156,11 @@ export async function insertSupabaseReport(report) {
   if (error) throw new Error(error.message)
   if (!inserted) return report
 
-  const syncedReport = { ...report, id: inserted.id }
+  const syncedReport = {
+    ...report,
+    id: inserted.id,
+    publicTrackingToken: inserted.public_tracking_token || inserted.id || report.publicTrackingToken,
+  }
   syncedReport.photos = await syncReportPhotos(inserted.id, syncedReport.photos)
   await syncRiskBreakdown(inserted.id, syncedReport.riskBreakdown)
   await insertStatusHistory(inserted.id, syncedReport.statusHistory?.[0])

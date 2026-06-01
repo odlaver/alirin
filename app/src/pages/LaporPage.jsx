@@ -26,6 +26,7 @@ import ReportMapPicker from '../components/ReportMapPicker.jsx'
 import { KECAMATAN_DATA } from '../data/bandarLampungAreas.js'
 import { createReport } from '../services/reportsStore.js'
 import { MAX_REPORT_PHOTOS, prepareReportPhotos } from '../services/imageFiles.js'
+import { getReportTrackingToken } from '../domain/reports.js'
 
 const CATEGORIES = [
   { id: 'sumbatan', label: 'Sumbatan sampah', icon: Trash2 },
@@ -489,6 +490,8 @@ function Step3({ data, setData }) {
 }
 
 function SuccessScreen({ report, onNew }) {
+  const statusToken = encodeURIComponent(getReportTrackingToken(report))
+
   return (
     <motion.div
       className="success-screen"
@@ -506,14 +509,14 @@ function SuccessScreen({ report, onNew }) {
       </motion.div>
       <span className="success-kicker">Laporan masuk</span>
       <h2>{report.code}</h2>
-      <p>Simpan kode ini untuk cek status. Skor awal: {report.riskScore} ({report.riskLevel}).</p>
+      <p>Simpan kode ini dan gunakan link status pribadi. Skor awal: {report.riskScore} ({report.riskLevel}).</p>
 
       <div className="success-actions">
         <Link to="/" className="btn btn-outline">
           <ArrowLeft size={18} />
           Beranda
         </Link>
-        <Link to={`/status/${report.code}`} className="btn btn-primary">
+        <Link to={`/status/${statusToken}`} className="btn btn-primary">
           Cek Status Laporan
         </Link>
         <button className="btn btn-ghost" type="button" onClick={onNew}>

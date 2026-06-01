@@ -80,7 +80,7 @@ function App() {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/lapor" element={<LaporPage />} />
-            <Route path="/status/:code" element={<StatusPage />} />
+            <Route path="/status/:token" element={<StatusPage />} />
             <Route path="/peta" element={<PetaPage />} />
             <Route path="/metodologi" element={<MetodologiPage />} />
             <Route path="/admin/login" element={<AdminLoginPage />} />

@@ -123,4 +123,19 @@ describe('reportsStore data mode', () => {
     expect(report.syncStatus).toBeUndefined()
     expect(mocks.insertSupabaseReport).not.toHaveBeenCalled()
   })
+
+  it('finds status reports by private token instead of sequential code', async () => {
+    installBrowserStorage()
+    const { createReport, getReportByCode, getReportByTrackingToken } = await loadReportsStore({
+      dataMode: 'local',
+      insertSupabaseReport: vi.fn(),
+    })
+
+    const report = await createReport(validInput)
+
+    expect(report.publicTrackingToken).toMatch(/^trk_/)
+    expect(getReportByTrackingToken(report.publicTrackingToken)?.id).toBe(report.id)
+    expect(getReportByTrackingToken(report.code)).toBeNull()
+    expect(getReportByCode(report.code)?.id).toBe(report.id)
+  })
 })
