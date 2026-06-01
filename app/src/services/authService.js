@@ -1,40 +1,153 @@
-import { supabase } from './supabaseClient.js'
+import { DEMO_USERS } from './reportsStore.js'
+import { isSupabaseConfigured, supabase } from './supabaseClient.js'
+
+const AUTH_SESSION_KEY = 'alirin_auth_session_v1'
+const AUTH_SESSION_EVENT = 'alirin-auth-session'
+
+function hasStorage() {
+  if (typeof window === 'undefined') return false
+  try {
+    return Boolean(window.localStorage)
+  } catch {
+    return false
+  }
+}
+
+function readDemoSession() {
+  if (!hasStorage()) return null
+  try {
+    const raw = window.localStorage.getItem(AUTH_SESSION_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+function writeDemoSession(session) {
+  if (!hasStorage()) return
+  window.localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session))
+  window.dispatchEvent(new CustomEvent(AUTH_SESSION_EVENT, { detail: session }))
+}
+
+function clearDemoSession() {
+  if (!hasStorage()) return
+  window.localStorage.removeItem(AUTH_SESSION_KEY)
+  window.dispatchEvent(new CustomEvent(AUTH_SESSION_EVENT, { detail: null }))
+}
+
+function getRoleFromUser(user, email) {
+  return user?.user_metadata?.role || (email?.includes('admin') ? 'admin' : 'petugas')
+}
+
+function buildDemoSession(user) {
+  return {
+    access_token: `demo-${user.role}`,
+    token_type: 'bearer',
+    provider_token: null,
+    provider_refresh_token: null,
+    refresh_token: `demo-refresh-${user.role}`,
+    expires_in: 60 * 60 * 24 * 7,
+    expires_at: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+    role: user.role,
+    user: {
+      id: `demo-${user.role}`,
+      aud: 'authenticated',
+      role: 'authenticated',
+      email: user.email,
+      user_metadata: {
+        name: user.name,
+        role: user.role,
+        officerId: user.officerId,
+      },
+    },
+  }
+}
+
+function getDemoSessionForCredentials(email, password) {
+  const normalizedEmail = String(email || '').trim().toLowerCase()
+  const user = Object.values(DEMO_USERS).find((item) => (
+    item.email.toLowerCase() === normalizedEmail && item.password === password
+  ))
+  return user ? buildDemoSession(user) : null
+}
 
 export async function signInWithEmail(email, password) {
+  const demoSession = getDemoSessionForCredentials(email, password)
+
+  if (!isSupabaseConfigured) {
+    if (!demoSession) return { ok: false, message: 'Email atau password tidak valid.' }
+    writeDemoSession(demoSession)
+    return { ok: true, session: demoSession }
+  }
+
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
   
   if (error) {
+    if (demoSession) {
+      writeDemoSession(demoSession)
+      return { ok: true, session: demoSession }
+    }
     return { ok: false, message: error.message }
   }
   
-  const role = data.user.user_metadata?.role || (email.includes('admin') ? 'admin' : 'petugas')
+  clearDemoSession()
+  const role = getRoleFromUser(data.user, email)
   
   return { ok: true, session: { ...data.session, role } }
 }
 
 export async function signOut() {
-  const { error } = await supabase.auth.signOut()
-  if (error) {
-    console.error('Error signing out:', error)
+  clearDemoSession()
+  if (isSupabaseConfigured) {
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      console.error('Error signing out:', error)
+    }
   }
 }
 
 export async function getSession() {
+  if (!isSupabaseConfigured) return readDemoSession()
+
   const { data, error } = await supabase.auth.getSession()
-  if (error || !data.session) return null
+  if (error || !data.session) return readDemoSession()
   
-  const role = data.session.user.user_metadata?.role || (data.session.user.email.includes('admin') ? 'admin' : 'petugas')
+  const role = getRoleFromUser(data.session.user, data.session.user.email)
   return { ...data.session, role }
 }
 
 export function onAuthStateChange(callback) {
-  return supabase.auth.onAuthStateChange((event, session) => {
-    if (session) {
-      session.role = session.user.user_metadata?.role || (session.user.email.includes('admin') ? 'admin' : 'petugas')
+  const handleDemoSession = (event) => {
+    callback(event.detail ? 'SIGNED_IN' : 'SIGNED_OUT', event.detail)
+  }
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener(AUTH_SESSION_EVENT, handleDemoSession)
+  }
+
+  const supabaseListener = isSupabaseConfigured
+    ? supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        session.role = getRoleFromUser(session.user, session.user.email)
+        clearDemoSession()
+      }
+      callback(event, session)
+    })
+    : null
+
+  return {
+    data: {
+      subscription: {
+        unsubscribe() {
+          if (typeof window !== 'undefined') {
+            window.removeEventListener(AUTH_SESSION_EVENT, handleDemoSession)
+          }
+          supabaseListener?.data?.subscription?.unsubscribe()
+        },
+      },
     }
-    callback(event, session)
-  })
+  }
 }
