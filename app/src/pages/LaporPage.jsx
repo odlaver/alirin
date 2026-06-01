@@ -25,7 +25,7 @@ import './LaporPage.css'
 import ReportMapPicker from '../components/ReportMapPicker.jsx'
 import { KECAMATAN_DATA } from '../data/bandarLampungAreas.js'
 import { createReport } from '../services/reportsStore.js'
-import { MAX_REPORT_PHOTOS, prepareReportPhoto } from '../services/imageFiles.js'
+import { MAX_REPORT_PHOTOS, prepareReportPhotos } from '../services/imageFiles.js'
 
 const CATEGORIES = [
   { id: 'sumbatan', label: 'Sumbatan sampah', icon: Trash2 },
@@ -320,27 +320,25 @@ function PhotoUploader({ photos, onChange }) {
   const [processing, setProcessing] = useState(false)
 
   async function handleFiles(files) {
-    const next = [...photos]
     const incoming = Array.from(files || [])
+    const availableSlots = MAX_REPORT_PHOTOS - photos.length
+    const messages = []
     setError('')
 
-    if (next.length + incoming.length > MAX_REPORT_PHOTOS) {
-      setError(`Maksimal ${MAX_REPORT_PHOTOS} foto untuk satu laporan.`)
+    if (photos.length + incoming.length > MAX_REPORT_PHOTOS) {
+      messages.push(`Maksimal ${MAX_REPORT_PHOTOS} foto untuk satu laporan.`)
     }
 
     setProcessing(true)
-    for (const file of incoming) {
-      if (next.length >= MAX_REPORT_PHOTOS) break
-      try {
-        const photo = await prepareReportPhoto(file)
-        next.push(photo)
-      } catch (err) {
-        setError(err.message || 'Gagal memproses foto.')
-      }
+    try {
+      const { photos: preparedPhotos, errors } = await prepareReportPhotos(incoming, availableSlots)
+      onChange([...photos, ...preparedPhotos])
+      messages.push(...errors)
+    } finally {
+      setProcessing(false)
     }
-    setProcessing(false)
 
-    onChange(next)
+    if (messages.length) setError(messages.join(' '))
   }
 
   return (

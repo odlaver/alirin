@@ -752,6 +752,16 @@
   box-shadow: 0 14px 34px rgba(var(--color-primary-rgb), 0.08);
 }
 
+.field-map-loading {
+  min-height: 460px;
+  display: grid;
+  place-items: center;
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+}
+
 .field-map-shell .osm-map-card {
   border: 0;
   border-radius: 0;

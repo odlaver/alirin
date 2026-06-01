@@ -67,3 +67,18 @@ export async function prepareReportPhoto(file) {
     url,
   }
 }
+
+export async function prepareReportPhotos(files, availableSlots = MAX_REPORT_PHOTOS) {
+  const incoming = Array.from(files || []).slice(0, Math.max(0, availableSlots))
+  const results = await Promise.allSettled(incoming.map((file) => prepareReportPhoto(file)))
+
+  return results.reduce((summary, result) => {
+    if (result.status === 'fulfilled') {
+      summary.photos.push(result.value)
+      return summary
+    }
+
+    summary.errors.push(result.reason?.message || 'Foto tidak bisa diproses.')
+    return summary
+  }, { photos: [], errors: [] })
+}

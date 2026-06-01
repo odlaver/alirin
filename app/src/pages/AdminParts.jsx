@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import {
@@ -10,7 +10,6 @@ import {
   MONTHLY_DATA, DONUT_DATA, PETUGAS, SETTINGS_ITEMS,
 } from './adminData.js'
 import { DEMO_OFFICERS } from '../data/officers.js'
-import RiskMap from '../components/RiskMap.jsx'
 import { REPORT_STATUSES, STATUS_CLASS, STATUS_LABEL, canTransitionTo } from '../domain/status.js'
 import {
   formatDateTime,
@@ -26,6 +25,16 @@ const RISK_COLORS = {
   Tinggi: 'var(--color-risk-high)',
   Waspada: 'var(--color-warning)',
   Normal: 'var(--color-success)',
+}
+const RiskMap = lazy(() => import('../components/RiskMap.jsx'))
+
+function MapLoading({ label = 'Memuat peta...' }) {
+  return (
+    <div className="admin-map-loading" role="status" aria-live="polite">
+      <span className="admin-map-loading-dot" />
+      <span>{label}</span>
+    </div>
+  )
 }
 
 export function Counter({ to, duration = 1200 }) {
@@ -222,7 +231,9 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
           
           <div className="modal-side-col">
             <div className="mini-map-preview">
-               <RiskMap height={160} compact={true} markers={[marker]} selectedMarkerId={marker.id} showHead={false} previewMode={true} />
+              <Suspense fallback={<MapLoading label="Memuat lokasi..." />}>
+                <RiskMap height={160} compact={true} markers={[marker]} selectedMarkerId={marker.id} showHead={false} previewMode={true} />
+              </Suspense>
             </div>
             
             <div className="status-update-box">
@@ -432,11 +443,13 @@ export function MapPreview({ reports = [] }) {
   const markers = useMemo(() => reportsToMarkers(reports), [reports])
   return (
     <div className="admin-map-preview-wrapper" style={{ height: '100%', width: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
-      <RiskMap 
-        height="100%" 
-        showHead={false} 
-        markers={markers}
-      />
+      <Suspense fallback={<MapLoading />}>
+        <RiskMap
+          height="100%"
+          showHead={false}
+          markers={markers}
+        />
+      </Suspense>
     </div>
   )
 }

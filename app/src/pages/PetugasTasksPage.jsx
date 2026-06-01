@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   AlertTriangle,
@@ -16,7 +16,6 @@ import {
   Wrench,
 } from 'lucide-react'
 import './PetugasTasksPage.css'
-import RiskMap from '../components/RiskMap.jsx'
 import {
   getReports,
   isArchivedReport,
@@ -34,7 +33,9 @@ import {
   sortReportsByPriority,
 } from '../domain/reports.js'
 import { STATUS_LABEL } from '../domain/status.js'
-import { MAX_REPORT_PHOTOS, prepareReportPhoto } from '../services/imageFiles.js'
+import { MAX_REPORT_PHOTOS, prepareReportPhotos } from '../services/imageFiles.js'
+
+const RiskMap = lazy(() => import('../components/RiskMap.jsx'))
 
 function TaskCard({ report, active, onSelect }) {
   const row = reportToAdminRow(report)
@@ -56,23 +57,22 @@ function PhotoInput({ photos, onChange }) {
   const [processing, setProcessing] = useState(false)
 
   async function handleFiles(files) {
-    const next = [...photos]
     const incoming = Array.from(files || [])
+    const availableSlots = MAX_REPORT_PHOTOS - photos.length
+    const messages = []
     setError('')
-    if (next.length + incoming.length > MAX_REPORT_PHOTOS) {
-      setError(`Maksimal ${MAX_REPORT_PHOTOS} foto penyelesaian.`)
+    if (photos.length + incoming.length > MAX_REPORT_PHOTOS) {
+      messages.push(`Maksimal ${MAX_REPORT_PHOTOS} foto penyelesaian.`)
     }
     setProcessing(true)
-    for (const file of incoming) {
-      if (next.length >= MAX_REPORT_PHOTOS) break
-      try {
-        next.push(await prepareReportPhoto(file))
-      } catch (err) {
-        setError(err.message || 'Foto tidak bisa diproses.')
-      }
+    try {
+      const { photos: preparedPhotos, errors } = await prepareReportPhotos(incoming, availableSlots)
+      onChange([...photos, ...preparedPhotos])
+      messages.push(...errors)
+    } finally {
+      setProcessing(false)
     }
-    setProcessing(false)
-    onChange(next)
+    if (messages.length) setError(messages.join(' '))
   }
 
   return (
@@ -130,7 +130,9 @@ function FieldCityMap({ reports, assignedReports }) {
       </div>
 
       <div className="field-map-shell">
-        <RiskMap height={460} markers={markers} />
+        <Suspense fallback={<div className="field-map-loading">Memuat peta...</div>}>
+          <RiskMap height={460} markers={markers} />
+        </Suspense>
       </div>
 
       <div className="field-priority-strip">

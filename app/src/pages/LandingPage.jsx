@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, Suspense } from 'react'
+import { useEffect, useRef, useState, Suspense, lazy } from 'react'
 import { Link } from 'react-router-dom'
 import { useSEO } from '../hooks/useSEO.js'
 import { motion } from 'framer-motion'
@@ -33,7 +33,8 @@ import {
   Waves,
   X,
 } from 'lucide-react'
-import RiskMap from '../components/RiskMap.jsx'
+
+const RiskMap = lazy(() => import('../components/RiskMap.jsx'))
 
 const navItems = [
   { label: 'Masalah', href: '#masalah' },
