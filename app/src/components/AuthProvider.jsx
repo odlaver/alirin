@@ -1,12 +1,6 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { getSession, onAuthStateChange } from '../services/authService.js'
-
-const AuthContext = createContext({
-  session: null,
-  user: null,
-  role: null,
-  loading: true
-})
+import { AuthContext } from './AuthContext.js'
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
@@ -42,7 +36,7 @@ export function AuthProvider({ children }) {
     session,
     user: session?.user || null,
     role: session?.role || null,
-    loading
+    loading,
   }
 
   return (
@@ -50,8 +44,4 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   )
-}
-
-export function useAuth() {
-  return useContext(AuthContext)
 }

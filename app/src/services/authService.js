@@ -32,10 +32,8 @@ export async function getSession() {
 
 export function onAuthStateChange(callback) {
   return supabase.auth.onAuthStateChange((event, session) => {
-    let role = null
     if (session) {
-      role = session.user.user_metadata?.role || (session.user.email.includes('admin') ? 'admin' : 'petugas')
-      session.role = role
+      session.role = session.user.user_metadata?.role || (session.user.email.includes('admin') ? 'admin' : 'petugas')
     }
     callback(event, session)
   })

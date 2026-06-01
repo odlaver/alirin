@@ -401,6 +401,12 @@
   min-width: 0;
 }
 
+.dashboard-view-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
 .admin-export-control {
   display: inline-flex;
   align-items: center;
@@ -473,6 +479,7 @@
 
 .command-meter span {
   display: block;
+  width: var(--critical-risk-width, 0%);
   min-width: 8px;
   height: 100%;
   border-radius: inherit;
@@ -651,6 +658,11 @@
 .panel-head-stacked > .filter-pills {
   max-width: none;
   justify-content: flex-start;
+}
+
+.panel-head-wrap {
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .panel-head h2 {

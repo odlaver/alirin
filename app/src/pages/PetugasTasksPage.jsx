@@ -24,7 +24,7 @@ import {
   updateFieldProgress,
 } from '../services/reportsStore.js'
 import { signOut } from '../services/authService.js'
-import { useAuth } from '../components/AuthProvider.jsx'
+import { useAuth } from '../hooks/useAuth.js'
 import {
   CATEGORY_LABEL,
   formatDateTime,

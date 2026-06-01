@@ -20,6 +20,13 @@ import {
   reportsToMarkers,
 } from '../domain/reports.js'
 
+const DAYS = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
+const RISK_COLORS = {
+  Kritis: 'var(--color-danger)',
+  Tinggi: 'var(--color-risk-high)',
+  Waspada: 'var(--color-warning)',
+  Normal: 'var(--color-success)',
+}
 
 export function Counter({ to, duration = 1200 }) {
   const [val, setVal] = useState(0)
@@ -314,14 +321,13 @@ export function ReportList({ reports, filter, onSelect }) {
 
 
 export function TrendChart({ reports = [] }) {
-  const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
   const chartData = useMemo(() => {
     return Array.from({ length: 7 }, (_, offset) => {
       const date = new Date()
       date.setDate(date.getDate() - (6 - offset))
       const key = date.toISOString().slice(0, 10)
       return {
-        day: days[date.getDay()],
+        day: DAYS[date.getDay()],
         val: reports.filter((report) => report.createdAt?.slice(0, 10) === key).length,
       }
     })
@@ -351,12 +357,6 @@ export function TrendChart({ reports = [] }) {
 
 
 export function RiskDist({ reports = [] }) {
-  const riskColors = {
-    Kritis: 'var(--color-danger)',
-    Tinggi: 'var(--color-risk-high)',
-    Waspada: 'var(--color-warning)',
-    Normal: 'var(--color-success)',
-  }
   const dist = useMemo(() => {
     return ['Kritis', 'Tinggi', 'Waspada', 'Normal'].map((label) => {
       const count = reports.filter((report) => report.riskLevel === label).length
@@ -364,7 +364,7 @@ export function RiskDist({ reports = [] }) {
         label,
         count,
         pct: reports.length ? Math.round((count / reports.length) * 100) : 0,
-        color: riskColors[label],
+        color: RISK_COLORS[label],
       }
     })
   }, [reports])

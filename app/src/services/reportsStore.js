@@ -461,20 +461,12 @@ export async function createReport(input) {
     if (inserted) {
       calculatedReport.id = inserted.id 
       if (calculatedReport.photos?.length) {
-        
-        const uploadedPhotos = []
-        for (const p of calculatedReport.photos) {
-          if (p.url && p.url.startsWith('data:')) {
-            const publicUrl = await uploadReportPhoto(p.url)
-            if (publicUrl) {
-              uploadedPhotos.push({ ...p, url: publicUrl })
-            } else {
-              uploadedPhotos.push(p)
-            }
-          } else {
-            uploadedPhotos.push(p)
-          }
-        }
+        const uploadedPhotos = await Promise.all(calculatedReport.photos.map(async (photo) => {
+          if (!photo.url?.startsWith('data:')) return photo
+
+          const publicUrl = await uploadReportPhoto(photo.url)
+          return publicUrl ? { ...photo, url: publicUrl } : photo
+        }))
         calculatedReport.photos = uploadedPhotos
 
         const { error: photoErr } = await supabase.from('report_photos').insert(
@@ -497,7 +489,7 @@ export async function createReport(input) {
     }
   } catch (err) {
     console.error("Supabase error:", err)
-    throw new Error(err.message || 'Gagal menyimpan laporan ke database.')
+    throw new Error(err.message || 'Gagal menyimpan laporan ke database.', { cause: err })
   }
 
   
@@ -570,7 +562,7 @@ export async function updateReportStatus(reportId, status, note = '', actor = 'A
       saveReports(reports)
     } catch(err) {
       console.error(err)
-      throw new Error(err.message || 'Gagal mengubah status laporan.')
+      throw new Error(err.message || 'Gagal mengubah status laporan.', { cause: err })
     }
   }
   return updatedReport
@@ -635,7 +627,7 @@ export async function assignReportOfficer(reportId, officerId, actor = 'Admin De
       saveReports(reports)
     } catch(err) {
       console.error(err)
-      throw new Error(err.message || 'Gagal menugaskan petugas.')
+      throw new Error(err.message || 'Gagal menugaskan petugas.', { cause: err })
     }
   }
   return updatedReport

@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Droplets, LockKeyhole, LogIn } from 'lucide-react'
 import { DEMO_USERS } from '../services/reportsStore.js'
 import { signInWithEmail } from '../services/authService.js'
-import { useAuth } from '../components/AuthProvider.jsx'
+import { useAuth } from '../hooks/useAuth.js'
 
 export default function AdminLoginPage() {
   const navigate = useNavigate()

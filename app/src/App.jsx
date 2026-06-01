@@ -1,44 +1,12 @@
-import { Suspense, lazy, useEffect, useRef, useState } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { Routes, Route, Link, Navigate, useLocation } from 'react-router-dom'
 import { Toaster } from 'sonner'
-import { useSEO } from './hooks/useSEO.js'
-import { motion } from 'framer-motion'
-import {
-  AlertTriangle,
-  BarChart3,
-  Camera,
-  ChevronRight,
-  ClipboardCheck,
-  Clock3,
-  Droplets,
-  FileCheck2,
-  Filter,
-  Gauge,
-  GitBranch,
-  Image as ImageIcon,
-  Layers3,
-  ListChecks,
-  LocateFixed,
-  LockKeyhole,
-  Map,
-  MapPin,
-  Menu,
-  Navigation,
-  RadioTower,
-  Route as RouteIcon,
-  Send,
-  ShieldCheck,
-  Target,
-  TimerReset,
-  TrendingUp,
-  Waves,
-  X,
-} from 'lucide-react'
+import { Droplets } from 'lucide-react'
 import './App.css'
 import { ErrorBoundary } from './components/ErrorBoundary.jsx'
-import { AuthProvider, useAuth } from './components/AuthProvider.jsx'
+import { AuthProvider } from './components/AuthProvider.jsx'
+import { useAuth } from './hooks/useAuth.js'
 
-const RiskMap = lazy(() => import('./components/RiskMap.jsx'))
 const LaporPage = lazy(() => import('./pages/LaporPage.jsx'))
 const PetaPage = lazy(() => import('./pages/PetaPage.jsx'))
 const AdminLoginPage = lazy(() => import('./pages/AdminLoginPage.jsx'))
