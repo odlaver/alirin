@@ -1,18 +1,33 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Droplets, LockKeyhole, LogIn } from 'lucide-react'
-import { DEMO_USERS } from '../services/reportsStore.js'
 import { signInWithEmail } from '../services/authService.js'
 import { useAuth } from '../hooks/useAuth.js'
+import { isDemoAuthEnabled } from '../services/runtimeConfig.js'
 
 export default function AdminLoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const [email, setEmail] = useState(DEMO_USERS.admin.email)
-  const [password, setPassword] = useState(DEMO_USERS.admin.password)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [demoUsers, setDemoUsers] = useState(null)
 
   const { role, loading } = useAuth()
+
+  useEffect(() => {
+    if (import.meta.env.PROD || !isDemoAuthEnabled) return undefined
+    let active = true
+    void import('../data/demoUsers.js').then(({ DEMO_USERS }) => {
+      if (!active) return
+      setDemoUsers(DEMO_USERS)
+      setEmail((current) => current || DEMO_USERS.admin.email)
+      setPassword((current) => current || DEMO_USERS.admin.password)
+    })
+    return () => {
+      active = false
+    }
+  }, [])
 
   useEffect(() => {
     if (loading) return
@@ -94,14 +109,16 @@ export default function AdminLoginPage() {
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
             }}>
-              <Droplets size={13} /> Demo Admin
+              <Droplets size={13} /> {isDemoAuthEnabled ? 'Demo Admin' : 'Admin'}
             </span>
             <h1 style={{ margin: '5px 0 0', fontSize: 28, lineHeight: 1.05 }}>Masuk dashboard</h1>
           </div>
         </div>
 
         <p style={{ margin: '0 0 22px', color: 'rgba(255,255,255,0.74)', lineHeight: 1.6 }}>
-          Login ini hanya untuk demo lokal. Data tersimpan di browser.
+          {isDemoAuthEnabled
+            ? 'Mode demo aktif untuk pengujian lokal. Jangan gunakan data sensitif.'
+            : 'Masuk dengan akun admin yang terdaftar di Supabase Auth.'}
         </p>
 
         <label style={labelStyle} htmlFor="admin-email">Email</label>
@@ -143,18 +160,20 @@ export default function AdminLoginPage() {
           Masuk Dashboard
         </button>
 
-        <div style={{
-          marginTop: 18,
-          borderTop: '1px solid rgba(255,255,255,0.12)',
-          paddingTop: 16,
-          color: 'rgba(255,255,255,0.62)',
-          fontSize: 13,
-          lineHeight: 1.6,
-        }}>
-          <strong style={{ color: '#fff' }}>Credential demo:</strong><br />
-          Admin: {DEMO_USERS.admin.email} / {DEMO_USERS.admin.password}<br />
-          Petugas: {DEMO_USERS.petugas.email} / {DEMO_USERS.petugas.password}
-        </div>
+        {isDemoAuthEnabled && demoUsers && (
+          <div style={{
+            marginTop: 18,
+            borderTop: '1px solid rgba(255,255,255,0.12)',
+            paddingTop: 16,
+            color: 'rgba(255,255,255,0.62)',
+            fontSize: 13,
+            lineHeight: 1.6,
+          }}>
+            <strong style={{ color: '#fff' }}>Credential demo:</strong><br />
+            Admin: {demoUsers.admin.email} / {demoUsers.admin.password}<br />
+            Petugas: {demoUsers.petugas.email} / {demoUsers.petugas.password}
+          </div>
+        )}
       </form>
     </div>
   )

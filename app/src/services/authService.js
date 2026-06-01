@@ -1,5 +1,5 @@
-import { DEMO_USERS } from './reportsStore.js'
 import { isSupabaseConfigured, supabase } from './supabaseClient.js'
+import { isDemoAuthEnabled } from './runtimeConfig.js'
 
 const AUTH_SESSION_KEY = 'alirin_auth_session_v1'
 const AUTH_SESSION_EVENT = 'alirin-auth-session'
@@ -63,7 +63,9 @@ function buildDemoSession(user) {
   }
 }
 
-function getDemoSessionForCredentials(email, password) {
+async function getDemoSessionForCredentials(email, password) {
+  if (import.meta.env.PROD || !isDemoAuthEnabled) return null
+  const { DEMO_USERS } = await import('../data/demoUsers.js')
   const normalizedEmail = String(email || '').trim().toLowerCase()
   const user = Object.values(DEMO_USERS).find((item) => (
     item.email.toLowerCase() === normalizedEmail && item.password === password
@@ -72,10 +74,17 @@ function getDemoSessionForCredentials(email, password) {
 }
 
 export async function signInWithEmail(email, password) {
-  const demoSession = getDemoSessionForCredentials(email, password)
+  const demoSession = await getDemoSessionForCredentials(email, password)
 
   if (!isSupabaseConfigured) {
-    if (!demoSession) return { ok: false, message: 'Email atau password tidak valid.' }
+    if (!demoSession) {
+      return {
+        ok: false,
+        message: isDemoAuthEnabled
+          ? 'Email atau password tidak valid.'
+          : 'Autentikasi belum dikonfigurasi. Hubungi admin sistem.',
+      }
+    }
     writeDemoSession(demoSession)
     return { ok: true, session: demoSession }
   }
@@ -110,10 +119,10 @@ export async function signOut() {
 }
 
 export async function getSession() {
-  if (!isSupabaseConfigured) return readDemoSession()
+  if (!isSupabaseConfigured) return isDemoAuthEnabled ? readDemoSession() : null
 
   const { data, error } = await supabase.auth.getSession()
-  if (error || !data.session) return readDemoSession()
+  if (error || !data.session) return isDemoAuthEnabled ? readDemoSession() : null
   
   const role = getRoleFromUser(data.session.user, data.session.user.email)
   return { ...data.session, role }
@@ -124,7 +133,7 @@ export function onAuthStateChange(callback) {
     callback(event.detail ? 'SIGNED_IN' : 'SIGNED_OUT', event.detail)
   }
 
-  if (typeof window !== 'undefined') {
+  if (isDemoAuthEnabled && typeof window !== 'undefined') {
     window.addEventListener(AUTH_SESSION_EVENT, handleDemoSession)
   }
 
@@ -142,7 +151,7 @@ export function onAuthStateChange(callback) {
     data: {
       subscription: {
         unsubscribe() {
-          if (typeof window !== 'undefined') {
+          if (isDemoAuthEnabled && typeof window !== 'undefined') {
             window.removeEventListener(AUTH_SESSION_EVENT, handleDemoSession)
           }
           supabaseListener?.data?.subscription?.unsubscribe()

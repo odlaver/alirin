@@ -160,11 +160,12 @@ function FieldCityMap({ reports, assignedReports }) {
 export default function PetugasTasksPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const userMetadata = user?.user_metadata ?? {}
   const session = {
     email: user?.email,
-    name: user?.user_metadata?.name || user?.email,
-    role: user?.user_metadata?.role || (user?.email?.includes('admin') ? 'admin' : 'petugas'),
-    officerId: user?.user_metadata?.officerId || 'ofc-budi'
+    name: userMetadata.name || user?.email,
+    role: userMetadata.role || (user?.email?.includes('admin') ? 'admin' : 'petugas'),
+    officerId: userMetadata.officerId || ''
   }
   const [reports, setReports] = useState(() => getReports())
   const [tab, setTab] = useState('aktif')

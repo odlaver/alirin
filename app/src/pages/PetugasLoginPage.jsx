@@ -1,18 +1,33 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Droplets, HardHat, LogIn } from 'lucide-react'
-import { DEMO_USERS } from '../services/reportsStore.js'
 import { signInWithEmail } from '../services/authService.js'
 import { useAuth } from '../hooks/useAuth.js'
+import { isDemoAuthEnabled } from '../services/runtimeConfig.js'
 
 export default function PetugasLoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const [email, setEmail] = useState(DEMO_USERS.petugas.email)
-  const [password, setPassword] = useState(DEMO_USERS.petugas.password)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [demoUsers, setDemoUsers] = useState(null)
 
   const { role, loading } = useAuth()
+
+  useEffect(() => {
+    if (import.meta.env.PROD || !isDemoAuthEnabled) return undefined
+    let active = true
+    void import('../data/demoUsers.js').then(({ DEMO_USERS }) => {
+      if (!active) return
+      setDemoUsers(DEMO_USERS)
+      setEmail((current) => current || DEMO_USERS.petugas.email)
+      setPassword((current) => current || DEMO_USERS.petugas.password)
+    })
+    return () => {
+      active = false
+    }
+  }, [])
 
   useEffect(() => {
     if (loading) return
@@ -53,14 +68,16 @@ export default function PetugasLoginPage() {
           </div>
           <div>
             <span style={kickerStyle}>
-              <Droplets size={13} /> Demo Petugas
+              <Droplets size={13} /> {isDemoAuthEnabled ? 'Demo Petugas' : 'Petugas'}
             </span>
             <h1 style={{ margin: '5px 0 0', fontSize: 28, lineHeight: 1.05 }}>Masuk petugas</h1>
           </div>
         </div>
 
         <p style={{ margin: '0 0 22px', color: 'rgba(255,255,255,0.74)', lineHeight: 1.6 }}>
-          Akses ini hanya untuk simulasi tugas lapangan. Petugas bisa mulai, melaporkan kendala, dan menyelesaikan tugas.
+          {isDemoAuthEnabled
+            ? 'Mode demo aktif untuk simulasi tugas lapangan.'
+            : 'Masuk dengan akun petugas yang terdaftar di Supabase Auth.'}
         </p>
 
         <label style={labelStyle} htmlFor="petugas-email">Email</label>
@@ -90,11 +107,13 @@ export default function PetugasLoginPage() {
           Masuk Tugas
         </button>
 
-        <div style={credentialStyle}>
-          <strong style={{ color: '#fff' }}>Credential demo:</strong><br />
-          {DEMO_USERS.petugas.email}<br />
-          {DEMO_USERS.petugas.password}
-        </div>
+        {isDemoAuthEnabled && demoUsers && (
+          <div style={credentialStyle}>
+            <strong style={{ color: '#fff' }}>Credential demo:</strong><br />
+            {demoUsers.petugas.email}<br />
+            {demoUsers.petugas.password}
+          </div>
+        )}
       </form>
     </div>
   )

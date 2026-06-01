@@ -1,7 +1,13 @@
 import { Droplets, LogOut } from 'lucide-react'
+import { useAuth } from '../../hooks/useAuth.js'
 import { NAV_MAIN } from './adminNavigation.js'
 
 export default function AdminSidebar({ nav, setNav, mobileOpen, setMobileOpen, pendingCount, onLogout }) {
+  const { user } = useAuth()
+  const displayName = user?.user_metadata?.name || user?.email || 'Admin'
+  const displayEmail = user?.email || 'admin'
+  const avatarLabel = displayName.charAt(0).toUpperCase()
+
   return (
     <>
       {mobileOpen && <div className="sidebar-overlay" onClick={() => setMobileOpen(false)} />}
@@ -31,8 +37,8 @@ export default function AdminSidebar({ nav, setNav, mobileOpen, setMobileOpen, p
         </nav>
         <div className="admin-sidebar-footer">
           <button className="admin-user-pill admin-user-button" type="button" onClick={onLogout}>
-            <div className="admin-avatar">A</div>
-            <div className="admin-user-info"><strong>Demo Admin</strong><small>admin@alirin.local</small></div>
+            <div className="admin-avatar">{avatarLabel}</div>
+            <div className="admin-user-info"><strong>{displayName}</strong><small>{displayEmail}</small></div>
             <LogOut size={16} className="logout-icon" />
           </button>
         </div>

@@ -577,7 +577,7 @@ export default function LaporPage() {
                       error.name === 'QuotaExceededError'
       setSubmitError(
         isQuota
-          ? 'Penyimpanan browser penuh karena terlalu banyak foto terkompresi. Kurangi jumlah foto atau gunakan tombol Reset Demo di halaman admin (admin@alirin.local).'
+          ? 'Penyimpanan browser penuh karena terlalu banyak foto terkompresi. Kurangi jumlah foto atau minta admin mengosongkan data demo.'
           : (error.message || 'Laporan belum bisa dikirim. Periksa kembali data laporan.')
       )
     } finally {

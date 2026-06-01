@@ -61,23 +61,6 @@ if (typeof window !== 'undefined') syncFromSupabase()
 
 export const REPORTS_STORAGE_KEY = 'alirin_reports_v1'
 export const ADMIN_SESSION_KEY = 'alirin_admin_session_v1'
-export const DEMO_USERS = {
-  admin: {
-    email: 'admin@alirin.local',
-    password: 'alirin123',
-    name: 'Demo Admin',
-    role: 'admin',
-  },
-  petugas: {
-    email: 'petugas@alirin.local',
-    password: 'petugas123',
-    name: 'Budi Santoso',
-    role: 'petugas',
-    officerId: 'ofc-budi',
-  },
-}
-export const DEMO_ADMIN_CREDENTIALS = DEMO_USERS.admin
-export const DEMO_PETUGAS_CREDENTIALS = DEMO_USERS.petugas
 
 const listeners = new Set()
 const LEGACY_STATUSES = ['verifikasi', 'proses']
