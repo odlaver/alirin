@@ -3,105 +3,38 @@ import { KECAMATAN_DATA } from '../data/bandarLampungAreas.js'
 import { DEMO_OFFICERS, getOfficerById } from '../data/officers.js'
 import { CATEGORY_LABEL, SEVERITY_LABEL, buildReport, formatReportLocation, getReportTitle, recalculateReportsRisk } from '../domain/reports.js'
 import { INITIAL_STATUS_HISTORY, REPORT_STATUSES, STATUS_LABEL, isFinalStatus, normalizeStatus, canTransitionTo } from '../domain/status.js'
-import { supabase } from './supabaseClient.js'
-import { uploadReportPhoto } from './storageService.js'
+import { isSupabaseConfigured } from './supabaseClient.js'
+import { getReportsDataMode, shouldFallbackToLocalReports } from './runtimeConfig.js'
+import {
+  ADMIN_SESSION_KEY,
+  REPORTS_STORAGE_KEY,
+  hasLocalStorage,
+  readLocalReports,
+  subscribeLocalReports,
+  writeLocalReports,
+} from './reportsLocalRepository.js'
+import {
+  assignSupabaseReportOfficer,
+  insertSupabaseReport,
+  updateSupabaseReportStatus,
+} from './reportsSupabaseRepository.js'
+import { refreshReportsFromSupabase, startReportsRealtimeSync } from './reportsSyncService.js'
 
-let isSupabaseInit = false
-async function syncFromSupabase() {
-  if (isSupabaseInit) return
-  isSupabaseInit = true
-  const { data } = await supabase.from('reports').select('*, report_photos(*), risk_breakdowns(*), report_status_history(*)')
-  if (data && data.length > 0) {
-    const mem = data.map(row => ({
-      id: row.id,
-      code: row.code,
-      category: row.category,
-      description: row.description,
-      address: row.address,
-      lat: row.lat,
-      lng: row.lng,
-      status: row.status,
-      severity: row.severity,
-      riskLevel: row.risk_level,
-      riskScore: row.risk_score,
-      reporterName: row.reporter_name,
-      reporterContact: row.reporter_contact,
-      assignedOfficerId: row.assigned_officer_id,
-      assignedOfficerName: row.assigned_officer_name,
-      createdAt: row.created_at,
-      photos: (row.report_photos || []).map(p => ({ id: p.id, url: p.url, name: 'foto.jpg', type: 'image/jpeg', size: 0 })),
-      riskBreakdown: (row.risk_breakdowns || []).map(b => ({
-        id: b.id, label: b.label, points: b.points, weight: b.weight, detail: b.detail
-      })),
-      statusHistory: (row.report_status_history || []).map(h => ({
-        status: h.status, actor: h.actor, note: h.note || '', at: h.at
-      })).sort((a,b) => new Date(a.at) - new Date(b.at)),
-      fieldNotes: [],
-      completionPhotos: []
-    }))
-    
-    const withRisk = recalculateReportsRisk(mem)
-    writeJson(REPORTS_STORAGE_KEY, withRisk)
-    emit(withRisk)
-  }
-  
-  let syncTimeout = null
-  supabase.channel('public:reports')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, () => {
-      if (syncTimeout) clearTimeout(syncTimeout)
-      syncTimeout = setTimeout(() => {
-        isSupabaseInit = false
-        syncFromSupabase()
-      }, 3000)
-    }).subscribe()
-}
-
-if (typeof window !== 'undefined') syncFromSupabase()
-
-
-export const REPORTS_STORAGE_KEY = 'alirin_reports_v1'
-export const ADMIN_SESSION_KEY = 'alirin_admin_session_v1'
+export { ADMIN_SESSION_KEY, REPORTS_STORAGE_KEY }
 
 const listeners = new Set()
+const reportsDataMode = getReportsDataMode(isSupabaseConfigured)
+const useSupabaseReports = isSupabaseConfigured && reportsDataMode !== 'local'
+const useLocalReports = shouldFallbackToLocalReports(isSupabaseConfigured)
+let realtimeUnsubscribe = null
+let hasStartedRemoteSync = false
+let reportsMemoryCache = null
 const LEGACY_STATUSES = ['verifikasi', 'proses']
 const TEXT_LIMITS = {
   short: 80,
   medium: 160,
   long: 500,
   contact: 64,
-}
-
-function hasStorage() {
-  if (typeof window === 'undefined') return false
-  try {
-    const storage = window.localStorage
-    return Boolean(storage)
-  } catch {
-    return false
-  }
-}
-
-function readJson(key, fallback) {
-  if (!hasStorage()) return fallback
-  try {
-    const raw = window.localStorage.getItem(key)
-    return raw ? JSON.parse(raw) : fallback
-  } catch {
-    return fallback
-  }
-}
-
-function writeJson(key, value, options = {}) {
-  if (!hasStorage()) return false
-  try {
-    window.localStorage.setItem(key, JSON.stringify(value))
-    return true
-  } catch {
-    if (options.required) {
-      throw new Error('Penyimpanan browser penuh. Kurangi jumlah foto atau reset data demo sebelum menyimpan lagi.')
-    }
-    return false
-  }
 }
 
 function cleanText(value, maxLength = TEXT_LIMITS.medium) {
@@ -371,26 +304,32 @@ function buildDemoReports() {
 }
 
 function ensureReportsSeeded() {
-  if (!hasStorage()) return []
-  const rawReports = readJson(REPORTS_STORAGE_KEY, null)
+  if (Array.isArray(reportsMemoryCache)) return reportsMemoryCache
+  if (!useLocalReports) return []
+  if (!hasLocalStorage()) return []
+  const rawReports = readLocalReports(null)
   if (Array.isArray(rawReports)) {
     const reports = recalculateReportsRisk(normalizeReports(rawReports))
-    writeJson(REPORTS_STORAGE_KEY, reports)
+    reportsMemoryCache = reports
+    writeLocalReports(reports)
     return reports
   }
   const seeded = buildDemoReports()
-  writeJson(REPORTS_STORAGE_KEY, seeded)
+  reportsMemoryCache = seeded
+  writeLocalReports(seeded)
   return seeded
 }
 
 export function getReports() {
-  if (!hasStorage()) return []
   const reports = ensureReportsSeeded()
   return Array.isArray(reports) ? reports : []
 }
 
 function saveReports(reports) {
-  writeJson(REPORTS_STORAGE_KEY, reports, { required: true })
+  reportsMemoryCache = reports
+  if (useLocalReports) {
+    writeLocalReports(reports, { required: true })
+  }
   emit(reports)
 }
 
@@ -420,62 +359,23 @@ export async function createReport(input) {
   }
   
   const nextReportsTemp = recalculateReportsRisk([withHistory, ...reports])
-  const calculatedReport = nextReportsTemp.find(r => r.code === withHistory.code) || withHistory
+  let calculatedReport = nextReportsTemp.find(r => r.code === withHistory.code) || withHistory
 
-  
-  try {
-    const { data: inserted, error: insertError } = await supabase.from('reports').insert({
-      code: calculatedReport.code,
-      category: calculatedReport.category,
-      description: calculatedReport.description,
-      address: calculatedReport.address,
-      lat: calculatedReport.lat,
-      lng: calculatedReport.lng,
-      status: calculatedReport.status,
-      severity: calculatedReport.severity,
-      risk_level: calculatedReport.riskLevel,
-      risk_score: calculatedReport.riskScore,
-      reporter_name: calculatedReport.reporterName,
-      reporter_contact: calculatedReport.reporterContact
-    }).select().single()
-
-    if (insertError) throw new Error(insertError.message)
-
-    if (inserted) {
-      calculatedReport.id = inserted.id 
-      if (calculatedReport.photos?.length) {
-        const uploadedPhotos = await Promise.all(calculatedReport.photos.map(async (photo) => {
-          if (!photo.url?.startsWith('data:')) return photo
-
-          const publicUrl = await uploadReportPhoto(photo.url)
-          return publicUrl ? { ...photo, url: publicUrl } : photo
-        }))
-        calculatedReport.photos = uploadedPhotos
-
-        const { error: photoErr } = await supabase.from('report_photos').insert(
-          calculatedReport.photos.map(p => ({ report_id: inserted.id, url: p.url }))
-        )
-        if (photoErr) throw new Error(photoErr.message)
+  if (useSupabaseReports) {
+    try {
+      calculatedReport = await insertSupabaseReport(calculatedReport)
+    } catch (error) {
+      if (!useLocalReports) {
+        throw new Error(error.message || 'Gagal menyimpan laporan ke database.', { cause: error })
       }
-      if (calculatedReport.riskBreakdown?.length) {
-        const { error: riskErr } = await supabase.from('risk_breakdowns').insert(
-          calculatedReport.riskBreakdown.map(b => ({
-            report_id: inserted.id, label: b.label, points: b.points, weight: b.weight, detail: b.detail
-          }))
-        )
-        if (riskErr) throw new Error(riskErr.message)
+      calculatedReport = {
+        ...calculatedReport,
+        syncStatus: 'pending',
+        syncError: error.message || 'Belum tersinkron ke Supabase.',
       }
-      const { error: histErr } = await supabase.from('report_status_history').insert({
-        report_id: inserted.id, status: 'masuk', actor: 'Pelapor (Warga)'
-      })
-      if (histErr) throw new Error(histErr.message)
     }
-  } catch (err) {
-    console.error("Supabase error:", err)
-    throw new Error(err.message || 'Gagal menyimpan laporan ke database.', { cause: err })
   }
 
-  
   const finalReports = nextReportsTemp.map(r => r.code === calculatedReport.code ? calculatedReport : r)
   saveReports(finalReports)
   return calculatedReport
@@ -537,16 +437,29 @@ export async function updateReportStatus(reportId, status, note = '', actor = 'A
   }
 
   if (updatedReport) {
-    try {
-      const { error: updateErr } = await supabase.from('reports').update({ status: nextStatus }).eq('id', reportId)
-      if (updateErr) throw new Error(updateErr.message)
-      const { error: histErr } = await supabase.from('report_status_history').insert({ report_id: reportId, status: nextStatus, actor })
-      if (histErr) throw new Error(histErr.message)
-      saveReports(reports)
-    } catch(err) {
-      console.error(err)
-      throw new Error(err.message || 'Gagal mengubah status laporan.', { cause: err })
+    if (useSupabaseReports) {
+      try {
+        await updateSupabaseReportStatus(
+          reportId,
+          nextStatus,
+          updatedReport.statusHistory.at(-1),
+          updatedReport.archivedAt
+        )
+      } catch (error) {
+        if (!useLocalReports) {
+          throw new Error(error.message || 'Gagal mengubah status laporan.', { cause: error })
+        }
+        updatedReport = {
+          ...updatedReport,
+          syncStatus: 'pending',
+          syncError: error.message || 'Perubahan status belum tersinkron ke Supabase.',
+        }
+        const pendingReports = reports.map((report) => report.id === reportId ? updatedReport : report)
+        saveReports(pendingReports)
+        return updatedReport
+      }
     }
+    saveReports(reports)
   }
   return updatedReport
 }
@@ -595,23 +508,24 @@ export async function assignReportOfficer(reportId, officerId, actor = 'Admin De
   }
 
   if (updatedReport) {
-    try {
-      const { error: updateErr } = await supabase.from('reports').update({ 
-        status: updatedReport.status,
-        assigned_officer_id: officer.id,
-        assigned_officer_name: officer.name
-      }).eq('id', reportId)
-      if (updateErr) throw new Error(updateErr.message)
-      
-      if (updatedReport.status !== 'masuk') {
-        const { error: histErr } = await supabase.from('report_status_history').insert({ report_id: reportId, status: updatedReport.status, actor })
-        if (histErr) throw new Error(histErr.message)
+    if (useSupabaseReports) {
+      try {
+        await assignSupabaseReportOfficer(reportId, updatedReport, updatedReport.statusHistory.at(-1))
+      } catch (error) {
+        if (!useLocalReports) {
+          throw new Error(error.message || 'Gagal menugaskan petugas.', { cause: error })
+        }
+        updatedReport = {
+          ...updatedReport,
+          syncStatus: 'pending',
+          syncError: error.message || 'Penugasan belum tersinkron ke Supabase.',
+        }
+        const pendingReports = reports.map((report) => report.id === reportId ? updatedReport : report)
+        saveReports(pendingReports)
+        return updatedReport
       }
-      saveReports(reports)
-    } catch(err) {
-      console.error(err)
-      throw new Error(err.message || 'Gagal menugaskan petugas.', { cause: err })
     }
+    saveReports(reports)
   }
   return updatedReport
 }
@@ -714,6 +628,31 @@ export function resetDemoReports() {
   return seeded
 }
 
+function acceptRemoteReports(remoteReports) {
+  const reports = recalculateReportsRisk(normalizeReports(remoteReports))
+  if (!reports.length && useLocalReports) return getReports()
+  saveReports(reports)
+  return reports
+}
+
+async function refreshRemoteReports() {
+  if (!useSupabaseReports) return getReports()
+  return refreshReportsFromSupabase(acceptRemoteReports, (error) => {
+    console.warn('Gagal sinkron laporan dari Supabase:', error)
+  })
+}
+
+function ensureRemoteSyncStarted() {
+  if (!useSupabaseReports || hasStartedRemoteSync) return
+  hasStartedRemoteSync = true
+  void refreshRemoteReports()
+  realtimeUnsubscribe = startReportsRealtimeSync(refreshRemoteReports)
+}
+
+export function syncReportsNow() {
+  return refreshRemoteReports()
+}
+
 function escapeCsvCell(value) {
   const text = String(value ?? '')
   const safeText = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text
@@ -766,19 +705,19 @@ export function createReportsCsv(reports = getReports()) {
 
 export function subscribeReports(listener) {
   listeners.add(listener)
-
-  const handleStorage = (event) => {
-    if (event.key === REPORTS_STORAGE_KEY) listener(getReports())
-  }
-
-  if (typeof window !== 'undefined') {
-    window.addEventListener('storage', handleStorage)
-  }
+  ensureRemoteSyncStarted()
+  const unsubscribeLocal = subscribeLocalReports(() => {
+    reportsMemoryCache = null
+    listener(getReports())
+  })
 
   return () => {
     listeners.delete(listener)
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('storage', handleStorage)
+    unsubscribeLocal()
+    if (!listeners.size && realtimeUnsubscribe) {
+      realtimeUnsubscribe()
+      realtimeUnsubscribe = null
+      hasStartedRemoteSync = false
     }
   }
 }
