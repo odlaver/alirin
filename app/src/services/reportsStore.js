@@ -4,6 +4,7 @@ import { DEMO_OFFICERS, getOfficerById } from '../data/officers.js'
 import { CATEGORY_LABEL, SEVERITY_LABEL, buildReport, formatReportLocation, getReportTitle, recalculateReportsRisk } from '../domain/reports.js'
 import { INITIAL_STATUS_HISTORY, REPORT_STATUSES, STATUS_LABEL, isFinalStatus, normalizeStatus, canTransitionTo } from '../domain/status.js'
 import { supabase } from './supabaseClient.js'
+import { uploadReportPhoto } from './storageService.js'
 
 let isSupabaseInit = false
 async function syncFromSupabase() {
@@ -464,17 +465,11 @@ export async function createReport(input) {
         const uploadedPhotos = []
         for (const p of calculatedReport.photos) {
           if (p.url && p.url.startsWith('data:')) {
-            try {
-              const res = await fetch(p.url)
-              const blob = await res.blob()
-              const fileName = `laporan-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`
-              const { error: uploadErr } = await supabase.storage.from('reports').upload(fileName, blob)
-              if (uploadErr) throw uploadErr
-              const { data: { publicUrl } } = supabase.storage.from('reports').getPublicUrl(fileName)
+            const publicUrl = await uploadReportPhoto(p.url)
+            if (publicUrl) {
               uploadedPhotos.push({ ...p, url: publicUrl })
-            } catch (err) {
-              console.warn('Storage bucket "reports" tidak ditemukan atau error upload, fallback ke Base64:', err)
-              uploadedPhotos.push(p) 
+            } else {
+              uploadedPhotos.push(p)
             }
           } else {
             uploadedPhotos.push(p)
@@ -813,51 +808,3 @@ export function subscribeReports(listener) {
   }
 }
 
-export function loginDemoUser(email, password) {
-  const user = Object.values(DEMO_USERS).find((item) => item.email === email && item.password === password)
-  if (user) {
-    const session = {
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      officerId: user.officerId ?? '',
-      loggedInAt: new Date().toISOString(),
-    }
-    writeJson(ADMIN_SESSION_KEY, session, { required: true })
-    return { ok: true, session }
-  }
-
-  return { ok: false, message: 'Email atau password demo tidak sesuai.' }
-}
-
-export function loginDemoAdmin(email, password) {
-  const result = loginDemoUser(email, password)
-  if (!result.ok) return result
-  if (result.session.role !== 'admin') {
-    logoutDemoAdmin()
-    return { ok: false, message: 'Akun ini bukan akun admin.' }
-  }
-  return result
-}
-
-export function getAdminSession() {
-  return readJson(ADMIN_SESSION_KEY, null)
-}
-
-export function getCurrentSession() {
-  return getAdminSession()
-}
-
-export function isRoleSessionActive(role) {
-  return getCurrentSession()?.role === role
-}
-
-export function isAdminSessionActive() {
-  return isRoleSessionActive('admin')
-}
-
-export function logoutDemoAdmin() {
-  if (hasStorage()) {
-    window.localStorage.removeItem(ADMIN_SESSION_KEY)
-  }
-}

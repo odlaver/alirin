@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Droplets, LockKeyhole, LogIn } from 'lucide-react'
-import {
-  DEMO_USERS,
-  getCurrentSession,
-  isRoleSessionActive,
-  loginDemoUser,
-} from '../services/reportsStore.js'
+import { DEMO_USERS } from '../services/reportsStore.js'
+import { signInWithEmail } from '../services/authService.js'
+import { useAuth } from '../components/AuthProvider.jsx'
 
 export default function AdminLoginPage() {
   const navigate = useNavigate()
@@ -15,20 +12,23 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState(DEMO_USERS.admin.password)
   const [error, setError] = useState('')
 
+  const { role, loading } = useAuth()
+
   useEffect(() => {
-    if (isRoleSessionActive('admin')) {
+    if (loading) return
+    if (role === 'admin') {
       navigate(location.state?.from || '/admin/dashboard', { replace: true })
       return
     }
-    if (getCurrentSession()?.role === 'petugas') {
+    if (role === 'petugas') {
       navigate('/petugas/tugas', { replace: true })
     }
-  }, [location.state, navigate])
+  }, [role, loading, location.state, navigate])
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
     setError('')
-    const result = loginDemoUser(email.trim(), password)
+    const result = await signInWithEmail(email.trim(), password)
     if (!result.ok) {
       setError(result.message)
       return

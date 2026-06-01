@@ -35,8 +35,8 @@ import {
   X,
 } from 'lucide-react'
 import './App.css'
-import { isRoleSessionActive } from './services/reportsStore.js'
 import { ErrorBoundary } from './components/ErrorBoundary.jsx'
+import { AuthProvider, useAuth } from './components/AuthProvider.jsx'
 
 const RiskMap = lazy(() => import('./components/RiskMap.jsx'))
 const LaporPage = lazy(() => import('./pages/LaporPage.jsx'))
@@ -89,34 +89,40 @@ function PageLoader() {
 }
 
 function AdminRoute() {
-  if (isRoleSessionActive('admin')) return <AdminDashboard />
+  const { role, loading } = useAuth()
+  if (loading) return <PageLoader />
+  if (role === 'admin') return <AdminDashboard />
   return <Navigate to="/admin/login" replace state={{ from: '/admin/dashboard' }} />
 }
 
 function PetugasRoute() {
-  if (isRoleSessionActive('petugas')) return <PetugasTasksPage />
+  const { role, loading } = useAuth()
+  if (loading) return <PageLoader />
+  if (role === 'petugas') return <PetugasTasksPage />
   return <Navigate to="/petugas/login" replace state={{ from: '/petugas/tugas' }} />
 }
 
 function App() {
   return (
     <ErrorBoundary>
-      <Toaster position="top-center" richColors expand={true} />
-      <ScrollToTop />
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/lapor" element={<LaporPage />} />
-          <Route path="/status/:code" element={<StatusPage />} />
-          <Route path="/peta" element={<PetaPage />} />
-          <Route path="/metodologi" element={<MetodologiPage />} />
-          <Route path="/admin/login" element={<AdminLoginPage />} />
-          <Route path="/admin/dashboard" element={<AdminRoute />} />
-          <Route path="/petugas/login" element={<PetugasLoginPage />} />
-          <Route path="/petugas/tugas" element={<PetugasRoute />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </Suspense>
+      <AuthProvider>
+        <Toaster position="top-center" richColors expand={true} />
+        <ScrollToTop />
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/lapor" element={<LaporPage />} />
+            <Route path="/status/:code" element={<StatusPage />} />
+            <Route path="/peta" element={<PetaPage />} />
+            <Route path="/metodologi" element={<MetodologiPage />} />
+            <Route path="/admin/login" element={<AdminLoginPage />} />
+            <Route path="/admin/dashboard" element={<AdminRoute />} />
+            <Route path="/petugas/login" element={<PetugasLoginPage />} />
+            <Route path="/petugas/tugas" element={<PetugasRoute />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
+      </AuthProvider>
     </ErrorBoundary>
   )
 }

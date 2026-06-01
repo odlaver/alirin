@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Droplets, HardHat, LogIn } from 'lucide-react'
-import { DEMO_USERS, getCurrentSession, isRoleSessionActive, loginDemoUser } from '../services/reportsStore.js'
+import { DEMO_USERS } from '../services/reportsStore.js'
+import { signInWithEmail } from '../services/authService.js'
+import { useAuth } from '../components/AuthProvider.jsx'
 
 export default function PetugasLoginPage() {
   const navigate = useNavigate()
@@ -10,20 +12,23 @@ export default function PetugasLoginPage() {
   const [password, setPassword] = useState(DEMO_USERS.petugas.password)
   const [error, setError] = useState('')
 
+  const { role, loading } = useAuth()
+
   useEffect(() => {
-    if (isRoleSessionActive('petugas')) {
+    if (loading) return
+    if (role === 'petugas') {
       navigate(location.state?.from || '/petugas/tugas', { replace: true })
       return
     }
-    if (getCurrentSession()?.role === 'admin') {
+    if (role === 'admin') {
       navigate('/admin/dashboard', { replace: true })
     }
-  }, [location.state, navigate])
+  }, [role, loading, location.state, navigate])
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
     setError('')
-    const result = loginDemoUser(email.trim(), password)
+    const result = await signInWithEmail(email.trim(), password)
     if (!result.ok) {
       setError(result.message)
       return

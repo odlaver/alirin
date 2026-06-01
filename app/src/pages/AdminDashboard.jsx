@@ -15,11 +15,10 @@ import {
   createReportsCsv,
   assignReportOfficer,
   isArchivedReport,
-  logoutDemoAdmin,
-  resetDemoReports,
   subscribeReports,
   updateReportStatus,
 } from '../services/reportsStore.js'
+import { signOut } from '../services/authService.js'
 import {
   KpiCards, ReportModal, ReportList, TrendChart,
   RiskDist, ActivityFeed, MapPreview,
@@ -352,8 +351,8 @@ export default function AdminDashboard() {
     setSelected(null)
   }
 
-  function handleLogout() {
-    logoutDemoAdmin()
+  async function handleLogout() {
+    await signOut()
     navigate('/admin/login', { replace: true })
   }
 

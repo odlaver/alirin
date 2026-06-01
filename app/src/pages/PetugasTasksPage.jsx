@@ -18,13 +18,13 @@ import {
 import './PetugasTasksPage.css'
 import RiskMap from '../components/RiskMap.jsx'
 import {
-  getCurrentSession,
   getReports,
   isArchivedReport,
-  logoutDemoAdmin,
   subscribeReports,
   updateFieldProgress,
 } from '../services/reportsStore.js'
+import { signOut } from '../services/authService.js'
+import { useAuth } from '../components/AuthProvider.jsx'
 import {
   CATEGORY_LABEL,
   formatDateTime,
@@ -157,7 +157,13 @@ function FieldCityMap({ reports, assignedReports }) {
 
 export default function PetugasTasksPage() {
   const navigate = useNavigate()
-  const session = getCurrentSession()
+  const { user } = useAuth()
+  const session = {
+    email: user?.email,
+    name: user?.user_metadata?.name || user?.email,
+    role: user?.user_metadata?.role || (user?.email?.includes('admin') ? 'admin' : 'petugas'),
+    officerId: user?.user_metadata?.officerId || 'ofc-budi'
+  }
   const [reports, setReports] = useState(() => getReports())
   const [tab, setTab] = useState('aktif')
   const [selectedId, setSelectedId] = useState('')
@@ -215,8 +221,8 @@ export default function PetugasTasksPage() {
     }
   }
 
-  function handleLogout() {
-    logoutDemoAdmin()
+  async function handleLogout() {
+    await signOut()
     navigate('/petugas/login', { replace: true })
   }
 
