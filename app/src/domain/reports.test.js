@@ -68,6 +68,10 @@ describe('report domain', () => {
     expect(getReportTrackingToken(report)).not.toBe(report.code)
   })
 
+  it('does not expose report IDs as public tracking tokens', () => {
+    expect(getReportTrackingToken({ id: 'report-1', code: 'ALR-2026-0001' })).toBe('')
+  })
+
   it('formats locations, markers, search, and priority sorting consistently', () => {
     const high = {
       id: 'high',

@@ -164,4 +164,28 @@ describe('authService', () => {
     expect(result.session.role).toBe('admin')
     expect(localStorage.removeItem).toHaveBeenCalledWith('alirin_auth_session_v1')
   })
+
+  it('rejects Supabase users without an explicit valid role', async () => {
+    const { localStorage } = installBrowserStorage()
+    const { signInWithEmail, mocks } = await loadAuthService({
+      demoEnabled: false,
+      supabaseConfigured: true,
+      signInResult: {
+        error: null,
+        data: {
+          session: { access_token: 'token', user: { email: 'admin@example.com', user_metadata: {} } },
+          user: { email: 'admin@example.com', user_metadata: {} },
+        },
+      },
+    })
+
+    const result = await signInWithEmail('admin@example.com', 'secret')
+
+    expect(result).toMatchObject({
+      ok: false,
+      message: 'Akun belum memiliki role admin/petugas yang valid. Hubungi admin sistem.',
+    })
+    expect(mocks.signOut).toHaveBeenCalled()
+    expect(localStorage.removeItem).toHaveBeenCalledWith('alirin_auth_session_v1')
+  })
 })

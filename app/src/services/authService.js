@@ -3,6 +3,8 @@ import { isDemoAuthEnabled } from './runtimeConfig.js'
 
 const AUTH_SESSION_KEY = 'alirin_auth_session_v1'
 const AUTH_SESSION_EVENT = 'alirin-auth-session'
+const VALID_ROLES = new Set(['admin', 'petugas'])
+const ROLE_REQUIRED_MESSAGE = 'Akun belum memiliki role admin/petugas yang valid. Hubungi admin sistem.'
 
 function hasStorage() {
   if (typeof window === 'undefined') return false
@@ -35,8 +37,16 @@ function clearDemoSession() {
   window.dispatchEvent(new CustomEvent(AUTH_SESSION_EVENT, { detail: null }))
 }
 
-function getRoleFromUser(user, email) {
-  return user?.user_metadata?.role || (email?.includes('admin') ? 'admin' : 'petugas')
+function getRoleFromUser(user) {
+  const role = String(
+    user?.app_metadata?.role
+      ?? user?.user_metadata?.role
+      ?? user?.app_metadata?.app_role
+      ?? user?.user_metadata?.app_role
+      ?? ''
+  ).trim().toLowerCase()
+
+  return VALID_ROLES.has(role) ? role : null
 }
 
 function buildDemoSession(user) {
@@ -103,7 +113,11 @@ export async function signInWithEmail(email, password) {
   }
   
   clearDemoSession()
-  const role = getRoleFromUser(data.user, email)
+  const role = getRoleFromUser(data.user)
+  if (!role) {
+    await supabase.auth.signOut()
+    return { ok: false, message: ROLE_REQUIRED_MESSAGE }
+  }
   
   return { ok: true, session: { ...data.session, role } }
 }
@@ -124,7 +138,11 @@ export async function getSession() {
   const { data, error } = await supabase.auth.getSession()
   if (error || !data.session) return isDemoAuthEnabled ? readDemoSession() : null
   
-  const role = getRoleFromUser(data.session.user, data.session.user.email)
+  const role = getRoleFromUser(data.session.user)
+  if (!role) {
+    await supabase.auth.signOut()
+    return isDemoAuthEnabled ? readDemoSession() : null
+  }
   return { ...data.session, role }
 }
 
@@ -140,7 +158,13 @@ export function onAuthStateChange(callback) {
   const supabaseListener = isSupabaseConfigured
     ? supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        session.role = getRoleFromUser(session.user, session.user.email)
+        const role = getRoleFromUser(session.user)
+        if (!role) {
+          void supabase.auth.signOut()
+          callback('SIGNED_OUT', null)
+          return
+        }
+        session.role = role
         clearDemoSession()
       }
       callback(event, session)

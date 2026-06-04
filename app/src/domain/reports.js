@@ -42,7 +42,7 @@ export function createReportTrackingToken() {
 }
 
 export function getReportTrackingToken(report) {
-  return String(report?.publicTrackingToken || report?.trackingToken || report?.id || '').trim()
+  return String(report?.publicTrackingToken || report?.trackingToken || '').trim()
 }
 
 function normalizePhotos(photos = []) {
