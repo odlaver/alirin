@@ -21,10 +21,6 @@ export default function AuthLoginShell({
   return (
     <div className="auth-page">
       <div className="auth-grid" aria-hidden="true" />
-      <span className="auth-wave auth-wave-one" aria-hidden="true" />
-      <span className="auth-wave auth-wave-two" aria-hidden="true" />
-      <span className="auth-current auth-current-one" aria-hidden="true" />
-      <span className="auth-current auth-current-two" aria-hidden="true" />
 
       <form className="auth-card" onSubmit={onSubmit}>
         <Link to="/" className="auth-back">

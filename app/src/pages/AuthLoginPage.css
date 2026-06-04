@@ -54,54 +54,6 @@
   animation: authWake 14s linear infinite;
 }
 
-.auth-wave {
-  position: absolute;
-  z-index: -1;
-  left: -18vw;
-  width: 136vw;
-  height: 94px;
-  border: 1px solid rgba(var(--color-secondary-rgb), 0.2);
-  border-right: 0;
-  border-left: 0;
-  border-radius: 999px;
-  background: linear-gradient(90deg, transparent, rgba(var(--color-secondary-rgb), 0.16), transparent);
-  filter: blur(0.2px);
-  transform: rotate(18deg);
-}
-
-.auth-wave-one {
-  top: 16%;
-  animation: authWaveSlide 9s var(--ease-water) infinite;
-}
-
-.auth-wave-two {
-  top: 38%;
-  opacity: 0.72;
-  animation: authWaveSlide 12s var(--ease-water) infinite reverse;
-}
-
-.auth-current {
-  position: absolute;
-  z-index: -1;
-  width: 220px;
-  height: 2px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, transparent, rgba(159, 242, 255, 0.72), transparent);
-  transform: rotate(45deg);
-  animation: authCurrentSweep 6s ease-in-out infinite;
-}
-
-.auth-current-one {
-  top: 16%;
-  left: 9%;
-}
-
-.auth-current-two {
-  top: 28%;
-  left: 18%;
-  animation-delay: 1.6s;
-}
-
 .auth-card {
   position: relative;
   display: grid;
@@ -279,31 +231,6 @@
   }
 }
 
-@keyframes authWaveSlide {
-  0%,
-  100% {
-    transform: translate3d(-3%, -8px, 0) rotate(18deg);
-  }
-  50% {
-    transform: translate3d(3%, 8px, 0) rotate(18deg);
-  }
-}
-
-@keyframes authCurrentSweep {
-  0% {
-    opacity: 0;
-    transform: translate3d(-90px, -90px, 0) rotate(45deg);
-  }
-  28%,
-  68% {
-    opacity: 0.88;
-  }
-  100% {
-    opacity: 0;
-    transform: translate3d(42vw, 42vw, 0) rotate(45deg);
-  }
-}
-
 @media (max-width: 520px) {
   .auth-page {
     padding: 16px;
@@ -321,9 +248,7 @@
 @media (prefers-reduced-motion: reduce) {
   .auth-grid,
   .auth-page::before,
-  .auth-page::after,
-  .auth-wave,
-  .auth-current {
+  .auth-page::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
