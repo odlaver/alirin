@@ -9,6 +9,7 @@ const REPORTS_DATA_MODES = new Set(['local', 'supabase', 'hybrid'])
 export function getReportsDataMode(isSupabaseConfigured = false) {
   const requestedMode = String(import.meta.env.VITE_REPORTS_DATA_MODE || '').trim().toLowerCase()
   if (REPORTS_DATA_MODES.has(requestedMode)) return requestedMode
+  if (import.meta.env.PROD) return isSupabaseConfigured ? 'supabase' : 'local'
   return isSupabaseConfigured ? 'hybrid' : 'local'
 }
 

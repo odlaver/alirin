@@ -6,6 +6,7 @@ import { useSEO } from '../hooks/useSEO.js'
 import './AdminDashboard.css'
 import {
   assignReportOfficer,
+  canResetDemoReports,
   createReportsCsv,
   getReports,
   isArchivedReport,
@@ -80,6 +81,7 @@ export default function AdminDashboard() {
   }
 
   function handleResetDemo() {
+    if (!canResetDemoReports()) return
     const ok = window.confirm('Reset semua laporan lokal dan isi ulang data demo ALIRIN? Laporan yang dibuat di browser ini akan tertimpa.')
     if (!ok) return
     const seeded = resetDemoReports()
@@ -162,9 +164,11 @@ export default function AdminDashboard() {
                   <span>Export</span>
                 </button>
               </div>
-              <button className="topbar-tool-btn subtle topbar-icon-only" type="button" onClick={handleResetDemo} aria-label="Reset demo" title="Reset demo">
-                <RotateCcw size={16} />
-              </button>
+              {canResetDemoReports() && (
+                <button className="topbar-tool-btn subtle topbar-icon-only" type="button" onClick={handleResetDemo} aria-label="Reset demo" title="Reset demo">
+                  <RotateCcw size={16} />
+                </button>
+              )}
               <button className="icon-btn" type="button" aria-label="Notifikasi demo"><Bell size={18} /><span className="notif-dot"></span></button>
               <button className="refresh-btn" onClick={handleRefresh} disabled={refreshing}>
                 <RefreshCw size={16} className={refreshing ? 'spin' : ''} />
