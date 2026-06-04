@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Droplets, HardHat, LogIn } from 'lucide-react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { HardHat } from 'lucide-react'
 import { signInWithEmail } from '../services/authService.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { isDemoAuthEnabled } from '../services/runtimeConfig.js'
+import AuthLoginShell from './AuthLoginShell.jsx'
 
 export default function PetugasLoginPage() {
   const navigate = useNavigate()
@@ -56,155 +57,29 @@ export default function PetugasLoginPage() {
   }
 
   return (
-    <div style={pageStyle}>
-      <form onSubmit={handleSubmit} style={cardStyle}>
-        <Link to="/" style={backStyle}>
-          <ArrowLeft size={16} /> Beranda
-        </Link>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
-          <div style={iconStyle}>
-            <HardHat size={26} />
-          </div>
-          <div>
-            <span style={kickerStyle}>
-              <Droplets size={13} /> {isDemoAuthEnabled ? 'Demo Petugas' : 'Petugas'}
-            </span>
-            <h1 style={{ margin: '5px 0 0', fontSize: 28, lineHeight: 1.05 }}>Masuk petugas</h1>
-          </div>
-        </div>
-
-        <p style={{ margin: '0 0 22px', color: 'rgba(255,255,255,0.74)', lineHeight: 1.6 }}>
-          {isDemoAuthEnabled
-            ? 'Mode demo aktif untuk simulasi tugas lapangan.'
-            : 'Masuk dengan akun petugas yang terdaftar di Supabase Auth.'}
-        </p>
-
-        <label style={labelStyle} htmlFor="petugas-email">Email</label>
-        <input
-          id="petugas-email"
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          style={inputStyle}
-          autoComplete="username"
-        />
-
-        <label style={{ ...labelStyle, marginTop: 14 }} htmlFor="petugas-password">Password</label>
-        <input
-          id="petugas-password"
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          style={inputStyle}
-          autoComplete="current-password"
-        />
-
-        {error && <div style={errorStyle}>{error}</div>}
-
-        <button type="submit" className="btn btn-primary btn-large" style={{ width: '100%', marginTop: 22 }}>
-          <LogIn size={18} />
-          Masuk Tugas
-        </button>
-
-        {isDemoAuthEnabled && demoUsers && (
-          <div style={credentialStyle}>
-            <strong style={{ color: '#fff' }}>Credential demo:</strong><br />
-            {demoUsers.petugas.email}<br />
-            {demoUsers.petugas.password}
-          </div>
-        )}
-      </form>
-    </div>
+    <AuthLoginShell
+      icon={HardHat}
+      kicker={isDemoAuthEnabled ? 'Demo Petugas' : 'Petugas'}
+      title="Masuk petugas"
+      description={isDemoAuthEnabled
+        ? 'Mode demo aktif untuk simulasi tugas lapangan.'
+        : 'Masuk dengan akun petugas yang terdaftar di Supabase Auth.'}
+      emailId="petugas-email"
+      passwordId="petugas-password"
+      email={email}
+      password={password}
+      onEmailChange={setEmail}
+      onPasswordChange={setPassword}
+      onSubmit={handleSubmit}
+      submitLabel="Masuk Tugas"
+      error={error}
+      demoContent={isDemoAuthEnabled && demoUsers ? (
+        <>
+          <strong>Credential demo:</strong><br />
+          {demoUsers.petugas.email}<br />
+          {demoUsers.petugas.password}
+        </>
+      ) : null}
+    />
   )
-}
-
-const pageStyle = {
-  minHeight: '100dvh',
-  display: 'grid',
-  placeItems: 'center',
-  padding: 20,
-  background: 'linear-gradient(135deg, #063a4c 0%, #0b7285 100%)',
-  color: '#fff',
-}
-
-const cardStyle = {
-  width: 'min(100%, 420px)',
-  border: '1px solid rgba(255,255,255,0.16)',
-  borderRadius: 22,
-  background: 'rgba(255,255,255,0.1)',
-  boxShadow: '0 30px 80px rgba(2, 6, 23, 0.32)',
-  backdropFilter: 'blur(18px)',
-  padding: '28px',
-}
-
-const backStyle = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 8,
-  color: 'rgba(255,255,255,0.78)',
-  textDecoration: 'none',
-  fontSize: 14,
-  fontWeight: 700,
-  marginBottom: 28,
-}
-
-const iconStyle = {
-  display: 'grid',
-  placeItems: 'center',
-  width: 54,
-  height: 54,
-  borderRadius: 16,
-  background: 'rgba(34,184,207,0.2)',
-  color: '#7ee4f2',
-}
-
-const kickerStyle = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 6,
-  color: '#a5f3fc',
-  fontSize: 12,
-  fontWeight: 800,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-}
-
-const labelStyle = {
-  display: 'block',
-  marginBottom: 7,
-  color: 'rgba(255,255,255,0.86)',
-  fontSize: 13,
-  fontWeight: 800,
-}
-
-const inputStyle = {
-  width: '100%',
-  height: 48,
-  border: '1px solid rgba(255,255,255,0.18)',
-  borderRadius: 13,
-  background: 'rgba(255,255,255,0.94)',
-  color: '#0f172a',
-  padding: '0 14px',
-  fontSize: 15,
-  outline: 'none',
-}
-
-const errorStyle = {
-  marginTop: 14,
-  padding: '11px 12px',
-  borderRadius: 12,
-  background: 'rgba(248, 113, 113, 0.18)',
-  color: '#fecaca',
-  fontSize: 13,
-  fontWeight: 700,
-}
-
-const credentialStyle = {
-  marginTop: 18,
-  borderTop: '1px solid rgba(255,255,255,0.12)',
-  paddingTop: 16,
-  color: 'rgba(255,255,255,0.62)',
-  fontSize: 13,
-  lineHeight: 1.6,
 }
