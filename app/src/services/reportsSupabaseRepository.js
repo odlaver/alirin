@@ -17,7 +17,7 @@ export function mapSupabaseReportRow(row) {
   return {
     id: row.id,
     code: row.code,
-    publicTrackingToken: row.public_tracking_token || row.id,
+    publicTrackingToken: row.public_tracking_token || '',
     category: row.category,
     description: row.description,
     address: row.address,
@@ -73,17 +73,15 @@ export async function fetchSupabaseReports() {
   return (data ?? []).map(mapSupabaseReportRow)
 }
 
-async function syncReportPhotos(reportId, photos = []) {
+async function insertReportPhotos(reportId, photos = []) {
   if (!photos.length) return []
 
-  const uploadedPhotos = await Promise.all(photos.map(async (photo) => {
-    if (!photo.url?.startsWith('data:')) return photo
-    const publicUrl = await uploadReportPhoto(photo.url)
-    return publicUrl ? { ...photo, url: publicUrl } : photo
-  }))
+  if (photos.some((photo) => String(photo.url || '').startsWith('data:'))) {
+    throw new Error('Foto laporan belum memiliki URL Storage yang valid.')
+  }
 
   const { error } = await supabase.from('report_photos').insert(
-    uploadedPhotos.map((photo) => ({
+    photos.map((photo) => ({
       report_id: reportId,
       url: photo.url,
       name: photo.name,
@@ -94,6 +92,25 @@ async function syncReportPhotos(reportId, photos = []) {
   )
 
   if (error) throw new Error(error.message)
+  return photos
+}
+
+async function syncInlinePhotos(photos = [], label = 'foto') {
+  if (!photos.length) return []
+
+  const uploadedPhotos = await Promise.all(photos.map(async (photo) => {
+    if (!photo.url?.startsWith('data:')) return photo
+    const publicUrl = await uploadReportPhoto(photo.url)
+    if (!publicUrl) {
+      throw new Error(`Gagal mengunggah ${label} ke Supabase Storage.`)
+    }
+    return { ...photo, url: publicUrl }
+  }))
+
+  if (uploadedPhotos.some((photo) => String(photo.url || '').startsWith('data:'))) {
+    throw new Error(`${label} belum memiliki URL Storage yang valid.`)
+  }
+
   return uploadedPhotos
 }
 
@@ -128,8 +145,12 @@ async function insertStatusHistory(reportId, historyItem) {
 }
 
 export async function insertSupabaseReport(report) {
+  const reportPhotos = await syncInlinePhotos(report.photos || [], 'foto laporan')
+  const completionPhotos = await syncInlinePhotos(report.completionPhotos || [], 'foto penyelesaian')
+
   const { data: inserted, error } = await supabase.from('reports').insert({
     code: report.code,
+    public_tracking_token: report.publicTrackingToken,
     category: report.category,
     description: report.description,
     address: report.address,
@@ -147,7 +168,7 @@ export async function insertSupabaseReport(report) {
     assigned_officer_name: report.assignedOfficerName || null,
     blocked_reason: report.blockedReason || null,
     field_notes: report.fieldNotes || [],
-    completion_photos: report.completionPhotos || [],
+    completion_photos: completionPhotos,
     archived_at: report.archivedAt || null,
     created_at: report.createdAt,
     updated_at: report.updatedAt,
@@ -159,9 +180,10 @@ export async function insertSupabaseReport(report) {
   const syncedReport = {
     ...report,
     id: inserted.id,
-    publicTrackingToken: inserted.public_tracking_token || inserted.id || report.publicTrackingToken,
+    publicTrackingToken: inserted.public_tracking_token || report.publicTrackingToken,
+    completionPhotos,
   }
-  syncedReport.photos = await syncReportPhotos(inserted.id, syncedReport.photos)
+  syncedReport.photos = await insertReportPhotos(inserted.id, reportPhotos)
   await syncRiskBreakdown(inserted.id, syncedReport.riskBreakdown)
   await insertStatusHistory(inserted.id, syncedReport.statusHistory?.[0])
 
@@ -195,6 +217,30 @@ export async function assignSupabaseReportOfficer(reportId, report, historyItem)
 
   if (updateError) throw new Error(updateError.message)
   await insertStatusHistory(reportId, historyItem)
+}
+
+export async function updateSupabaseFieldProgress(reportId, report, historyItem) {
+  const completionPhotos = await syncInlinePhotos(report.completionPhotos || [], 'foto penyelesaian')
+
+  const { error: updateError } = await supabase
+    .from('reports')
+    .update({
+      status: report.status,
+      blocked_reason: report.blockedReason || null,
+      field_notes: report.fieldNotes || [],
+      completion_photos: completionPhotos,
+      archived_at: report.archivedAt || null,
+      updated_at: report.updatedAt,
+    })
+    .eq('id', reportId)
+
+  if (updateError) throw new Error(updateError.message)
+  await insertStatusHistory(reportId, historyItem)
+
+  return {
+    ...report,
+    completionPhotos,
+  }
 }
 
 export function subscribeSupabaseReports(onChange) {

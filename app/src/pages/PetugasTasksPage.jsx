@@ -159,13 +159,14 @@ function FieldCityMap({ reports, assignedReports }) {
 
 export default function PetugasTasksPage() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { role, user } = useAuth()
   const userMetadata = user?.user_metadata ?? {}
+  const appMetadata = user?.app_metadata ?? {}
   const session = {
     email: user?.email,
     name: userMetadata.name || user?.email,
-    role: userMetadata.role || (user?.email?.includes('admin') ? 'admin' : 'petugas'),
-    officerId: userMetadata.officerId || ''
+    role,
+    officerId: userMetadata.officerId || userMetadata.officer_id || appMetadata.officerId || appMetadata.officer_id || ''
   }
   const [reports, setReports] = useState(() => getReports())
   const [tab, setTab] = useState('aktif')
@@ -207,11 +208,11 @@ export default function PetugasTasksPage() {
     setError('')
   }
 
-  function updateTask(action, payload = {}) {
+  async function updateTask(action, payload = {}) {
     if (!selected) return
     setError('')
     try {
-      const updated = updateFieldProgress(selected.id, action, payload, session)
+      const updated = await updateFieldProgress(selected.id, action, payload, session)
       if (!updated) {
         setError('Aksi belum bisa dilakukan untuk status laporan saat ini.')
         return
@@ -356,10 +357,10 @@ export default function PetugasTasksPage() {
                           onChange={(event) => setNote(event.target.value)}
                         />
                         <div className="field-button-row">
-                          <button type="button" className="field-primary" onClick={() => updateTask('start', { note })} disabled={selected.status !== 'dijadwalkan'}>
+                          <button type="button" className="field-primary" onClick={() => void updateTask('start', { note })} disabled={selected.status !== 'dijadwalkan'}>
                             <Play size={16} /> Mulai
                           </button>
-                          <button type="button" onClick={() => updateTask('blocked', { blockedReason })}>
+                          <button type="button" onClick={() => void updateTask('blocked', { blockedReason })}>
                             <AlertTriangle size={16} /> Simpan Kendala
                           </button>
                         </div>
@@ -370,7 +371,7 @@ export default function PetugasTasksPage() {
                           onChange={(event) => setBlockedReason(event.target.value)}
                         />
                         <PhotoInput photos={completionPhotos} onChange={setCompletionPhotos} />
-                        <button type="button" className="field-complete" onClick={() => updateTask('complete', { note, photos: completionPhotos })} disabled={selected.status !== 'ditangani'}>
+                        <button type="button" className="field-complete" onClick={() => void updateTask('complete', { note, photos: completionPhotos })} disabled={selected.status !== 'ditangani'}>
                           <Camera size={16} /> Selesaikan dengan foto
                         </button>
                         {error && <p className="field-error">{error}</p>}

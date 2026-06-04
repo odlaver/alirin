@@ -47,6 +47,7 @@ async function loadReportsStore({
   dataMode = 'hybrid',
   supabaseConfigured = true,
   insertSupabaseReport = vi.fn().mockRejectedValue(new Error('Network down')),
+  updateSupabaseFieldProgress = vi.fn().mockImplementation(async (_reportId, report) => report),
   refreshReportsFromSupabase = vi.fn(),
   startReportsRealtimeSync = vi.fn(() => () => {}),
 } = {}) {
@@ -61,6 +62,7 @@ async function loadReportsStore({
   vi.doMock('./reportsSupabaseRepository.js', () => ({
     assignSupabaseReportOfficer: vi.fn(),
     insertSupabaseReport,
+    updateSupabaseFieldProgress,
     updateSupabaseReportStatus: vi.fn(),
   }))
   vi.doMock('./reportsSyncService.js', () => ({
@@ -73,6 +75,7 @@ async function loadReportsStore({
     ...store,
     mocks: {
       insertSupabaseReport,
+      updateSupabaseFieldProgress,
       refreshReportsFromSupabase,
       startReportsRealtimeSync,
     },
@@ -137,5 +140,49 @@ describe('reportsStore data mode', () => {
     expect(getReportByTrackingToken(report.publicTrackingToken)?.id).toBe(report.id)
     expect(getReportByTrackingToken(report.code)).toBeNull()
     expect(getReportByCode(report.code)?.id).toBe(report.id)
+  })
+
+  it('writes petugas progress to Supabase in hybrid mode', async () => {
+    installBrowserStorage()
+    const { assignReportOfficer, createReport, updateFieldProgress, updateReportStatus, mocks } = await loadReportsStore({
+      insertSupabaseReport: vi.fn().mockImplementation(async (report) => report),
+    })
+
+    const report = await createReport(validInput)
+    await updateReportStatus(report.id, 'diverifikasi')
+    const assigned = await assignReportOfficer(report.id, 'ofc-rina')
+    const updated = await updateFieldProgress(
+      assigned.id,
+      'start',
+      { note: 'Berangkat ke lokasi.' },
+      { name: 'Rina Wati', officerId: 'ofc-rina' }
+    )
+
+    expect(updated.status).toBe('ditangani')
+    expect(mocks.updateSupabaseFieldProgress).toHaveBeenCalledWith(
+      assigned.id,
+      expect.objectContaining({ status: 'ditangani' }),
+      expect.objectContaining({ status: 'ditangani', actor: 'Rina Wati' })
+    )
+  })
+
+  it('blocks petugas progress when Supabase-only writes fail', async () => {
+    installBrowserStorage()
+    const { assignReportOfficer, createReport, updateFieldProgress, updateReportStatus } = await loadReportsStore({
+      dataMode: 'supabase',
+      insertSupabaseReport: vi.fn().mockImplementation(async (report) => report),
+      updateSupabaseFieldProgress: vi.fn().mockRejectedValue(new Error('Storage down')),
+    })
+
+    const report = await createReport(validInput)
+    await updateReportStatus(report.id, 'diverifikasi')
+    const assigned = await assignReportOfficer(report.id, 'ofc-rina')
+
+    await expect(updateFieldProgress(
+      assigned.id,
+      'start',
+      { note: 'Berangkat ke lokasi.' },
+      { name: 'Rina Wati', officerId: 'ofc-rina' }
+    )).rejects.toThrow('Storage down')
   })
 })

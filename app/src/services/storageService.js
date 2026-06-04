@@ -10,7 +10,7 @@ export async function uploadReportPhoto(base64Url) {
     const { data: { publicUrl } } = supabase.storage.from('reports').getPublicUrl(fileName)
     return publicUrl
   } catch (err) {
-    console.warn('Gagal unggah foto ke Supabase Storage, fallback ke URL asal:', err)
+    console.warn('Gagal unggah foto ke Supabase Storage:', err)
     return null
   }
 }

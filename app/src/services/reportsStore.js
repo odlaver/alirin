@@ -16,6 +16,7 @@ import {
 import {
   assignSupabaseReportOfficer,
   insertSupabaseReport,
+  updateSupabaseFieldProgress,
   updateSupabaseReportStatus,
 } from './reportsSupabaseRepository.js'
 import { refreshReportsFromSupabase, startReportsRealtimeSync } from './reportsSyncService.js'
@@ -84,12 +85,16 @@ function cleanPhotoUrl(value) {
     .split('\t').join('')
 }
 
+function isAllowedPhotoUrl(value) {
+  return value.startsWith('data:image/') || value.startsWith('https://') || value.startsWith('http://')
+}
+
 function cleanPhotos(photos = []) {
   return (Array.isArray(photos) ? photos : [])
     .slice(0, 3)
     .map((photo, index) => {
       const url = cleanPhotoUrl(photo?.url ?? photo?.dataUrl)
-      if (!url.startsWith('data:image/')) return null
+      if (!isAllowedPhotoUrl(url)) return null
       return {
         id: cleanText(photo?.id, TEXT_LIMITS.short) || `photo-${index + 1}`,
         name: cleanText(photo?.name, TEXT_LIMITS.short) || `foto-${index + 1}.jpg`,
@@ -537,14 +542,14 @@ export async function assignReportOfficer(reportId, officerId, actor = 'Admin De
   return updatedReport
 }
 
-export function updateFieldProgress(reportId, action, payload = {}, actorSession = {}) {
+export async function updateFieldProgress(reportId, action, payload = {}, actorSession = {}) {
   const actor = cleanText(actorSession.name, TEXT_LIMITS.short) || 'Petugas Demo'
   const officerId = cleanText(actorSession.officerId, TEXT_LIMITS.short)
   const now = new Date().toISOString()
   let updatedReport = null
   let transitionError = null
 
-  const reports = getReports().map((report) => {
+  let reports = getReports().map((report) => {
     if (report.id !== reportId) return report
     if (officerId && report.assignedOfficerId && report.assignedOfficerId !== officerId) return report
 
@@ -624,6 +629,28 @@ export function updateFieldProgress(reportId, action, payload = {}, actorSession
   }
 
   if (updatedReport) {
+    if (useSupabaseReports) {
+      try {
+        updatedReport = await updateSupabaseFieldProgress(
+          reportId,
+          updatedReport,
+          updatedReport.statusHistory.at(-1)
+        )
+        reports = reports.map((report) => report.id === reportId ? updatedReport : report)
+      } catch (error) {
+        if (!useLocalReports) {
+          throw new Error(error.message || 'Gagal menyimpan progres petugas.', { cause: error })
+        }
+        updatedReport = {
+          ...updatedReport,
+          syncStatus: 'pending',
+          syncError: error.message || 'Progres petugas belum tersinkron ke Supabase.',
+        }
+        reports = reports.map((report) => report.id === reportId ? updatedReport : report)
+        saveReports(reports)
+        return updatedReport
+      }
+    }
     saveReports(reports)
   }
   return updatedReport
@@ -658,6 +685,10 @@ function ensureRemoteSyncStarted() {
 
 export function syncReportsNow() {
   return refreshRemoteReports()
+}
+
+export function canResetDemoReports() {
+  return useLocalReports
 }
 
 function escapeCsvCell(value) {
