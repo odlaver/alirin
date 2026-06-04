@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Bell, Download, Menu, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { Download, Menu, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useSEO } from '../hooks/useSEO.js'
 import './AdminDashboard.css'
 import {
@@ -159,9 +159,8 @@ export default function AdminDashboard() {
                   <option value="aktif">Aktif</option>
                   <option value="arsip">Arsip</option>
                 </select>
-                <button className="topbar-tool-btn" type="button" onClick={handleExportCsv}>
+                <button className="topbar-tool-btn topbar-icon-only" type="button" onClick={handleExportCsv} aria-label="Export CSV" title="Export CSV">
                   <Download size={16} />
-                  <span>Export</span>
                 </button>
               </div>
               {canResetDemoReports() && (
@@ -169,10 +168,8 @@ export default function AdminDashboard() {
                   <RotateCcw size={16} />
                 </button>
               )}
-              <button className="icon-btn" type="button" aria-label="Notifikasi demo"><Bell size={18} /><span className="notif-dot"></span></button>
-              <button className="refresh-btn" onClick={handleRefresh} disabled={refreshing}>
+              <button className="topbar-tool-btn topbar-icon-only topbar-refresh" type="button" onClick={handleRefresh} disabled={refreshing} aria-label="Perbarui data" title="Perbarui data">
                 <RefreshCw size={16} className={refreshing ? 'spin' : ''} />
-                <span>{refreshing ? 'Memuat...' : 'Perbarui'}</span>
               </button>
             </div>
           </div>

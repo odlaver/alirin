@@ -281,26 +281,6 @@
   color: var(--color-text-main);
 }
 
-.icon-btn {
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: var(--motion-fast);
-  position: relative;
-}
-
-.icon-btn:hover {
-  background: var(--bg-base);
-  color: var(--color-primary);
-  transform: translateY(-1px);
-}
-
 .topbar-tool-btn {
   display: inline-flex;
   align-items: center;
@@ -314,6 +294,8 @@
   color: var(--color-primary);
   font-size: var(--text-sm);
   font-weight: var(--font-weight-bold);
+  line-height: 1;
+  white-space: normal;
   cursor: pointer;
   transition: var(--motion-fast);
 }
@@ -335,6 +317,17 @@
   flex: 0 0 44px;
 }
 
+.topbar-refresh {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.topbar-refresh:hover {
+  border-color: var(--color-primary-dark);
+  background: var(--color-primary-dark);
+}
+
 .export-mode-select {
   min-height: 42px;
   border: 1px solid var(--color-border);
@@ -345,36 +338,6 @@
   font-size: var(--text-sm);
   font-weight: var(--font-weight-bold);
   outline: none;
-}
-
-.notif-dot {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-danger);
-}
-
-.refresh-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border-radius: 999px;
-  background: var(--color-primary);
-  color: #fff;
-  border: none;
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-semibold);
-  cursor: pointer;
-  transition: var(--motion-fast);
-}
-
-.refresh-btn:hover {
-  background: var(--color-primary-dark);
-  transform: translateY(-1px);
 }
 
 .spin {
@@ -2599,9 +2562,8 @@
   }
 
   .topbar-tools {
-    display: grid;
-    grid-template-columns: minmax(120px, 1fr) 44px 44px 44px;
-    justify-content: stretch;
+    display: flex;
+    justify-content: flex-end;
     width: 100%;
   }
 
@@ -2617,20 +2579,14 @@
     width: 100%;
   }
 
-  .refresh-btn span {
-    display: none;
-  }
-
-  .topbar-tool-btn span {
-    display: none;
-  }
-
   .topbar-tool-btn {
     width: 44px;
     padding: 0;
   }
 
   .admin-export-control {
+    flex: 1 1 auto;
+    min-width: 0;
     justify-self: stretch;
   }
 
@@ -2642,14 +2598,6 @@
   .export-mode-select {
     width: 100%;
     min-width: 74px;
-  }
-
-  .refresh-btn {
-    padding: 0;
-    border-radius: 50%;
-    width: 44px;
-    height: 44px;
-    justify-content: center;
   }
 
   .admin-topbar-title h1 {
@@ -2685,7 +2633,8 @@
   }
 
   .command-chip {
-    width: 100%;
+    width: fit-content;
+    max-width: 100%;
   }
 
   .bottom-grid {

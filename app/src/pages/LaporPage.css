@@ -1071,6 +1071,7 @@
   bottom: 0;
   z-index: 20;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
@@ -1085,6 +1086,9 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
   min-height: 47px;
   padding: 12px 18px;
   color: var(--color-primary);
@@ -1095,7 +1099,9 @@
   font-weight: 700;
   line-height: 1;
   text-decoration: none;
-  white-space: nowrap;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
   cursor: pointer;
   transition:
     color 0.2s var(--ease-water),
@@ -1422,7 +1428,8 @@
   }
 
   .btn-locate-text {
-    width: 100%;
+    width: fit-content;
+    max-width: 100%;
     justify-content: center;
   }
 
@@ -1446,8 +1453,8 @@
   }
 
   .lapor-nav-sticky {
-    align-items: stretch;
-    flex-direction: column-reverse;
+    align-items: center;
+    flex-direction: row;
   }
 
   .lapor-nav-sticky > span {
@@ -1455,12 +1462,12 @@
   }
 
   .lapor-page .btn {
-    width: 100%;
+    width: fit-content;
   }
 
   .success-actions {
-    align-items: stretch;
-    flex-direction: column;
+    align-items: center;
+    flex-direction: row;
   }
 }
 

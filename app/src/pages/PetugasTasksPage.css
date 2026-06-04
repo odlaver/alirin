@@ -46,6 +46,8 @@
 
 .field-back,
 .field-logout {
+  width: fit-content;
+  max-width: 100%;
   min-height: 42px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-button);
@@ -494,6 +496,9 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+  justify-self: start;
+  width: fit-content;
+  max-width: 100%;
   min-height: 42px;
   border-radius: var(--radius-button);
   background: var(--color-surface);
@@ -501,6 +506,8 @@
   cursor: pointer;
   font-weight: var(--font-weight-bold);
   padding: 0 16px;
+  text-align: center;
+  white-space: normal;
 }
 
 .field-actions button {
@@ -702,6 +709,8 @@
 
 .field-map-link {
   flex: 0 0 auto;
+  width: fit-content;
+  max-width: 100%;
   min-height: 42px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-button);
@@ -848,10 +857,12 @@
 
   .field-back {
     grid-column: 1;
+    justify-self: start;
   }
 
   .field-logout {
     grid-column: 2;
+    justify-self: end;
   }
 
   .field-back,
@@ -886,7 +897,6 @@
   }
 
   .field-map-link {
-    width: 100%;
     justify-content: center;
   }
 

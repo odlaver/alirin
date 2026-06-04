@@ -92,6 +92,9 @@
   align-items: center;
   justify-content: center;
   gap: 9px;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
   padding: 10px 16px;
   color: var(--color-primary);
   border: 1px solid transparent;
@@ -100,7 +103,9 @@
   font-size: var(--text-sm);
   font-weight: 700;
   line-height: 1;
-  white-space: nowrap;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
   cursor: pointer;
   transition:
     transform var(--motion-fast) var(--ease-standard),
@@ -1985,14 +1990,6 @@
     font-size: var(--text-base);
   }
 
-  .hero-actions {
-    width: 100%;
-  }
-
-  .hero-actions .btn {
-    width: 100%;
-  }
-
   .hero-stat-row {
     display: grid;
     width: 100%;
@@ -2144,9 +2141,6 @@
     grid-template-columns: 1fr;
   }
 
-  .cta-actions .btn {
-    width: 100%;
-  }
 }
 
 @media (max-width: 1080px) {
