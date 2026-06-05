@@ -42,12 +42,13 @@ function requireEnv(name, aliases = []) {
 
 const supabaseUrl = requireEnv('VITE_SUPABASE_URL', ['SUPABASE_URL'])
 const serviceRoleKey = requireEnv('SUPABASE_SERVICE_ROLE_KEY')
+const defaultDemoPassword = 'alirin123'
 
 const users = [
   {
     label: 'admin',
     email: localEnv.ALIRIN_ADMIN_EMAIL || 'admin@alirin.local',
-    password: requireEnv('ALIRIN_ADMIN_PASSWORD'),
+    password: localEnv.ALIRIN_ADMIN_PASSWORD || defaultDemoPassword,
     metadata: {
       name: localEnv.ALIRIN_ADMIN_NAME || 'Admin ALIRIN',
       role: 'admin',
@@ -56,7 +57,7 @@ const users = [
   {
     label: 'petugas',
     email: localEnv.ALIRIN_PETUGAS_EMAIL || 'petugas@alirin.local',
-    password: requireEnv('ALIRIN_PETUGAS_PASSWORD'),
+    password: localEnv.ALIRIN_PETUGAS_PASSWORD || defaultDemoPassword,
     metadata: {
       name: localEnv.ALIRIN_PETUGAS_NAME || 'Budi Santoso',
       officerId: localEnv.ALIRIN_PETUGAS_OFFICER_ID || 'ofc-budi',
