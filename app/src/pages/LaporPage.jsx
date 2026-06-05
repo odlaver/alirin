@@ -9,11 +9,13 @@ import {
   CheckCircle2,
   ChevronRight,
   ClipboardList,
+  Copy,
   Droplets,
   FileText,
   MapPin,
   Navigation,
   Send,
+  ShieldCheck,
   Trash2,
   Upload,
   Waves,
@@ -98,6 +100,31 @@ const itemMotion = {
     y: 0,
     transition: { duration: 0.58, ease: [0.22, 1, 0.36, 1] },
   },
+}
+
+function copyTextFallback(text) {
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.setAttribute('readonly', '')
+  textarea.style.position = 'fixed'
+  textarea.style.opacity = '0'
+  document.body.appendChild(textarea)
+  textarea.select()
+  let copied
+  try {
+    copied = document.execCommand('copy')
+  } finally {
+    document.body.removeChild(textarea)
+  }
+  if (!copied) throw new Error('Gagal menyalin link.')
+}
+
+async function copyTextToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text)
+    return
+  }
+  copyTextFallback(text)
 }
 
 function StepDot({ step, current, label }) {
@@ -491,6 +518,24 @@ function Step3({ data, setData }) {
 
 function SuccessScreen({ report, onNew }) {
   const statusToken = encodeURIComponent(getReportTrackingToken(report))
+  const statusPath = `/status/${statusToken}`
+  const statusUrl = `${window.location.origin}${statusPath}`
+  const [copyState, setCopyState] = useState('idle')
+
+  useEffect(() => {
+    if (copyState === 'idle') return undefined
+    const timer = window.setTimeout(() => setCopyState('idle'), 2200)
+    return () => window.clearTimeout(timer)
+  }, [copyState])
+
+  async function handleCopyLink() {
+    try {
+      await copyTextToClipboard(statusUrl)
+      setCopyState('copied')
+    } catch {
+      setCopyState('failed')
+    }
+  }
 
   return (
     <motion.div
@@ -511,12 +556,31 @@ function SuccessScreen({ report, onNew }) {
       <h2>{report.code}</h2>
       <p>Simpan kode ini dan gunakan link status pribadi. Skor awal: {report.riskScore} ({report.riskLevel}).</p>
 
+      <div className="success-tracking-card">
+        <span>Link status pribadi</span>
+        <div className="tracking-link-row">
+          <code>{statusUrl}</code>
+          <button
+            className="btn btn-outline success-copy-btn"
+            type="button"
+            onClick={handleCopyLink}
+          >
+            <Copy size={16} />
+            {copyState === 'copied' ? 'Tersalin' : copyState === 'failed' ? 'Gagal salin' : 'Salin'}
+          </button>
+        </div>
+        <small className="success-private-note">
+          <ShieldCheck size={15} />
+          Link ini privat. Bagikan hanya kepada pihak yang perlu memantau laporan.
+        </small>
+      </div>
+
       <div className="success-actions">
         <Link to="/" className="btn btn-outline">
           <ArrowLeft size={18} />
           Beranda
         </Link>
-        <Link to={`/status/${statusToken}`} className="btn btn-primary">
+        <Link to={statusPath} className="btn btn-primary">
           Cek Status Laporan
         </Link>
         <button className="btn btn-ghost" type="button" onClick={onNew}>

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   buildReport,
   createReportCode,
+  formatApproxReportCoordinates,
   formatReportLocation,
   getReportTrackingToken,
   matchesReportSearch,
@@ -110,5 +111,10 @@ describe('report domain', () => {
       area: 'Kemiling, Beringin Raya',
       status: 'Masuk',
     })
+  })
+
+  it('formats public status coordinates as approximate values', () => {
+    expect(formatApproxReportCoordinates({ lat: -5.39712, lng: 105.26684 })).toBe('-5.397, 105.267')
+    expect(formatApproxReportCoordinates({ lat: 'invalid', lng: null })).toBe('-, -')
   })
 })

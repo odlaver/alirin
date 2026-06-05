@@ -13,9 +13,22 @@ import {
 } from 'lucide-react'
 import './StatusPage.css'
 import { getReportByTrackingToken, subscribeReports } from '../services/reportsStore.js'
-import { CATEGORY_LABEL, SEVERITY_LABEL, formatDateTime, formatReportLocation } from '../domain/reports.js'
+import {
+  CATEGORY_LABEL,
+  SEVERITY_LABEL,
+  formatApproxReportCoordinates,
+  formatDateTime,
+  formatReportLocation,
+} from '../domain/reports.js'
 import { getRiskLevelClass } from '../domain/scoring.js'
 import { STATUS_CLASS, STATUS_LABEL } from '../domain/status.js'
+
+function maskStatusToken(token) {
+  const value = String(token || '').trim()
+  if (!value) return 'tidak ada token'
+  if (value.length <= 14) return value
+  return `${value.slice(0, 8)}...${value.slice(-4)}`
+}
 
 function NotFoundStatus({ token }) {
   return (
@@ -30,8 +43,19 @@ function NotFoundStatus({ token }) {
       <main className="status-empty">
         <AlertTriangle size={46} />
         <h1>Link status tidak ditemukan</h1>
-        <p>Token status {token} belum cocok dengan laporan di perangkat ini.</p>
-        <Link to="/lapor" className="btn btn-primary">Buat laporan baru</Link>
+        <p>Token ini belum cocok dengan laporan yang tersimpan atau tersinkron di aplikasi.</p>
+        <div className="status-empty-help">
+          <span>Token dicek: <code>{maskStatusToken(token)}</code></span>
+          <ul>
+            <li>Pastikan link dibuka dari tombol status pada halaman sukses.</li>
+            <li>Jika link disalin manual, cek lagi apakah ada karakter yang terpotong.</li>
+            <li>Jika laporan dibuat di perangkat lain, tunggu sinkronisasi lalu muat ulang halaman.</li>
+          </ul>
+        </div>
+        <div className="status-empty-actions">
+          <Link to="/lapor" className="btn btn-primary">Buat laporan baru</Link>
+          <Link to="/" className="btn btn-outline">Kembali ke beranda</Link>
+        </div>
       </main>
     </div>
   )
@@ -140,8 +164,9 @@ export default function StatusPage() {
                 <strong>{report.address || '-'}</strong>
               </div>
               <div>
-                <span>Koordinat</span>
-                <strong>{Number(report.lat).toFixed(5)}, {Number(report.lng).toFixed(5)}</strong>
+                <span>Koordinat area</span>
+                <strong>{formatApproxReportCoordinates(report)}</strong>
+                <small className="status-privacy-note">Dibulatkan untuk menjaga privasi lokasi pelapor.</small>
               </div>
               <p>{report.description}</p>
             </div>

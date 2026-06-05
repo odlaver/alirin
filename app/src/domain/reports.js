@@ -162,6 +162,16 @@ export function formatReportLocation(report) {
   return [report.kecamatan, report.kelurahan].filter(Boolean).join(', ') || report.address || 'Lokasi tidak diketahui'
 }
 
+export function formatApproxCoordinate(value) {
+  if (value === null || value === undefined || value === '') return '-'
+  const coordinate = Number(value)
+  return Number.isFinite(coordinate) ? coordinate.toFixed(3) : '-'
+}
+
+export function formatApproxReportCoordinates(report) {
+  return `${formatApproxCoordinate(report?.lat)}, ${formatApproxCoordinate(report?.lng)}`
+}
+
 export function reportToMarker(report) {
   return {
     id: report.id,
