@@ -23,6 +23,14 @@ import {
 import { getRiskLevelClass } from '../domain/scoring.js'
 import { STATUS_CLASS, STATUS_LABEL } from '../domain/status.js'
 
+const TRACK_STEPS = [
+  { id: 'masuk', label: 'Masuk', icon: Clock3 },
+  { id: 'diverifikasi', label: 'Verifikasi', icon: ShieldCheck },
+  { id: 'dijadwalkan', label: 'Jadwal', icon: MapPin },
+  { id: 'ditangani', label: 'Ditangani', icon: Droplets },
+  { id: 'selesai', label: 'Selesai', icon: CheckCircle2 },
+]
+
 function maskStatusToken(token) {
   const value = String(token || '').trim()
   if (!value) return 'tidak ada token'
@@ -30,9 +38,22 @@ function maskStatusToken(token) {
   return `${value.slice(0, 8)}...${value.slice(-4)}`
 }
 
+function StatusBackdrop() {
+  return (
+    <>
+      <div className="status-bg-grid" aria-hidden="true" />
+      <div className="status-bg-wave wave-one" aria-hidden="true" />
+      <div className="status-bg-wave wave-two" aria-hidden="true" />
+      <div className="status-flow-line flow-one" aria-hidden="true" />
+      <div className="status-flow-line flow-two" aria-hidden="true" />
+    </>
+  )
+}
+
 function NotFoundStatus({ token }) {
   return (
     <div className="status-page">
+      <StatusBackdrop />
       <header className="status-topbar">
         <Link to="/" className="status-back"><ArrowLeft size={18} /> Beranda</Link>
         <div className="status-brand">
@@ -41,20 +62,23 @@ function NotFoundStatus({ token }) {
         </div>
       </header>
       <main className="status-empty">
-        <AlertTriangle size={46} />
-        <h1>Link status tidak ditemukan</h1>
-        <p>Token ini belum cocok dengan laporan yang tersimpan atau tersinkron di aplikasi.</p>
-        <div className="status-empty-help">
-          <span>Token dicek: <code>{maskStatusToken(token)}</code></span>
-          <ul>
-            <li>Pastikan link dibuka dari tombol status pada halaman sukses.</li>
-            <li>Jika link disalin manual, cek lagi apakah ada karakter yang terpotong.</li>
-            <li>Jika laporan dibuat di perangkat lain, tunggu sinkronisasi lalu muat ulang halaman.</li>
-          </ul>
-        </div>
-        <div className="status-empty-actions">
-          <Link to="/lapor" className="btn btn-primary">Buat laporan baru</Link>
-          <Link to="/" className="btn btn-outline">Kembali ke beranda</Link>
+        <div className="status-empty-card">
+          <span className="status-empty-icon"><AlertTriangle size={42} /></span>
+          <span className="status-kicker">Status laporan</span>
+          <h1>Link status tidak ditemukan</h1>
+          <p>Token ini belum cocok dengan laporan yang tersimpan atau tersinkron di aplikasi.</p>
+          <div className="status-empty-help">
+            <span>Token dicek: <code>{maskStatusToken(token)}</code></span>
+            <ul>
+              <li>Pastikan link dibuka dari tombol status pada halaman sukses.</li>
+              <li>Jika link disalin manual, cek lagi apakah ada karakter yang terpotong.</li>
+              <li>Jika laporan dibuat di perangkat lain, tunggu sinkronisasi lalu muat ulang halaman.</li>
+            </ul>
+          </div>
+          <div className="status-empty-actions">
+            <Link to="/lapor" className="btn btn-primary">Buat laporan baru</Link>
+            <Link to="/" className="btn btn-outline">Kembali ke beranda</Link>
+          </div>
         </div>
       </main>
     </div>
@@ -83,9 +107,21 @@ export default function StatusPage() {
 
   const riskClass = getRiskLevelClass(report.riskLevel)
   const latestStatus = STATUS_LABEL[report.status] ?? 'Masuk'
+  const latestHistory = sortedHistory[sortedHistory.length - 1]
+  const reportPhotos = report.photos ?? []
+  const completionPhotos = report.completionPhotos ?? []
+  const completedStatus = report.status === 'ditolak'
+    ? [...sortedHistory].reverse().find((item) => item.status !== 'ditolak')?.status ?? 'masuk'
+    : report.status
+  const activeStepIndex = Math.max(0, TRACK_STEPS.findIndex((item) => item.id === completedStatus))
+  const statusProgress = report.status === 'ditolak'
+    ? 100
+    : Math.round((activeStepIndex / (TRACK_STEPS.length - 1)) * 100)
+  const totalPhotos = reportPhotos.length + completionPhotos.length
 
   return (
     <div className="status-page">
+      <StatusBackdrop />
       <header className="status-topbar">
         <Link to="/" className="status-back"><ArrowLeft size={18} /> Beranda</Link>
         <div className="status-brand">
@@ -97,21 +133,57 @@ export default function StatusPage() {
 
       <main className="status-main">
         <section className="status-hero">
-          <div>
+          <div className="status-hero-copy">
             <span className="status-kicker">Status laporan</span>
             <h1>{report.code}</h1>
             <p>{CATEGORY_LABEL[report.category]} di {formatReportLocation(report)}</p>
+            <div className="status-hero-meta">
+              <span><Clock3 size={15} /> Update {formatDateTime(report.updatedAt)}</span>
+              <span><Camera size={15} /> {totalPhotos} foto</span>
+            </div>
           </div>
-          <div className={`status-current ${STATUS_CLASS[report.status]}`}>
-            <ShieldCheck size={18} />
-            {latestStatus}
+          <div className="status-hero-card">
+            <span className="status-card-label">Status saat ini</span>
+            <div className={`status-current ${STATUS_CLASS[report.status]}`}>
+              <ShieldCheck size={18} />
+              {latestStatus}
+            </div>
+            <p>{latestHistory?.note || 'Laporan sedang dipantau sistem.'}</p>
           </div>
+        </section>
+
+        <section className={`status-tracker ${report.status === 'ditolak' ? 'is-rejected' : ''}`} style={{ '--status-progress': `${statusProgress}%` }}>
+          <div className="status-tracker-line" aria-hidden="true" />
+          {TRACK_STEPS.map((item, index) => {
+            const Icon = item.icon
+            const isComplete = report.status === 'ditolak' ? index <= activeStepIndex : index < activeStepIndex
+            const isCurrent = report.status !== 'ditolak' && index === activeStepIndex
+            return (
+              <div
+                className={`tracker-step ${isComplete ? 'is-complete' : ''} ${isCurrent ? 'is-current' : ''}`}
+                key={item.id}
+              >
+                <span className="tracker-step-icon"><Icon size={17} /></span>
+                <span>{item.label}</span>
+              </div>
+            )
+          })}
+          {report.status === 'ditolak' && (
+            <div className="tracker-rejected">
+              <AlertTriangle size={16} />
+              Ditolak
+            </div>
+          )}
         </section>
 
         <section className="status-grid">
           <article className="status-panel status-summary-card">
             <div className="risk-score-wrap">
-              <div className={`risk-score-ring risk-${riskClass}`}>
+              <div
+                className={`risk-score-ring risk-${riskClass}`}
+                style={{ '--risk-deg': `${Math.round((Number(report.riskScore) / 100) * 360)}deg` }}
+              >
+                <span className="risk-score-glow" aria-hidden="true" />
                 <strong>{report.riskScore}</strong>
                 <span>{report.riskLevel}</span>
               </div>
@@ -138,7 +210,7 @@ export default function StatusPage() {
             <div className="timeline-list">
               {sortedHistory.map((item, index) => (
                 <div className="timeline-item" key={`${item.status}-${item.at}-${index}`}>
-                  <span className="timeline-dot"><CheckCircle2 size={14} /></span>
+                  <span className={`timeline-dot ${STATUS_CLASS[item.status] ?? ''}`}><CheckCircle2 size={14} /></span>
                   <div>
                     <strong>{STATUS_LABEL[item.status] ?? item.status}</strong>
                     <p>{item.note}</p>
@@ -179,10 +251,15 @@ export default function StatusPage() {
             </div>
             <div className="breakdown-list">
               {report.riskBreakdown.map((item) => (
-                <div className="breakdown-row" key={item.id}>
-                  <div>
+                <div
+                  className="breakdown-row"
+                  key={item.id}
+                  style={{ '--breakdown-value': `${Math.round((item.points / item.weight) * 100)}%` }}
+                >
+                  <div className="breakdown-copy">
                     <strong>{item.label}</strong>
                     <small>{item.detail}</small>
+                    <i className="breakdown-meter" aria-hidden="true" />
                   </div>
                   <span>{item.points}/{item.weight}</span>
                 </div>
@@ -196,21 +273,27 @@ export default function StatusPage() {
               <h2>Foto bukti</h2>
             </div>
             <div className="status-photo-grid">
-              {report.photos.map((photo, index) => (
-                <img src={photo.url} alt={`Foto laporan ${index + 1}`} key={photo.id ?? photo.url} />
+              {reportPhotos.map((photo, index) => (
+                <figure className="status-photo-card" key={photo.id ?? photo.url}>
+                  <img src={photo.url} alt={`Foto laporan ${index + 1}`} loading="lazy" decoding="async" />
+                  <figcaption>Foto {index + 1}</figcaption>
+                </figure>
               ))}
             </div>
           </article>
 
-          {report.completionPhotos?.length > 0 && (
+          {completionPhotos.length > 0 && (
             <article className="status-panel status-photos-panel">
               <div className="status-panel-head">
                 <Camera size={18} />
                 <h2>Foto penyelesaian</h2>
               </div>
               <div className="status-photo-grid">
-                {report.completionPhotos.map((photo, index) => (
-                  <img src={photo.url} alt={`Foto penyelesaian ${index + 1}`} key={photo.id ?? photo.url} />
+                {completionPhotos.map((photo, index) => (
+                  <figure className="status-photo-card" key={photo.id ?? photo.url}>
+                    <img src={photo.url} alt={`Foto penyelesaian ${index + 1}`} loading="lazy" decoding="async" />
+                    <figcaption>Selesai {index + 1}</figcaption>
+                  </figure>
                 ))}
               </div>
             </article>
