@@ -100,10 +100,7 @@ async function syncInlinePhotos(photos = [], label = 'foto') {
 
   const uploadedPhotos = await Promise.all(photos.map(async (photo) => {
     if (!photo.url?.startsWith('data:')) return photo
-    const publicUrl = await uploadReportPhoto(photo.url)
-    if (!publicUrl) {
-      throw new Error(`Gagal mengunggah ${label} ke Supabase Storage.`)
-    }
+    const publicUrl = await uploadReportPhoto(photo)
     return { ...photo, url: publicUrl }
   }))
 
@@ -148,7 +145,8 @@ export async function insertSupabaseReport(report) {
   const reportPhotos = await syncInlinePhotos(report.photos || [], 'foto laporan')
   const completionPhotos = await syncInlinePhotos(report.completionPhotos || [], 'foto penyelesaian')
 
-  const { data: inserted, error } = await supabase.from('reports').insert({
+  const { error } = await supabase.from('reports').insert({
+    id: report.id,
     code: report.code,
     public_tracking_token: report.publicTrackingToken,
     category: report.category,
@@ -172,20 +170,17 @@ export async function insertSupabaseReport(report) {
     archived_at: report.archivedAt || null,
     created_at: report.createdAt,
     updated_at: report.updatedAt,
-  }).select().single()
+  })
 
   if (error) throw new Error(error.message)
-  if (!inserted) return report
 
   const syncedReport = {
     ...report,
-    id: inserted.id,
-    publicTrackingToken: inserted.public_tracking_token || report.publicTrackingToken,
     completionPhotos,
   }
-  syncedReport.photos = await insertReportPhotos(inserted.id, reportPhotos)
-  await syncRiskBreakdown(inserted.id, syncedReport.riskBreakdown)
-  await insertStatusHistory(inserted.id, syncedReport.statusHistory?.[0])
+  syncedReport.photos = await insertReportPhotos(report.id, reportPhotos)
+  await syncRiskBreakdown(report.id, syncedReport.riskBreakdown)
+  await insertStatusHistory(report.id, syncedReport.statusHistory?.[0])
 
   return syncedReport
 }
