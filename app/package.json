@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "supabase:seed-auth": "node scripts/seed-supabase-auth.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview",

@@ -5,6 +5,7 @@ const AUTH_SESSION_KEY = 'alirin_auth_session_v1'
 const AUTH_SESSION_EVENT = 'alirin-auth-session'
 const VALID_ROLES = new Set(['admin', 'petugas'])
 const ROLE_REQUIRED_MESSAGE = 'Akun belum memiliki role admin/petugas yang valid. Hubungi admin sistem.'
+const INVALID_CREDENTIALS_MESSAGE = 'Email/password tidak valid atau akun belum dibuat di Supabase Auth.'
 
 function hasStorage() {
   if (typeof window === 'undefined') return false
@@ -47,6 +48,12 @@ function getRoleFromUser(user) {
   ).trim().toLowerCase()
 
   return VALID_ROLES.has(role) ? role : null
+}
+
+function getAuthErrorMessage(error) {
+  const message = error?.message || String(error || '')
+  if (/invalid login credentials/i.test(message)) return INVALID_CREDENTIALS_MESSAGE
+  return message || 'Login gagal. Coba lagi.'
 }
 
 function buildDemoSession(user) {
@@ -109,7 +116,7 @@ export async function signInWithEmail(email, password) {
       writeDemoSession(demoSession)
       return { ok: true, session: demoSession }
     }
-    return { ok: false, message: error.message }
+    return { ok: false, message: getAuthErrorMessage(error) }
   }
   
   clearDemoSession()

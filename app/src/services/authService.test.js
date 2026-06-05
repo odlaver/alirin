@@ -124,7 +124,10 @@ describe('authService', () => {
       email: 'admin@alirin.local',
       password: 'alirin123',
     })
-    expect(result).toMatchObject({ ok: false, message: 'Invalid login credentials' })
+    expect(result).toMatchObject({
+      ok: false,
+      message: 'Email/password tidak valid atau akun belum dibuat di Supabase Auth.',
+    })
     expect(localStorage.setItem).not.toHaveBeenCalled()
   })
 
