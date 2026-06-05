@@ -31,7 +31,7 @@ function createPhotoPath(photo, mimeType) {
 function buildUploadError(error) {
   const message = error?.message || String(error || 'Unknown error')
   return new Error(
-    `${message} Pastikan VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY valid, bucket Storage "${REPORT_PHOTO_BUCKET}" sudah ada, dan policy upload publik untuk folder report-photos aktif.`
+    `${message} Pastikan VITE_SUPABASE_URL dan VITE_SUPABASE_PUBLISHABLE_KEY valid, bucket Storage "${REPORT_PHOTO_BUCKET}" sudah ada, dan policy upload publik untuk folder report-photos aktif.`
   )
 }
 
