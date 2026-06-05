@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react'
+import { lazy, memo, Suspense, useCallback, useMemo, useRef, useState, useEffect } from 'react'
 import { useSEO } from '../hooks/useSEO.js'
 import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -24,11 +24,12 @@ import {
   X,
 } from 'lucide-react'
 import './LaporPage.css'
-import ReportMapPicker from '../components/ReportMapPicker.jsx'
 import { KECAMATAN_DATA } from '../data/bandarLampungAreas.js'
 import { createReport } from '../services/reportsStore.js'
 import { MAX_REPORT_PHOTOS, prepareReportPhotos } from '../services/imageFiles.js'
 import { getReportTrackingToken } from '../domain/reports.js'
+
+const ReportMapPicker = lazy(() => import('../components/ReportMapPicker.jsx'))
 
 const CATEGORIES = [
   { id: 'sumbatan', label: 'Sumbatan sampah', icon: Trash2 },
@@ -64,22 +65,16 @@ const INITIAL_DATA = {
 
 const SLIDE_VARIANTS = {
   enter: (dir) => ({
-    x: dir > 0 ? 48 : -48,
+    x: dir > 0 ? 28 : -28,
     opacity: 0,
-    scale: 0.98,
-    filter: 'blur(6px)',
   }),
   center: {
     x: 0,
     opacity: 1,
-    scale: 1,
-    filter: 'blur(0px)',
   },
   exit: (dir) => ({
-    x: dir > 0 ? -48 : 48,
+    x: dir > 0 ? -28 : 28,
     opacity: 0,
-    scale: 0.98,
-    filter: 'blur(6px)',
   }),
 }
 
@@ -98,7 +93,7 @@ const itemMotion = {
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.58, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.42, ease: [0.22, 1, 0.36, 1] },
   },
 }
 
@@ -127,28 +122,25 @@ async function copyTextToClipboard(text) {
   copyTextFallback(text)
 }
 
-function StepDot({ step, current, label }) {
+const StepDot = memo(function StepDot({ step, current, label }) {
   const done = current > step
   const active = current === step
 
   return (
     <div className={`step-dot-wrap ${active ? 'is-active' : ''} ${done ? 'is-done' : ''}`}>
-      <motion.div
-        className="step-dot"
-        animate={active ? { y: [0, -5, 0], scale: [1, 1.06, 1] } : { y: 0, scale: 1 }}
-        transition={active ? { duration: 0.5, ease: [0.22, 1, 0.36, 1] } : { duration: 0.2 }}
-      >
+      <div className="step-dot">
         {done ? <CheckCircle2 size={16} /> : <span>{step}</span>}
-      </motion.div>
+      </div>
       <span className="step-dot-label">{label}</span>
     </div>
   )
-}
+})
 
-function Step1({ data, setData }) {
+const Step1 = memo(function Step1({ data, updateData }) {
   const [isLocating, setIsLocating] = useState(false)
   const [locError, setLocError] = useState('')
   const isMounted = useRef(true)
+  const handleMapChange = useCallback((point) => updateData(point), [updateData])
 
   useEffect(() => {
     return () => {
@@ -171,7 +163,7 @@ function Step1({ data, setData }) {
         const lon = pos.coords.longitude
 
         setIsLocating(false)
-        setData({ ...data, lat, lng: lon, alamat: 'Lokasi terkini Anda' })
+        updateData({ lat, lng: lon, alamat: 'Lokasi terkini Anda' })
       },
       (err) => {
         if (!isMounted.current) return
@@ -199,11 +191,13 @@ function Step1({ data, setData }) {
       </div>
 
       <div className="map-picker-mock">
-        <ReportMapPicker
-          lat={data.lat}
-          lng={data.lng}
-          onChange={(point) => setData({ ...data, ...point })}
-        />
+        <Suspense fallback={<div className="map-picker-loading">Memuat peta...</div>}>
+          <ReportMapPicker
+            lat={data.lat}
+            lng={data.lng}
+            onChange={handleMapChange}
+          />
+        </Suspense>
 
         <div className="map-actions-row">
           <div className="map-coords">
@@ -231,7 +225,7 @@ function Step1({ data, setData }) {
           <select
             id="kecamatan"
             value={data.kecamatan}
-            onChange={(event) => setData({ ...data, kecamatan: event.target.value, kelurahan: '' })}
+            onChange={(event) => updateData({ kecamatan: event.target.value, kelurahan: '' })}
           >
             <option value="">Pilih kecamatan</option>
             {Object.keys(KECAMATAN_DATA).map((item) => (
@@ -244,7 +238,7 @@ function Step1({ data, setData }) {
           <select
             id="kelurahan"
             value={data.kelurahan}
-            onChange={(event) => setData({ ...data, kelurahan: event.target.value })}
+            onChange={(event) => updateData({ kelurahan: event.target.value })}
             disabled={!data.kecamatan}
           >
             <option value="">Pilih kelurahan</option>
@@ -262,14 +256,14 @@ function Step1({ data, setData }) {
           type="text"
           placeholder="Depan warung Bu Sari, RT 03"
           value={data.alamat}
-          onChange={(event) => setData({ ...data, alamat: event.target.value })}
+          onChange={(event) => updateData({ alamat: event.target.value })}
         />
       </div>
     </div>
   )
-}
+})
 
-function Step2({ data, setData }) {
+const Step2 = memo(function Step2({ data, updateData }) {
   return (
     <div className="step-body">
       <div className="step-heading">
@@ -286,17 +280,15 @@ function Step2({ data, setData }) {
         <label>Kategori</label>
         <div className="category-grid">
           {CATEGORIES.map((cat) => (
-            <motion.button
+            <button
               key={cat.id}
               type="button"
               className={`category-chip ${data.category === cat.id ? 'is-selected' : ''}`}
-              onClick={() => setData({ ...data, category: cat.id })}
-              whileHover={{ y: -4 }}
-              whileTap={{ scale: 0.98 }}
+              onClick={() => updateData({ category: cat.id })}
             >
               <cat.icon size={18} />
               <span>{cat.label}</span>
-            </motion.button>
+            </button>
           ))}
         </div>
       </div>
@@ -305,13 +297,11 @@ function Step2({ data, setData }) {
         <label>Keparahan</label>
         <div className="severity-list">
           {SEVERITY.map((sev) => (
-            <motion.button
+            <button
               key={sev.id}
               type="button"
               className={`severity-item risk-${sev.color} ${data.severity === sev.id ? 'is-selected' : ''}`}
-              onClick={() => setData({ ...data, severity: sev.id })}
-              whileHover={{ x: 5 }}
-              whileTap={{ scale: 0.99 }}
+              onClick={() => updateData({ severity: sev.id })}
             >
               <span className="severity-dot" />
               <span className="severity-text">
@@ -321,7 +311,7 @@ function Step2({ data, setData }) {
               <span className="severity-check">
                 {data.severity === sev.id && <CheckCircle2 size={18} />}
               </span>
-            </motion.button>
+            </button>
           ))}
         </div>
       </div>
@@ -334,24 +324,31 @@ function Step2({ data, setData }) {
           maxLength={300}
           placeholder="Contoh: Air meluap setelah hujan, sampah menutup inlet."
           value={data.deskripsi}
-          onChange={(event) => setData({ ...data, deskripsi: event.target.value })}
+          onChange={(event) => updateData({ deskripsi: event.target.value })}
         />
         <small>{data.deskripsi.length}/300 karakter (minimal 10 karakter)</small>
       </div>
     </div>
   )
-}
+})
 
-function PhotoUploader({ photos, onChange }) {
+const PhotoUploader = memo(function PhotoUploader({ photos, onChange }) {
   const inputRef = useRef(null)
   const [error, setError] = useState('')
   const [processing, setProcessing] = useState(false)
 
-  async function handleFiles(files) {
+  const handleFiles = useCallback(async (files) => {
     const incoming = Array.from(files || [])
     const availableSlots = MAX_REPORT_PHOTOS - photos.length
     const messages = []
     setError('')
+
+    if (!incoming.length) return
+
+    if (availableSlots <= 0) {
+      setError(`Maksimal ${MAX_REPORT_PHOTOS} foto untuk satu laporan.`)
+      return
+    }
 
     if (photos.length + incoming.length > MAX_REPORT_PHOTOS) {
       messages.push(`Maksimal ${MAX_REPORT_PHOTOS} foto untuk satu laporan.`)
@@ -367,49 +364,38 @@ function PhotoUploader({ photos, onChange }) {
     }
 
     if (messages.length) setError(messages.join(' '))
-  }
+  }, [onChange, photos])
 
   return (
     <div className="photo-uploader">
       <div className="photo-grid">
-        <AnimatePresence>
-          {photos.map((photo, index) => (
-            <motion.div
-              key={photo.url}
-              className="photo-thumb"
-              initial={{ opacity: 0, scale: 0.78, rotate: -3 }}
-              animate={{ opacity: 1, scale: 1, rotate: 0 }}
-              exit={{ opacity: 0, scale: 0.78, rotate: 3 }}
-              transition={{ type: 'spring', stiffness: 280, damping: 22 }}
+        {photos.map((photo, index) => (
+          <div key={photo.url} className="photo-thumb">
+            <img src={photo.url} alt={`Foto ${index + 1}`} loading="lazy" decoding="async" />
+            <button
+              type="button"
+              className="photo-remove"
+              onClick={() => {
+                onChange(photos.filter((_, idx) => idx !== index))
+              }}
+              aria-label={`Hapus foto ${index + 1}`}
             >
-              <img src={photo.url} alt={`Foto ${index + 1}`} />
-              <button
-                type="button"
-                className="photo-remove"
-                onClick={() => {
-                  onChange(photos.filter((_, idx) => idx !== index))
-                }}
-                aria-label={`Hapus foto ${index + 1}`}
-              >
-                <X size={14} />
-              </button>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+              <X size={14} />
+            </button>
+          </div>
+        ))}
 
         {photos.length < MAX_REPORT_PHOTOS && (
-          <motion.button
+          <button
             type="button"
             className="photo-add"
             onClick={() => inputRef.current?.click()}
             disabled={processing}
-            whileHover={{ y: -4, scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
           >
             <Camera size={24} />
             <span>{processing ? 'Memproses...' : 'Tambah foto'}</span>
             <small>Maks. {MAX_REPORT_PHOTOS}</small>
-          </motion.button>
+          </button>
         )}
       </div>
 
@@ -446,11 +432,12 @@ function PhotoUploader({ photos, onChange }) {
       {error && <p className="photo-error">{error}</p>}
     </div>
   )
-}
+})
 
-function Step3({ data, setData }) {
+const Step3 = memo(function Step3({ data, updateData }) {
   const cat = CATEGORIES.find((item) => item.id === data.category)
   const sev = SEVERITY.find((item) => item.id === data.severity)
+  const handlePhotosChange = useCallback((photos) => updateData({ photos }), [updateData])
 
   return (
     <div className="step-body">
@@ -467,7 +454,7 @@ function Step3({ data, setData }) {
       <div className="form-group">
         <label>Foto bukti <span>Wajib</span></label>
         <small className="photo-required-note">Minimal 1 foto. Maksimal 3 foto, 5 MB per file.</small>
-        <PhotoUploader photos={data.photos} onChange={(photos) => setData({ ...data, photos })} />
+        <PhotoUploader photos={data.photos} onChange={handlePhotosChange} />
       </div>
 
       <div className="review-section">
@@ -498,7 +485,7 @@ function Step3({ data, setData }) {
             type="text"
             placeholder="Nama atau anonim"
             value={data.nama}
-            onChange={(event) => setData({ ...data, nama: event.target.value })}
+            onChange={(event) => updateData({ nama: event.target.value })}
           />
         </div>
         <div className="form-group">
@@ -508,15 +495,15 @@ function Step3({ data, setData }) {
             type="tel"
             placeholder="Untuk konfirmasi"
             value={data.kontak}
-            onChange={(event) => setData({ ...data, kontak: event.target.value })}
+            onChange={(event) => updateData({ kontak: event.target.value })}
           />
         </div>
       </div>
     </div>
   )
-}
+})
 
-function SuccessScreen({ report, onNew }) {
+const SuccessScreen = memo(function SuccessScreen({ report, onNew }) {
   const statusToken = encodeURIComponent(getReportTrackingToken(report))
   const statusPath = `/status/${statusToken}`
   const statusUrl = `${window.location.origin}${statusPath}`
@@ -589,7 +576,7 @@ function SuccessScreen({ report, onNew }) {
       </div>
     </motion.div>
   )
-}
+})
 
 export default function LaporPage() {
   useSEO({
@@ -604,11 +591,18 @@ export default function LaporPage() {
   const [loading, setLoading] = useState(false)
   const [submitError, setSubmitError] = useState('')
 
-  function canNext() {
+  const updateData = useCallback((patch) => {
+    setData((current) => ({
+      ...current,
+      ...(typeof patch === 'function' ? patch(current) : patch),
+    }))
+  }, [])
+
+  const canProceed = useMemo(() => {
     if (step === 1) return data.kecamatan !== '' && data.kelurahan.trim() !== ''
     if (step === 2) return data.category !== '' && data.severity !== '' && data.deskripsi.trim().length >= 10
     return data.photos.length > 0
-  }
+  }, [data.category, data.deskripsi, data.kecamatan, data.kelurahan, data.photos.length, data.severity, step])
 
   function goNext() {
     setSubmitError('')
@@ -625,7 +619,7 @@ export default function LaporPage() {
   }
 
   async function handleSubmit() {
-    if (!canNext()) return
+    if (!canProceed) return
     setSubmitError('')
     setLoading(true)
     try {
@@ -723,7 +717,7 @@ export default function LaporPage() {
                 </div>
               </div>
 
-              <motion.div className="lapor-card-content" layout>
+              <div className="lapor-card-content">
                 <AnimatePresence mode="wait" custom={dir}>
                   <motion.div
                     key={step}
@@ -734,9 +728,9 @@ export default function LaporPage() {
                     exit="exit"
                     transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
                   >
-                    {step === 1 && <Step1 data={data} setData={setData} />}
-                    {step === 2 && <Step2 data={data} setData={setData} />}
-                    {step === 3 && <Step3 data={data} setData={setData} />}
+                    {step === 1 && <Step1 data={data} updateData={updateData} />}
+                    {step === 2 && <Step2 data={data} updateData={updateData} />}
+                    {step === 3 && <Step3 data={data} updateData={updateData} />}
                   </motion.div>
                 </AnimatePresence>
 
@@ -748,38 +742,33 @@ export default function LaporPage() {
 
                 <div className="lapor-nav-sticky">
                   {step > 1 ? (
-                    <motion.button
+                    <button
                       type="button"
                       className="btn btn-ghost"
                       onClick={goPrev}
-                      whileHover={{ y: -3 }}
-                      whileTap={{ scale: 0.97 }}
                     >
                       <ArrowLeft size={18} />
                       Kembali
-                    </motion.button>
+                    </button>
                   ) : <span />}
 
                   {step < 3 ? (
-                    <motion.button
+                    <button
                       type="button"
                       className="btn btn-primary"
                       onClick={goNext}
-                      disabled={!canNext()}
-                      whileHover={canNext() ? { y: -4, scale: 1.02 } : undefined}
-                      whileTap={canNext() ? { scale: 0.97 } : undefined}
+                      disabled={!canProceed}
                     >
                       Lanjut
                       <ChevronRight size={18} />
-                    </motion.button>
+                    </button>
                   ) : (
-                    <motion.button
+                    <button
                       type="button"
                       className="btn btn-submit"
                       onClick={handleSubmit}
-                      disabled={loading || !canNext()}
-                      whileHover={!loading ? { y: -4, scale: 1.02 } : undefined}
-                      whileTap={!loading ? { scale: 0.97 } : undefined}
+                      disabled={loading || !canProceed}
+                      aria-busy={loading}
                     >
                       {loading ? (
                         <>
@@ -792,10 +781,10 @@ export default function LaporPage() {
                           Kirim laporan
                         </>
                       )}
-                    </motion.button>
+                    </button>
                   )}
                 </div>
-              </motion.div>
+              </div>
             </motion.section>
           </motion.div>
         )}
