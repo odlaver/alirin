@@ -294,7 +294,11 @@ function buildDemoReports() {
       },
       reports,
       new Date(),
-      { status: input.status, createdAt: input.createdAt }
+      {
+        status: input.status,
+        createdAt: input.createdAt,
+        publicTrackingToken: input.publicTrackingToken ?? `trk_demo_${String(index + 1).padStart(2, '0')}`,
+      }
     )
     const statusHistory = buildSeedHistory(report, input.status)
     reports.push({
@@ -312,7 +316,10 @@ function buildDemoReports() {
 function ensureReportsSeeded() {
   if (Array.isArray(reportsMemoryCache)) return reportsMemoryCache
   if (!useLocalReports) return []
-  if (!hasLocalStorage()) return []
+  if (!hasLocalStorage()) {
+    reportsMemoryCache = buildDemoReports()
+    return reportsMemoryCache
+  }
   const rawReports = readLocalReports(null)
   if (Array.isArray(rawReports)) {
     const reports = recalculateReportsRisk(normalizeReports(rawReports))
@@ -395,7 +402,16 @@ export function getReportByCode(code) {
 export function getReportByTrackingToken(token) {
   const normalized = String(token || '').trim()
   if (!normalized) return null
-  return getReports().find((report) => getReportTrackingToken(report) === normalized) ?? null
+  const reports = getReports()
+  const report = reports.find((item) => getReportTrackingToken(item) === normalized)
+  if (report) return report
+
+  const demoToken = /^trk_demo_(\d{2})$/.exec(normalized)
+  if (reportsDataMode === 'local' && demoToken) {
+    return reports[Number(demoToken[1]) - 1] ?? null
+  }
+
+  return null
 }
 
 export function isArchivedReport(report) {

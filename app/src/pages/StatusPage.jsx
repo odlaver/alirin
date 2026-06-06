@@ -38,22 +38,9 @@ function maskStatusToken(token) {
   return `${value.slice(0, 8)}...${value.slice(-4)}`
 }
 
-function StatusBackdrop() {
-  return (
-    <>
-      <div className="status-bg-grid" aria-hidden="true" />
-      <div className="status-bg-wave wave-one" aria-hidden="true" />
-      <div className="status-bg-wave wave-two" aria-hidden="true" />
-      <div className="status-flow-line flow-one" aria-hidden="true" />
-      <div className="status-flow-line flow-two" aria-hidden="true" />
-    </>
-  )
-}
-
 function NotFoundStatus({ token }) {
   return (
     <div className="status-page">
-      <StatusBackdrop />
       <header className="status-topbar">
         <Link to="/" className="status-back"><ArrowLeft size={18} /> Beranda</Link>
         <div className="status-brand">
@@ -66,15 +53,10 @@ function NotFoundStatus({ token }) {
           <span className="status-empty-icon"><AlertTriangle size={42} /></span>
           <span className="status-kicker">Status laporan</span>
           <h1>Link status tidak ditemukan</h1>
-          <p>Token ini belum cocok dengan laporan yang tersimpan atau tersinkron di aplikasi.</p>
-          <div className="status-empty-help">
-            <span>Token dicek: <code>{maskStatusToken(token)}</code></span>
-            <ul>
-              <li>Pastikan link dibuka dari tombol status pada halaman sukses.</li>
-              <li>Jika link disalin manual, cek lagi apakah ada karakter yang terpotong.</li>
-              <li>Jika laporan dibuat di perangkat lain, tunggu sinkronisasi lalu muat ulang halaman.</li>
-            </ul>
-          </div>
+          <p>
+            Token <code>{maskStatusToken(token)}</code> belum cocok dengan laporan yang tersimpan.
+            Pastikan link dibuka dari halaman sukses laporan.
+          </p>
           <div className="status-empty-actions">
             <Link to="/lapor" className="btn btn-primary">Buat laporan baru</Link>
             <Link to="/" className="btn btn-outline">Kembali ke beranda</Link>
@@ -121,7 +103,6 @@ export default function StatusPage() {
 
   return (
     <div className="status-page">
-      <StatusBackdrop />
       <header className="status-topbar">
         <Link to="/" className="status-back"><ArrowLeft size={18} /> Beranda</Link>
         <div className="status-brand">
@@ -132,81 +113,87 @@ export default function StatusPage() {
       </header>
 
       <main className="status-main">
-        <section className="status-hero">
-          <div className="status-hero-copy">
+        <section className="status-overview">
+          <div className="status-overview-copy">
             <span className="status-kicker">Status laporan</span>
             <h1>{report.code}</h1>
             <p>{CATEGORY_LABEL[report.category]} di {formatReportLocation(report)}</p>
-            <div className="status-hero-meta">
+            <div className="status-meta-row">
               <span><Clock3 size={15} /> Update {formatDateTime(report.updatedAt)}</span>
               <span><Camera size={15} /> {totalPhotos} foto</span>
             </div>
           </div>
-          <div className="status-hero-card">
+          <aside className="status-now-card" aria-label="Status saat ini">
             <span className="status-card-label">Status saat ini</span>
             <div className={`status-current ${STATUS_CLASS[report.status]}`}>
               <ShieldCheck size={18} />
               {latestStatus}
             </div>
             <p>{latestHistory?.note || 'Laporan sedang dipantau sistem.'}</p>
-          </div>
+          </aside>
         </section>
 
         <section className={`status-tracker ${report.status === 'ditolak' ? 'is-rejected' : ''}`} style={{ '--status-progress': `${statusProgress}%` }}>
-          <div className="status-tracker-line" aria-hidden="true" />
-          {TRACK_STEPS.map((item, index) => {
-            const Icon = item.icon
-            const isComplete = report.status === 'ditolak' ? index <= activeStepIndex : index < activeStepIndex
-            const isCurrent = report.status !== 'ditolak' && index === activeStepIndex
-            return (
-              <div
-                className={`tracker-step ${isComplete ? 'is-complete' : ''} ${isCurrent ? 'is-current' : ''}`}
-                key={item.id}
-              >
-                <span className="tracker-step-icon"><Icon size={17} /></span>
-                <span>{item.label}</span>
+          <div className="status-tracker-head">
+            <span>Alur penanganan</span>
+            <strong>{report.status === 'ditolak' ? 'Ditolak' : latestStatus}</strong>
+          </div>
+          <div className="status-tracker-line" aria-hidden="true"><span /></div>
+          <div className="status-tracker-steps">
+            {TRACK_STEPS.map((item, index) => {
+              const Icon = item.icon
+              const isComplete = report.status === 'ditolak' ? index <= activeStepIndex : index < activeStepIndex
+              const isCurrent = report.status !== 'ditolak' && index === activeStepIndex
+              return (
+                <div
+                  className={`tracker-step ${isComplete ? 'is-complete' : ''} ${isCurrent ? 'is-current' : ''}`}
+                  key={item.id}
+                >
+                  <span className="tracker-step-icon"><Icon size={17} /></span>
+                  <span>{item.label}</span>
+                </div>
+              )
+            })}
+            {report.status === 'ditolak' && (
+              <div className="tracker-rejected">
+                <AlertTriangle size={16} />
+                Ditolak
               </div>
-            )
-          })}
-          {report.status === 'ditolak' && (
-            <div className="tracker-rejected">
-              <AlertTriangle size={16} />
-              Ditolak
-            </div>
-          )}
+            )}
+          </div>
         </section>
 
         <section className="status-grid">
           <article className="status-panel status-summary-card">
-            <div className="risk-score-wrap">
-              <div
-                className={`risk-score-ring risk-${riskClass}`}
-                style={{ '--risk-deg': `${Math.round((Number(report.riskScore) / 100) * 360)}deg` }}
-              >
-                <span className="risk-score-glow" aria-hidden="true" />
+            <div className="status-summary-line">
+              <span className={`status-priority-pill risk-${riskClass}`}>
                 <strong>{report.riskScore}</strong>
-                <span>{report.riskLevel}</span>
-              </div>
+                {report.riskLevel}
+              </span>
               <div>
                 <h2>Prioritas awal</h2>
-                <p>Skor ini dihitung dari keparahan, kategori, laporan sekitar, fasilitas publik terdekat, dan umur laporan.</p>
+                <p>Dipakai petugas untuk mengurutkan penanganan.</p>
               </div>
             </div>
             <div className="status-info-grid">
               <div><span>Kategori</span><strong>{CATEGORY_LABEL[report.category]}</strong></div>
               <div><span>Keparahan</span><strong>{SEVERITY_LABEL[report.severity]}</strong></div>
               <div><span>Dibuat</span><strong>{formatDateTime(report.createdAt)}</strong></div>
-              <div><span>Diperbarui</span><strong>{formatDateTime(report.updatedAt)}</strong></div>
               <div><span>Petugas</span><strong>{report.assignedOfficerName || '-'}</strong></div>
-              <div><span>Arsip</span><strong>{report.archivedAt ? formatDateTime(report.archivedAt) : '-'}</strong></div>
+              {report.archivedAt && (
+                <div><span>Arsip</span><strong>{formatDateTime(report.archivedAt)}</strong></div>
+              )}
             </div>
           </article>
 
-          <article className="status-panel">
-            <div className="status-panel-head">
-              <Clock3 size={18} />
-              <h2>Timeline</h2>
-            </div>
+          <details className="status-panel status-disclosure">
+            <summary>
+              <span className="status-panel-head">
+                <Clock3 size={18} />
+                <h2>Timeline</h2>
+              </span>
+              <small>{sortedHistory.length} update</small>
+            </summary>
             <div className="timeline-list">
               {sortedHistory.map((item, index) => (
                 <div className="timeline-item" key={`${item.status}-${item.at}-${index}`}>
@@ -219,13 +206,16 @@ export default function StatusPage() {
                 </div>
               ))}
             </div>
-          </article>
+          </details>
 
-          <article className="status-panel">
-            <div className="status-panel-head">
-              <MapPin size={18} />
-              <h2>Lokasi dan deskripsi</h2>
-            </div>
+          <details className="status-panel status-disclosure">
+            <summary>
+              <span className="status-panel-head">
+                <MapPin size={18} />
+                <h2>Lokasi dan deskripsi</h2>
+              </span>
+              <small>{report.kecamatan || 'Lokasi'}</small>
+            </summary>
             <div className="status-detail-list">
               <div>
                 <span>Wilayah</span>
@@ -242,52 +232,37 @@ export default function StatusPage() {
               </div>
               <p>{report.description}</p>
             </div>
-          </article>
+          </details>
 
-          <article className="status-panel">
-            <div className="status-panel-head">
-              <AlertTriangle size={18} />
-              <h2>Alasan skor</h2>
-            </div>
-            <div className="breakdown-list">
-              {report.riskBreakdown.map((item) => (
-                <div
-                  className="breakdown-row"
-                  key={item.id}
-                  style={{ '--breakdown-value': `${Math.round((item.points / item.weight) * 100)}%` }}
-                >
-                  <div className="breakdown-copy">
-                    <strong>{item.label}</strong>
-                    <small>{item.detail}</small>
-                    <i className="breakdown-meter" aria-hidden="true" />
-                  </div>
-                  <span>{item.points}/{item.weight}</span>
-                </div>
-              ))}
-            </div>
-          </article>
-
-          <article className="status-panel status-photos-panel">
-            <div className="status-panel-head">
-              <Camera size={18} />
-              <h2>Foto bukti</h2>
-            </div>
-            <div className="status-photo-grid">
-              {reportPhotos.map((photo, index) => (
-                <figure className="status-photo-card" key={photo.id ?? photo.url}>
-                  <img src={photo.url} alt={`Foto laporan ${index + 1}`} loading="lazy" decoding="async" />
-                  <figcaption>Foto {index + 1}</figcaption>
-                </figure>
-              ))}
-            </div>
-          </article>
+          {reportPhotos.length > 0 && (
+            <details className="status-panel status-disclosure status-photos-panel">
+              <summary>
+                <span className="status-panel-head">
+                  <Camera size={18} />
+                  <h2>Foto bukti</h2>
+                </span>
+                <small>{reportPhotos.length} foto</small>
+              </summary>
+              <div className="status-photo-grid">
+                {reportPhotos.map((photo, index) => (
+                  <figure className="status-photo-card" key={photo.id ?? photo.url}>
+                    <img src={photo.url} alt={`Foto laporan ${index + 1}`} loading="lazy" decoding="async" />
+                    <figcaption>Foto {index + 1}</figcaption>
+                  </figure>
+                ))}
+              </div>
+            </details>
+          )}
 
           {completionPhotos.length > 0 && (
-            <article className="status-panel status-photos-panel">
-              <div className="status-panel-head">
-                <Camera size={18} />
-                <h2>Foto penyelesaian</h2>
-              </div>
+            <details className="status-panel status-disclosure status-photos-panel">
+              <summary>
+                <span className="status-panel-head">
+                  <Camera size={18} />
+                  <h2>Foto penyelesaian</h2>
+                </span>
+                <small>{completionPhotos.length} foto</small>
+              </summary>
               <div className="status-photo-grid">
                 {completionPhotos.map((photo, index) => (
                   <figure className="status-photo-card" key={photo.id ?? photo.url}>
@@ -296,7 +271,7 @@ export default function StatusPage() {
                   </figure>
                 ))}
               </div>
-            </article>
+            </details>
           )}
         </section>
       </main>
