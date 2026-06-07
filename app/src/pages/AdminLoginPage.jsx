@@ -4,31 +4,17 @@ import { LockKeyhole } from 'lucide-react'
 import { signInWithEmail } from '../services/authService.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { isDemoAuthEnabled } from '../services/runtimeConfig.js'
+import { DEMO_USERS } from '../data/demoUsers.js'
 import AuthLoginShell from './AuthLoginShell.jsx'
 
 export default function AdminLoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState(DEMO_USERS.admin.email)
+  const [password, setPassword] = useState(DEMO_USERS.admin.password)
   const [error, setError] = useState('')
-  const [demoUsers, setDemoUsers] = useState(null)
 
   const { role, loading } = useAuth()
-
-  useEffect(() => {
-    if (import.meta.env.PROD || !isDemoAuthEnabled) return undefined
-    let active = true
-    void import('../data/demoUsers.js').then(({ DEMO_USERS }) => {
-      if (!active) return
-      setDemoUsers(DEMO_USERS)
-      setEmail((current) => current || DEMO_USERS.admin.email)
-      setPassword((current) => current || DEMO_USERS.admin.password)
-    })
-    return () => {
-      active = false
-    }
-  }, [])
 
   useEffect(() => {
     if (loading) return
@@ -56,6 +42,12 @@ export default function AdminLoginPage() {
     navigate('/admin/dashboard', { replace: true })
   }
 
+  function fillDemoCredentials() {
+    setEmail(DEMO_USERS.admin.email)
+    setPassword(DEMO_USERS.admin.password)
+    setError('')
+  }
+
   return (
     <AuthLoginShell
       icon={LockKeyhole}
@@ -70,16 +62,17 @@ export default function AdminLoginPage() {
       password={password}
       onEmailChange={setEmail}
       onPasswordChange={setPassword}
+      emailPlaceholder={DEMO_USERS.admin.email}
+      passwordPlaceholder={DEMO_USERS.admin.password}
       onSubmit={handleSubmit}
       submitLabel="Masuk Dashboard"
       error={error}
-      demoContent={isDemoAuthEnabled && demoUsers ? (
-        <>
-          <strong>Credential demo:</strong><br />
-          Admin: {demoUsers.admin.email} / {demoUsers.admin.password}<br />
-          Petugas: {demoUsers.petugas.email} / {demoUsers.petugas.password}
-        </>
-      ) : null}
+      demoContent={(
+        <button type="button" className="auth-autofill" onClick={fillDemoCredentials}>
+          <span>Isi akun admin demo</span>
+          <strong>{DEMO_USERS.admin.email} / {DEMO_USERS.admin.password}</strong>
+        </button>
+      )}
     />
   )
 }

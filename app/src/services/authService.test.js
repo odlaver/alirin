@@ -139,7 +139,7 @@ describe('authService', () => {
       signInResult: { data: null, error: { message: 'Invalid login credentials' } },
     })
 
-    const result = await signInWithEmail('petugas@alirin.local', 'petugas123')
+    const result = await signInWithEmail('petugas@alirin.local', 'alirin123')
 
     expect(result.ok).toBe(true)
     expect(result.session.role).toBe('petugas')

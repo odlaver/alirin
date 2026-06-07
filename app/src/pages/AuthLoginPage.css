@@ -203,6 +203,43 @@
   color: #fff;
 }
 
+.auth-autofill {
+  display: grid;
+  width: 100%;
+  gap: 4px;
+  padding: 12px 14px;
+  color: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(126, 228, 242, 0.18);
+  border-radius: 13px;
+  background: rgba(var(--color-secondary-rgb), 0.1);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color var(--motion-fast) var(--ease-standard),
+    background var(--motion-fast) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-standard);
+}
+
+.auth-autofill:hover {
+  border-color: rgba(126, 228, 242, 0.42);
+  background: rgba(var(--color-secondary-rgb), 0.16);
+  transform: translateY(-1px);
+}
+
+.auth-autofill span {
+  color: #a5f3fc;
+  font-size: var(--text-xs);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.auth-autofill strong {
+  color: #fff;
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
 @keyframes authGridDrift {
   from {
     background-position: 0 0;

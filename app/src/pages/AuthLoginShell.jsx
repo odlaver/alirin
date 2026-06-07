@@ -13,6 +13,8 @@ export default function AuthLoginShell({
   password,
   onEmailChange,
   onPasswordChange,
+  emailPlaceholder,
+  passwordPlaceholder,
   onSubmit,
   submitLabel,
   error,
@@ -48,6 +50,7 @@ export default function AuthLoginShell({
           type="email"
           value={email}
           onChange={(event) => onEmailChange(event.target.value)}
+          placeholder={emailPlaceholder}
           autoComplete="username"
         />
 
@@ -58,6 +61,7 @@ export default function AuthLoginShell({
           type="password"
           value={password}
           onChange={(event) => onPasswordChange(event.target.value)}
+          placeholder={passwordPlaceholder}
           autoComplete="current-password"
         />
 

@@ -65,17 +65,29 @@ export default function RiskMap({
 
     const map = L.map(mapNodeRef.current, {
       attributionControl: false,
+      boxZoom: true,
       center: BANDAR_LAMPUNG_CENTER,
+      dragging: true,
       doubleClickZoom: true,
-      scrollWheelZoom: false,
+      inertia: true,
+      scrollWheelZoom: true,
+      tap: true,
+      touchZoom: true,
+      wheelDebounceTime: 35,
+      wheelPxPerZoomLevel: 70,
       zoom: compact ? 12 : 13,
       zoomControl: false,
+      zoomSnap: 0.25,
     })
 
     mapRef.current = map
     const markerMap = markerRefs.current
     L.control.zoom({ position: 'bottomleft' }).addTo(map)
     L.control.attribution({ position: 'bottomleft', prefix: false }).addTo(map)
+    map.dragging.enable()
+    map.scrollWheelZoom.enable()
+    map.touchZoom.enable()
+    map.doubleClickZoom.enable()
 
     window.setTimeout(() => map.invalidateSize(), 0)
 
@@ -184,6 +196,12 @@ export default function RiskMap({
               <Search size={16} />
               <span>Bandar Lampung</span>
             </div>
+
+            {!compact && (
+              <div className="map-gesture-hint" aria-hidden="true">
+                Drag peta, scroll atau pinch untuk zoom
+              </div>
+            )}
 
             <div className="map-layer-switch" aria-label="Ganti layer peta">
               <Layers3 size={15} aria-hidden="true" />

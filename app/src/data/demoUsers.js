@@ -7,7 +7,7 @@ export const DEMO_USERS = {
   },
   petugas: {
     email: 'petugas@alirin.local',
-    password: 'petugas123',
+    password: 'alirin123',
     name: 'Budi Santoso',
     role: 'petugas',
     officerId: 'ofc-budi',

@@ -540,6 +540,7 @@
   content: "";
   background: linear-gradient(90deg, transparent, rgba(34, 184, 207, 0.82), transparent);
   animation: signalScan 5.6s linear infinite;
+  pointer-events: none;
 }
 
 .map-picker-loading {
@@ -622,6 +623,7 @@
   backdrop-filter: blur(8px);
   font-size: var(--text-xs);
   font-weight: 700;
+  pointer-events: none;
 }
 
 .map-actions-row {

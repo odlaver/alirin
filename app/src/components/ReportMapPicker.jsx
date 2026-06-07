@@ -35,15 +35,26 @@ export default function ReportMapPicker({ lat, lng, onChange }) {
     const initialPoint = initialPointRef.current
     const map = L.map(mapNodeRef.current, {
       attributionControl: false,
+      boxZoom: true,
       center: initialPoint,
-      scrollWheelZoom: false,
+      dragging: true,
+      inertia: true,
+      scrollWheelZoom: true,
+      tap: true,
+      touchZoom: true,
+      wheelDebounceTime: 35,
+      wheelPxPerZoomLevel: 70,
       zoom: 15,
       zoomControl: false,
+      zoomSnap: 0.25,
     })
 
     mapRef.current = map
     L.control.zoom({ position: 'bottomleft' }).addTo(map)
     L.control.attribution({ position: 'bottomleft', prefix: false }).addTo(map)
+    map.dragging.enable()
+    map.scrollWheelZoom.enable()
+    map.touchZoom.enable()
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors',
@@ -99,7 +110,7 @@ export default function ReportMapPicker({ lat, lng, onChange }) {
         <Search size={15} />
         <span>Bandar Lampung</span>
       </div>
-      <span className="map-mock-hint">Klik atau seret pin</span>
+      <span className="map-mock-hint">Klik/seret pin, scroll atau pinch untuk zoom</span>
     </div>
   )
 }
