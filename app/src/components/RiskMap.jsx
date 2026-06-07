@@ -26,6 +26,20 @@ function createRiskIcon(marker, isActive) {
   })
 }
 
+function createUserLocationIcon() {
+  return L.divIcon({
+    className: 'leaflet-user-location-shell',
+    html: `
+      <span class="leaflet-user-location-body">
+        <span class="leaflet-user-location-pulse"></span>
+        <span class="leaflet-user-location-dot"></span>
+      </span>
+    `,
+    iconSize: [34, 34],
+    iconAnchor: [17, 17],
+  })
+}
+
 export default function RiskMap({
   compact = false,
   className = '',
@@ -40,9 +54,13 @@ export default function RiskMap({
   const mapRef = useRef(null)
   const tileLayerRef = useRef(null)
   const markerRefs = useRef(new Map())
+  const userMarkerRef = useRef(null)
+  const userAccuracyRef = useRef(null)
   const callbackRef = useRef(onSelectedMarkerChange)
   const [activeLayer, setActiveLayer] = useState('osm')
   const [internalActiveId, setInternalActiveId] = useState(riskMarkers[0].id)
+  const [isLocating, setIsLocating] = useState(false)
+  const [locateMessage, setLocateMessage] = useState('')
   const safeMarkers = useMemo(
     () => (Array.isArray(markers) ? markers : riskMarkers),
     [markers],
@@ -95,6 +113,8 @@ export default function RiskMap({
       map.remove()
       mapRef.current = null
       tileLayerRef.current = null
+      userMarkerRef.current = null
+      userAccuracyRef.current = null
       markerMap.clear()
     }
   }, [compact])
@@ -160,13 +180,77 @@ export default function RiskMap({
     }
   }, [activeMarker, safeMarkers])
 
-  function focusActiveMarker() {
+  function focusUserLocation() {
     const map = mapRef.current
     if (!map) return
 
-    map.flyTo(activeMarker.position, compact ? 13 : 14, {
-      duration: 0.55,
-    })
+    if (!navigator.geolocation) {
+      setLocateMessage('Browser tidak mendukung lokasi.')
+      return
+    }
+
+    setIsLocating(true)
+    setLocateMessage('Meminta izin lokasi...')
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (mapRef.current !== map) return
+
+        const point = L.latLng(position.coords.latitude, position.coords.longitude)
+        const accuracy = Number.isFinite(position.coords.accuracy)
+          ? Math.max(position.coords.accuracy, 20)
+          : 80
+
+        if (!userMarkerRef.current) {
+          userMarkerRef.current = L.marker(point, {
+            icon: createUserLocationIcon(),
+            keyboard: false,
+            title: 'Lokasi kamu saat ini',
+            zIndexOffset: 900,
+          }).addTo(map)
+        } else {
+          userMarkerRef.current.setLatLng(point)
+        }
+
+        if (!userAccuracyRef.current) {
+          userAccuracyRef.current = L.circle(point, {
+            radius: accuracy,
+            color: '#0284c7',
+            fillColor: '#38bdf8',
+            fillOpacity: 0.14,
+            interactive: false,
+            opacity: 0.28,
+            weight: 1,
+          }).addTo(map)
+        } else {
+          userAccuracyRef.current.setLatLng(point)
+          userAccuracyRef.current.setRadius(accuracy)
+        }
+
+        map.flyTo(point, Math.max(map.getZoom(), compact ? 14 : 16), {
+          duration: 0.7,
+        })
+        setIsLocating(false)
+        setLocateMessage('Lokasi kamu ditemukan.')
+      },
+      (error) => {
+        if (mapRef.current !== map) return
+
+        const messages = {
+          [error.PERMISSION_DENIED]: 'Izin lokasi ditolak.',
+          [error.POSITION_UNAVAILABLE]: 'Lokasi belum tersedia.',
+          [error.TIMEOUT]: 'Pencarian lokasi terlalu lama.',
+        }
+
+        setIsLocating(false)
+        setLocateMessage(messages[error.code] ?? 'Gagal membaca lokasi.')
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 30000,
+        timeout: 12000,
+      },
+    )
   }
 
   return (
@@ -218,13 +302,21 @@ export default function RiskMap({
             </div>
 
             <button
-              className="map-recenter"
+              className={`map-recenter ${isLocating ? 'is-loading' : ''}`}
               type="button"
-              onClick={focusActiveMarker}
-              aria-label="Pusatkan peta ke titik aktif"
+              onClick={focusUserLocation}
+              aria-label="Gunakan lokasi saya saat ini"
+              disabled={isLocating}
+              title="Gunakan lokasi saya saat ini"
             >
               <LocateFixed size={18} />
             </button>
+
+            {locateMessage && (
+              <div className="map-location-status" aria-live="polite">
+                {locateMessage}
+              </div>
+            )}
 
             {safeMarkers.length > 0 ? (
               <div className="map-popup map-detail-panel" aria-live="polite">
