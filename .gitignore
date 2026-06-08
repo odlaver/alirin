@@ -1,3 +1,5 @@
 .vercel
 
 *.txt
+*.docx
+_render_laporan_alirin/
