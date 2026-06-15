@@ -307,7 +307,7 @@
 .status-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(300px, 0.78fr);
-  align-items: start;
+  align-items: stretch;
   gap: 18px;
 }
 
@@ -317,6 +317,18 @@
 
 .status-summary-card {
   grid-column: 1 / -1;
+}
+
+.status-detail-row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.78fr);
+  align-items: stretch;
+  gap: 18px;
+}
+
+.status-detail-row > .status-disclosure {
+  height: 100%;
 }
 
 .status-photos-panel {
@@ -439,6 +451,8 @@
 }
 
 .status-disclosure {
+  align-self: stretch;
+  min-height: 100%;
   padding: 0;
 }
 
@@ -666,6 +680,10 @@
 
   .status-overview,
   .status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .status-detail-row {
     grid-template-columns: 1fr;
   }
 

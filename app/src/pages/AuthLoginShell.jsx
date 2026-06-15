@@ -18,7 +18,6 @@ export default function AuthLoginShell({
   onSubmit,
   submitLabel,
   error,
-  demoContent,
 }) {
   return (
     <div className="auth-page">
@@ -71,12 +70,6 @@ export default function AuthLoginShell({
           <LogIn size={18} />
           {submitLabel}
         </button>
-
-        {demoContent && (
-          <div className="auth-demo">
-            {demoContent}
-          </div>
-        )}
       </form>
     </div>
   )

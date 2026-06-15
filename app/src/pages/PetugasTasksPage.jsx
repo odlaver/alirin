@@ -227,7 +227,7 @@ export default function PetugasTasksPage() {
 
   async function handleLogout() {
     await signOut()
-    navigate('/petugas/login', { replace: true })
+    navigate('/login', { replace: true })
   }
 
   return (

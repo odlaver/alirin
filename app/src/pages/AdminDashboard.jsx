@@ -91,7 +91,7 @@ export default function AdminDashboard() {
 
   async function handleLogout() {
     await signOut()
-    navigate('/admin/login', { replace: true })
+    navigate('/login', { replace: true })
   }
 
   const [title, subtitle] = PAGE_TITLE[nav] || ['Dashboard', '']

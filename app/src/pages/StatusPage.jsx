@@ -186,53 +186,55 @@ export default function StatusPage() {
             </div>
           </article>
 
-          <details className="status-panel status-disclosure">
-            <summary>
-              <span className="status-panel-head">
-                <Clock3 size={18} />
-                <h2>Timeline</h2>
-              </span>
-              <small>{sortedHistory.length} update</small>
-            </summary>
-            <div className="timeline-list">
-              {sortedHistory.map((item, index) => (
-                <div className="timeline-item" key={`${item.status}-${item.at}-${index}`}>
-                  <span className={`timeline-dot ${STATUS_CLASS[item.status] ?? ''}`}><CheckCircle2 size={14} /></span>
-                  <div>
-                    <strong>{STATUS_LABEL[item.status] ?? item.status}</strong>
-                    <p>{item.note}</p>
-                    <small>{item.actor} - {formatDateTime(item.at)}</small>
+          <div className="status-detail-row">
+            <details className="status-panel status-disclosure status-timeline-card">
+              <summary>
+                <span className="status-panel-head">
+                  <Clock3 size={18} />
+                  <h2>Timeline</h2>
+                </span>
+                <small>{sortedHistory.length} update</small>
+              </summary>
+              <div className="timeline-list">
+                {sortedHistory.map((item, index) => (
+                  <div className="timeline-item" key={`${item.status}-${item.at}-${index}`}>
+                    <span className={`timeline-dot ${STATUS_CLASS[item.status] ?? ''}`}><CheckCircle2 size={14} /></span>
+                    <div>
+                      <strong>{STATUS_LABEL[item.status] ?? item.status}</strong>
+                      <p>{item.note}</p>
+                      <small>{item.actor} - {formatDateTime(item.at)}</small>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </details>
+                ))}
+              </div>
+            </details>
 
-          <details className="status-panel status-disclosure">
-            <summary>
-              <span className="status-panel-head">
-                <MapPin size={18} />
-                <h2>Lokasi dan deskripsi</h2>
-              </span>
-              <small>{report.kecamatan || 'Lokasi'}</small>
-            </summary>
-            <div className="status-detail-list">
-              <div>
-                <span>Wilayah</span>
-                <strong>{formatReportLocation(report)}</strong>
+            <details className="status-panel status-disclosure status-location-card">
+              <summary>
+                <span className="status-panel-head">
+                  <MapPin size={18} />
+                  <h2>Lokasi dan deskripsi</h2>
+                </span>
+                <small>{report.kecamatan || 'Lokasi'}</small>
+              </summary>
+              <div className="status-detail-list">
+                <div>
+                  <span>Wilayah</span>
+                  <strong>{formatReportLocation(report)}</strong>
+                </div>
+                <div>
+                  <span>Alamat / patokan</span>
+                  <strong>{report.address || '-'}</strong>
+                </div>
+                <div>
+                  <span>Koordinat area</span>
+                  <strong>{formatApproxReportCoordinates(report)}</strong>
+                  <small className="status-privacy-note">Dibulatkan untuk menjaga privasi lokasi pelapor.</small>
+                </div>
+                <p>{report.description}</p>
               </div>
-              <div>
-                <span>Alamat / patokan</span>
-                <strong>{report.address || '-'}</strong>
-              </div>
-              <div>
-                <span>Koordinat area</span>
-                <strong>{formatApproxReportCoordinates(report)}</strong>
-                <small className="status-privacy-note">Dibulatkan untuk menjaga privasi lokasi pelapor.</small>
-              </div>
-              <p>{report.description}</p>
-            </div>
-          </details>
+            </details>
+          </div>
 
           {reportPhotos.length > 0 && (
             <details className="status-panel status-disclosure status-photos-panel">

@@ -9,11 +9,10 @@ import { useAuth } from './hooks/useAuth.js'
 
 const LaporPage = lazy(() => import('./pages/LaporPage.jsx'))
 const PetaPage = lazy(() => import('./pages/PetaPage.jsx'))
-const AdminLoginPage = lazy(() => import('./pages/AdminLoginPage.jsx'))
+const LoginPage = lazy(() => import('./pages/LoginPage.jsx'))
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard.jsx'))
 const StatusPage = lazy(() => import('./pages/StatusPage.jsx'))
 const MetodologiPage = lazy(() => import('./pages/MetodologiPage.jsx'))
-const PetugasLoginPage = lazy(() => import('./pages/PetugasLoginPage.jsx'))
 const PetugasTasksPage = lazy(() => import('./pages/PetugasTasksPage.jsx'))
 
 
@@ -60,14 +59,14 @@ function AdminRoute() {
   const { role, loading } = useAuth()
   if (loading) return <PageLoader />
   if (role === 'admin') return <AdminDashboard />
-  return <Navigate to="/admin/login" replace state={{ from: '/admin/dashboard' }} />
+  return <Navigate to="/login" replace state={{ from: '/admin/dashboard' }} />
 }
 
 function PetugasRoute() {
   const { role, loading } = useAuth()
   if (loading) return <PageLoader />
   if (role === 'petugas') return <PetugasTasksPage />
-  return <Navigate to="/petugas/login" replace state={{ from: '/petugas/tugas' }} />
+  return <Navigate to="/login" replace state={{ from: '/petugas/tugas' }} />
 }
 
 function App() {
@@ -83,9 +82,10 @@ function App() {
             <Route path="/status/:token" element={<StatusPage />} />
             <Route path="/peta" element={<PetaPage />} />
             <Route path="/metodologi" element={<MetodologiPage />} />
-            <Route path="/admin/login" element={<AdminLoginPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/admin/login" element={<Navigate to="/login" replace />} />
             <Route path="/admin/dashboard" element={<AdminRoute />} />
-            <Route path="/petugas/login" element={<PetugasLoginPage />} />
+            <Route path="/petugas/login" element={<Navigate to="/login" replace />} />
             <Route path="/petugas/tugas" element={<PetugasRoute />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

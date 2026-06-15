@@ -243,7 +243,7 @@ function Header() {
         </nav>
 
         <div className="desktop-actions">
-          <Link className="btn btn-ghost" to="/admin/login">
+          <Link className="btn btn-ghost" to="/login">
             Masuk Dashboard
           </Link>
           <Link className="btn btn-primary" to="/lapor">
@@ -311,7 +311,7 @@ function Header() {
               <Map size={17} />
               Lihat Peta Risiko
             </Link>
-            <Link className="btn btn-ghost drawer-login" to="/admin/login">
+            <Link className="btn btn-ghost drawer-login" to="/login">
               Masuk Dashboard
             </Link>
           </div>
@@ -820,8 +820,7 @@ function Footer() {
 
         <div>
           <h2>Admin</h2>
-          <Link to="/admin/login">Masuk Dashboard</Link>
-          <Link to="/petugas/login">Masuk Petugas</Link>
+          <Link to="/login">Masuk Internal</Link>
           <Link to="/admin/dashboard">Dashboard Admin</Link>
         </div>
 

@@ -2,7 +2,7 @@ export const DEMO_USERS = {
   admin: {
     email: 'admin@alirin.local',
     password: 'alirin123',
-    name: 'Demo Admin',
+    name: 'Admin Pemda',
     role: 'admin',
   },
   petugas: {
