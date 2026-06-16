@@ -90,4 +90,55 @@ describe('reportsSupabaseRepository', () => {
       ],
     })
   })
+
+  it('retries with a new report code if insert fails with a unique constraint violation', async () => {
+    const inserts = []
+    
+    const limitMock = vi.fn().mockResolvedValue({
+      data: [{ code: 'ALR-2026-0005' }],
+      error: null
+    })
+    const orderMock = vi.fn().mockReturnValue({ limit: limitMock })
+    const likeMock = vi.fn().mockReturnValue({ order: orderMock })
+    const selectMock = vi.fn().mockReturnValue({ like: likeMock })
+    
+    const insertMock = vi.fn((payload) => {
+      inserts.push(payload)
+      if (payload.code === 'ALR-2026-0001') {
+        return Promise.resolve({
+          error: {
+            code: '23505',
+            message: 'duplicate key value violates unique constraint "reports_code_key"'
+          }
+        })
+      }
+      return Promise.resolve({ error: null })
+    })
+
+    const fromMock = vi.fn(() => {
+      return {
+        insert: insertMock,
+        select: selectMock
+      }
+    })
+
+    vi.doMock('./supabaseClient.js', () => ({
+      supabase: { from: fromMock },
+    }))
+    
+    const uploadReportPhoto = vi.fn().mockResolvedValue('https://cdn.alirin.test/report-photos/photo.webp')
+    vi.doMock('./storageService.js', () => ({
+      uploadReportPhoto,
+    }))
+
+    const { insertSupabaseReport } = await import('./reportsSupabaseRepository.js')
+
+    const report = await insertSupabaseReport(baseReport)
+
+    expect(fromMock).toHaveBeenNthCalledWith(1, 'reports')
+    expect(fromMock).toHaveBeenNthCalledWith(2, 'reports')
+    expect(inserts[0].code).toBe('ALR-2026-0001')
+    expect(inserts[1].code).toBe('ALR-2026-0006')
+    expect(report.code).toBe('ALR-2026-0006')
+  })
 })

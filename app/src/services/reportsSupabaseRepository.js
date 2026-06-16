@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient.js'
 import { uploadReportPhoto } from './storageService.js'
+import { createReportCode } from '../domain/reports.js'
 
 const REPORT_SELECT = '*, report_photos(*), risk_breakdowns(*), report_status_history(*)'
 
@@ -145,44 +146,85 @@ export async function insertSupabaseReport(report) {
   const reportPhotos = await syncInlinePhotos(report.photos || [], 'foto laporan')
   const completionPhotos = await syncInlinePhotos(report.completionPhotos || [], 'foto penyelesaian')
 
-  const { error } = await supabase.from('reports').insert({
-    id: report.id,
-    code: report.code,
-    public_tracking_token: report.publicTrackingToken,
-    category: report.category,
-    description: report.description,
-    address: report.address,
-    lat: report.lat,
-    lng: report.lng,
-    kecamatan: report.kecamatan,
-    kelurahan: report.kelurahan,
-    status: report.status,
-    severity: report.severity,
-    risk_level: report.riskLevel,
-    risk_score: report.riskScore,
-    reporter_name: report.reporterName,
-    reporter_contact: report.reporterContact,
-    assigned_officer_id: report.assignedOfficerId || null,
-    assigned_officer_name: report.assignedOfficerName || null,
-    blocked_reason: report.blockedReason || null,
-    field_notes: report.fieldNotes || [],
-    completion_photos: completionPhotos,
-    archived_at: report.archivedAt || null,
-    created_at: report.createdAt,
-    updated_at: report.updatedAt,
-  })
+  let currentReport = { ...report }
+  let attempts = 0
+  const maxAttempts = 5
+  let lastError = null
 
-  if (error) throw new Error(error.message)
+  while (attempts < maxAttempts) {
+    const { error } = await supabase.from('reports').insert({
+      id: currentReport.id,
+      code: currentReport.code,
+      public_tracking_token: currentReport.publicTrackingToken,
+      category: currentReport.category,
+      description: currentReport.description,
+      address: currentReport.address,
+      lat: currentReport.lat,
+      lng: currentReport.lng,
+      kecamatan: currentReport.kecamatan,
+      kelurahan: currentReport.kelurahan,
+      status: currentReport.status,
+      severity: currentReport.severity,
+      risk_level: currentReport.riskLevel,
+      risk_score: currentReport.riskScore,
+      reporter_name: currentReport.reporterName,
+      reporter_contact: currentReport.reporterContact,
+      assigned_officer_id: currentReport.assignedOfficerId || null,
+      assigned_officer_name: currentReport.assignedOfficerName || null,
+      blocked_reason: currentReport.blockedReason || null,
+      field_notes: currentReport.fieldNotes || [],
+      completion_photos: completionPhotos,
+      archived_at: currentReport.archivedAt || null,
+      created_at: currentReport.createdAt,
+      updated_at: currentReport.updatedAt,
+    })
 
-  const syncedReport = {
-    ...report,
-    completionPhotos,
+    if (!error) {
+      const syncedReport = {
+        ...currentReport,
+        completionPhotos,
+      }
+      syncedReport.photos = await insertReportPhotos(currentReport.id, reportPhotos)
+      await syncRiskBreakdown(currentReport.id, syncedReport.riskBreakdown)
+      await insertStatusHistory(currentReport.id, syncedReport.statusHistory?.[0])
+
+      return syncedReport
+    }
+
+    lastError = error
+    const isCodeConflict = error.code === '23505' || 
+                           error.message?.includes('reports_code_key') || 
+                           error.message?.includes('duplicate key value')
+
+    if (isCodeConflict && attempts < maxAttempts - 1) {
+      attempts++
+      try {
+        const createdAtDate = new Date(currentReport.createdAt)
+        const year = createdAtDate.getFullYear()
+        const yearPrefix = `ALR-${year}-`
+        
+        const { data: latestData, error: latestError } = await supabase
+          .from('reports')
+          .select('code')
+          .like('code', `${yearPrefix}%`)
+          .order('code', { ascending: false })
+          .limit(1)
+
+        if (!latestError && latestData && latestData.length > 0) {
+          const latestCode = latestData[0].code
+          currentReport.code = createReportCode([{ code: latestCode }], createdAtDate)
+        } else {
+          currentReport.code = createReportCode([{ code: currentReport.code }], createdAtDate)
+        }
+      } catch (retryError) {
+        currentReport.code = createReportCode([{ code: currentReport.code }], new Date(currentReport.createdAt))
+      }
+    } else {
+      break
+    }
   }
-  syncedReport.photos = await insertReportPhotos(report.id, reportPhotos)
-  await syncRiskBreakdown(report.id, syncedReport.riskBreakdown)
-  await insertStatusHistory(report.id, syncedReport.statusHistory?.[0])
 
-  return syncedReport
+  throw new Error(lastError?.message || 'Gagal menyimpan laporan ke database.')
 }
 
 export async function updateSupabaseReportStatus(reportId, status, historyItem, archivedAt = '') {

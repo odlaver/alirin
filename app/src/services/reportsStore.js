@@ -372,7 +372,7 @@ export async function createReport(input) {
   }
   
   const nextReportsTemp = recalculateReportsRisk([withHistory, ...reports])
-  let calculatedReport = nextReportsTemp.find(r => r.code === withHistory.code) || withHistory
+  let calculatedReport = nextReportsTemp.find(r => r.id === withHistory.id) || withHistory
 
   if (useSupabaseReports) {
     try {
@@ -389,7 +389,7 @@ export async function createReport(input) {
     }
   }
 
-  const finalReports = nextReportsTemp.map(r => r.code === calculatedReport.code ? calculatedReport : r)
+  const finalReports = nextReportsTemp.map(r => r.id === calculatedReport.id ? calculatedReport : r)
   saveReports(finalReports)
   return calculatedReport
 }
