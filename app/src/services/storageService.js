@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient.js'
 
-export const REPORT_PHOTO_BUCKET = 'reports'
+const REPORT_PHOTO_BUCKET = 'reports'
 
 const MIME_EXTENSION = {
   'image/jpeg': 'jpg',

@@ -13,6 +13,3 @@ export const DEMO_USERS = {
     officerId: 'ofc-budi',
   },
 }
-
-export const DEMO_ADMIN_CREDENTIALS = DEMO_USERS.admin
-export const DEMO_PETUGAS_CREDENTIALS = DEMO_USERS.petugas

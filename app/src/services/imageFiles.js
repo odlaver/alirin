@@ -1,5 +1,5 @@
 export const MAX_REPORT_PHOTOS = 3
-export const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024
+const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024
 
 function loadImage(dataUrl) {
   return new Promise((resolve, reject) => {
@@ -31,7 +31,7 @@ function getDataUrlMimeType(dataUrl, fallback = 'image/jpeg') {
   return match?.[1] ?? fallback
 }
 
-export async function compressImageFile(file, maxWidth = 900, quality = 0.72) {
+async function compressImageFile(file, maxWidth = 900, quality = 0.72) {
   const dataUrl = await readFileAsDataUrl(file)
   const image = await loadImage(dataUrl)
   const scale = Math.min(1, maxWidth / image.width)
@@ -49,7 +49,7 @@ export async function compressImageFile(file, maxWidth = 900, quality = 0.72) {
   return canvas.toDataURL(mimeType, quality)
 }
 
-export async function prepareReportPhoto(file) {
+async function prepareReportPhoto(file) {
   if (!file.type.startsWith('image/')) {
     throw new Error(`${file.name} bukan file gambar.`)
   }

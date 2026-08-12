@@ -59,7 +59,3 @@ export const TILE_LAYERS = {
 export function getLevelClass(level) {
   return level.toLowerCase().replace(/\s+/g, '-')
 }
-
-export function getMarkerById(markerId) {
-  return riskMarkers.find((marker) => marker.id === markerId) ?? riskMarkers[0]
-}

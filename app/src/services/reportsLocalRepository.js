@@ -10,7 +10,7 @@ export function hasLocalStorage() {
   }
 }
 
-export function readLocalJson(key, fallback) {
+function readLocalJson(key, fallback) {
   if (!hasLocalStorage()) return fallback
   try {
     const raw = window.localStorage.getItem(key)
@@ -20,7 +20,7 @@ export function readLocalJson(key, fallback) {
   }
 }
 
-export function writeLocalJson(key, value, options = {}) {
+function writeLocalJson(key, value, options = {}) {
   if (!hasLocalStorage()) return false
   try {
     window.localStorage.setItem(key, JSON.stringify(value))

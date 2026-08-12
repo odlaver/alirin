@@ -2,7 +2,7 @@ import { isSupabaseConfigured } from './supabaseClient.js'
 import { fetchSupabaseReports, subscribeSupabaseReports } from './reportsSupabaseRepository.js'
 import { getReportsDataMode } from './runtimeConfig.js'
 
-export function canUseSupabaseReports() {
+function canUseSupabaseReports() {
   return isSupabaseConfigured && getReportsDataMode(isSupabaseConfigured) !== 'local'
 }
 

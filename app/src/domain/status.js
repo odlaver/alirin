@@ -25,15 +25,6 @@ export const STATUS_CLASS = {
   ditolak: 'tag-ditolak',
 }
 
-export const STATUS_TONE = {
-  masuk: 'warning',
-  diverifikasi: 'info',
-  dijadwalkan: 'info',
-  ditangani: 'primary',
-  selesai: 'success',
-  ditolak: 'danger',
-}
-
 export const INITIAL_STATUS_HISTORY = {
   status: 'masuk',
   actor: 'Sistem',

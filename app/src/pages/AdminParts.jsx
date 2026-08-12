@@ -1,14 +1,10 @@
-import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react'
+﻿import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import {
   AlertTriangle, CheckCircle2, Clock, FileCheck2,
   MapPin, TrendingUp, TrendingDown, X,
 } from 'lucide-react'
-import {
-  TREND_DATA,
-  MONTHLY_DATA, DONUT_DATA, PETUGAS, SETTINGS_ITEMS,
-} from './adminData.js'
 import { DEMO_OFFICERS } from '../data/officers.js'
 import { REPORT_STATUSES, STATUS_CLASS, STATUS_LABEL, canTransitionTo } from '../domain/status.js'
 import {
@@ -157,7 +153,7 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
           <div className="cover-overlay">
             <span className="modal-badge">
               <span className={`report-severity-dot dot-${report.severity}`}/>
-              {report.severity.toUpperCase()} • SKOR {report.riskScore}
+              {report.severity.toUpperCase()} â€¢ SKOR {report.riskScore}
             </span>
             <div className="cover-title">
               <span className="cover-id">{report.code}</span>
@@ -312,7 +308,7 @@ export function ReportList({ reports, filter, onSelect }) {
             <span className={`report-severity-dot dot-${r.severity}`}/>
             <div className="report-info">
               <strong>{r.title}</strong>
-              <small><MapPin size={11} style={{display:'inline',verticalAlign:'middle'}}/> {r.loc} · {r.time}</small>
+              <small><MapPin size={11} style={{display:'inline',verticalAlign:'middle'}}/> {r.loc} Â· {r.time}</small>
             </div>
             <span className={`report-score score-${r.severity}`}>{r.riskScore}</span>
             <span className={`report-status-tag ${STATUS_CLASS[r.status]}`}>{STATUS_LABEL[r.status]}</span>
@@ -451,204 +447,5 @@ export function MapPreview({ reports = [] }) {
         />
       </Suspense>
     </div>
-  )
-}
-
-
-export function StatistikView({ reports = [] }) {
-  const max = Math.max(...MONTHLY_DATA.map(d=>d.val)) || 100
-  const total = DONUT_DATA.reduce((a,b)=>a+b.val,0) || 1
-
-  const donutSegments = useMemo(() => {
-    return DONUT_DATA.reduce((segments, d) => {
-      const prevOffset = segments.length > 0 ? segments[segments.length - 1]._nextOffset : 0
-      const pct = d.val / total * 100
-      const dash = pct * 0.94
-      segments.push({ ...d, pct, dash, offset: prevOffset * 0.94, _nextOffset: prevOffset + pct })
-      return segments
-    }, [])
-  }, [total])
-
-  const trendMax = Math.max(...TREND_DATA.map(d=>d.val)) || 100
-  const trendW = 100 / (TREND_DATA.length - 1)
-  const areaPath = TREND_DATA.map((d,i) => {
-    const x = i * trendW
-    const y = 100 - (d.val / trendMax) * 80
-    return `${i === 0 ? 'M' : 'L'}${x},${y}`
-  }).join(' ')
-  const areaFill = `${areaPath} L100,100 L0,100 Z`
-
-  const completionRate = reports.length > 0 ? Math.round((reports.filter(r => r.status === 'selesai').length / reports.length) * 100) : 0
-
-  const summaryCards = [
-    { label: 'Total bulan ini', value: '128', sub: '+22% vs lalu', accent: 'var(--color-secondary)' },
-    { label: 'Rata-rata harian', value: '4.1', sub: 'laporan/hari', accent: 'var(--color-primary)' },
-    { label: 'Waktu respons', value: '3.2j', sub: '-18% vs target', accent: 'var(--color-success)' },
-    { label: 'Tingkat selesai', value: `${completionRate}%`, sub: 'kinerja stabil', accent: 'var(--color-warning)' },
-  ]
-
-  return (
-    <div className="statistik-layout">
-      <div className="stat-summary-row">
-        {summaryCards.map((c, i) => (
-          <motion.div key={c.label} className="stat-summary-card"
-            initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05, duration: 0.4 }}>
-            <div className="stat-summary-accent" style={{ background: c.accent }} />
-            <div className="stat-summary-content">
-              <span className="stat-summary-value">{c.value}</span>
-              <div className="stat-summary-info">
-                <span className="stat-summary-label">{c.label}</span>
-                <span className="stat-summary-sub">{c.sub}</span>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      <motion.div className="admin-panel" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-        <div className="panel-head">
-          <div><h2>Laporan per Bulan</h2><p>Tahun 2026</p></div>
-          <span className="panel-badge info">Total: {MONTHLY_DATA.reduce((a, b) => a + b.val, 0)} Laporan</span>
-        </div>
-        <div className="stat-chart-area">
-          <div className="stat-gridlines">
-            {[100, 75, 50, 25, 0].map(pct => (
-              <div key={pct} className="stat-gridline">
-                <span>{Math.round(max * pct / 100)}</span>
-                <div className="stat-gridline-rule" />
-              </div>
-            ))}
-          </div>
-          <div className="stat-big-chart">
-            {MONTHLY_DATA.map((d, i) => (
-              <div key={d.mon} className="stat-bar-col">
-                <motion.div className="stat-bar"
-                  initial={{ height: 0 }} animate={{ height: `${(d.val / max) * 100}%` }}
-                  transition={{ delay: i * 0.1 + 0.3, duration: 0.6, ease: 'easeOut' }}>
-                  <span className="stat-bar-val">{d.val}</span>
-                  <div className="stat-bar-glow" />
-                </motion.div>
-                <span className="stat-bar-lbl">{d.mon}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </motion.div>
-
-      <div className="stat-two-col">
-        <motion.div className="admin-panel" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <div className="panel-head"><div><h2>Tren Mingguan</h2><p>7 hari terakhir</p></div></div>
-          <div className="trend-chart-wrap">
-            <div className="trend-svg-container">
-              
-              <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="trend-area-svg">
-                <defs>
-                  <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--color-secondary)" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="var(--color-surface)" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
-                <path d={areaFill} fill="url(#trendGrad)" />
-                <path d={areaPath} fill="none" stroke="var(--color-secondary)" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              
-              
-              {TREND_DATA.map((d, i) => {
-                const leftPct = i * trendW
-                const topPct = 100 - (d.val / trendMax) * 80
-                return (
-                  <div key={d.day} className="trend-interact-col" style={{ left: `${leftPct}%` }}>
-                    <div className="trend-col-hover-line" />
-                    <div className="trend-node" style={{ top: `${topPct}%` }}>
-                      <div className="trend-node-label">{d.val} <span>laporan</span></div>
-                      <div className="trend-node-dot" />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            <div className="trend-labels">
-              {TREND_DATA.map(d => <span key={d.day}>{d.day}</span>)}
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div className="admin-panel" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-          <div className="panel-head"><div><h2>Kategori Laporan</h2><p>Distribusi masalah</p></div></div>
-          <div className="donut-wrap">
-            <div className="donut-ring-container">
-              <svg className="donut-svg" viewBox="0 0 42 42">
-                {donutSegments.map(seg => (
-                  <circle key={seg.label} cx="21" cy="21" r="15" fill="none" stroke={seg.color} strokeWidth="4"
-                    strokeDasharray={`${seg.dash} ${94 - seg.dash}`} strokeDashoffset={-seg.offset}
-                    transform="rotate(-90 21 21)" strokeLinecap="round" />
-                ))}
-              </svg>
-              <div className="donut-center-label">
-                <strong>{total}</strong>
-                <small>Laporan</small>
-              </div>
-            </div>
-            <div className="donut-legend">
-              {DONUT_DATA.map(d => (
-                <div key={d.label} className="donut-legend-item">
-                  <div className="donut-legend-dot" style={{ background: d.color }} />
-                  <span className="donut-legend-text">{d.label}</span>
-                  <span className="donut-legend-pct">{Math.round((d.val / total) * 100)}%</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-      </div>
-
-      <motion.div className="admin-panel" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
-        <div className="panel-head"><div><h2>Distribusi Risiko</h2><p>128 laporan total</p></div></div>
-        <RiskDist />
-      </motion.div>
-    </div>
-  )
-}
-
-
-export function PetugasView() {
-  return (
-    <motion.div className="admin-panel" initial={{opacity:0,y:16}} animate={{opacity:1,y:0}}>
-      <div className="panel-head"><div><h2>Daftar Petugas</h2><p>{PETUGAS.length} petugas terdaftar</p></div>
-        <span className="panel-badge info">{PETUGAS.filter(p=>p.status==='online').length} online</span>
-      </div>
-      <div className="petugas-grid">
-        {PETUGAS.map((p,i)=>(
-          <motion.div key={p.name} className="petugas-row"
-            initial={{opacity:0,x:-10}} animate={{opacity:1,x:0}} transition={{delay:i*0.07}}>
-            <div className="petugas-avatar" style={{background:p.color}}>{p.name.charAt(0)}</div>
-            <div className="petugas-info"><strong>{p.name}</strong><small>{p.role} · {p.area}</small></div>
-            <div className="petugas-stat"><strong>{p.done}/{p.tasks}</strong><small>tugas selesai</small></div>
-            <span className={`petugas-status petugas-${p.status}`}>{p.status==='online'?'Online':'Offline'}</span>
-          </motion.div>
-        ))}
-      </div>
-    </motion.div>
-  )
-}
-
-
-export function PengaturanView() {
-  const [toggles, setToggles] = useState(Object.fromEntries(SETTINGS_ITEMS.map(s=>[s.id,s.default])))
-  const toggle = id => setToggles(prev=>({...prev,[id]:!prev[id]}))
-  return (
-    <motion.div className="admin-panel" initial={{opacity:0,y:16}} animate={{opacity:1,y:0}}>
-      <div className="panel-head"><div><h2>Pengaturan</h2><p>Konfigurasi dashboard</p></div></div>
-      <div className="settings-group">
-        {SETTINGS_ITEMS.map((s,i)=>(
-          <motion.div key={s.id} className="setting-row"
-            initial={{opacity:0,x:-10}} animate={{opacity:1,x:0}} transition={{delay:i*0.06}}>
-            <div className="setting-text"><strong>{s.label}</strong><small>{s.desc}</small></div>
-            <button className={`toggle-switch ${toggles[s.id]?'on':'off'}`} onClick={()=>toggle(s.id)}/>
-          </motion.div>
-        ))}
-      </div>
-    </motion.div>
   )
 }
