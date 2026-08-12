@@ -6,6 +6,7 @@ const AUTH_SESSION_EVENT = 'alirin-auth-session'
 const VALID_ROLES = new Set(['admin', 'petugas'])
 const ROLE_REQUIRED_MESSAGE = 'Akun belum memiliki role admin/petugas yang valid. Hubungi admin sistem.'
 const INVALID_CREDENTIALS_MESSAGE = 'Email/password tidak valid atau akun belum dibuat di Supabase Auth.'
+const NETWORK_ERROR_MESSAGE = 'Server autentikasi tidak dapat dihubungi. Periksa koneksi internet dan pastikan project Supabase masih aktif.'
 
 function hasStorage() {
   if (typeof window === 'undefined') return false
@@ -50,9 +51,25 @@ function getRoleFromUser(user) {
   return VALID_ROLES.has(role) ? role : null
 }
 
+async function callSupabaseAuth(operation) {
+  try {
+    return await operation()
+  } catch (thrown) {
+    return { data: null, error: thrown }
+  }
+}
+
+function isNetworkError(error) {
+  const name = error?.name || ''
+  const message = error?.message || String(error || '')
+  if (/AuthRetryableFetchError|TypeError/i.test(name)) return true
+  return /failed to fetch|fetch failed|network ?error|load failed|ERR_NAME_NOT_RESOLVED|ERR_INTERNET_DISCONNECTED/i.test(message)
+}
+
 function getAuthErrorMessage(error) {
   const message = error?.message || String(error || '')
   if (/invalid login credentials/i.test(message)) return INVALID_CREDENTIALS_MESSAGE
+  if (isNetworkError(error)) return NETWORK_ERROR_MESSAGE
   return message || 'Login gagal. Coba lagi.'
 }
 
@@ -106,11 +123,11 @@ export async function signInWithEmail(email, password) {
     return { ok: true, session: demoSession }
   }
 
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await callSupabaseAuth(() => supabase.auth.signInWithPassword({
     email,
     password,
-  })
-  
+  }))
+
   if (error) {
     if (demoSession) {
       writeDemoSession(demoSession)
@@ -142,8 +159,8 @@ export async function signOut() {
 export async function getSession() {
   if (!isSupabaseConfigured) return isDemoAuthEnabled ? readDemoSession() : null
 
-  const { data, error } = await supabase.auth.getSession()
-  if (error || !data.session) return isDemoAuthEnabled ? readDemoSession() : null
+  const { data, error } = await callSupabaseAuth(() => supabase.auth.getSession())
+  if (error || !data?.session) return isDemoAuthEnabled ? readDemoSession() : null
   
   const role = getRoleFromUser(data.session.user)
   if (!role) {
@@ -151,6 +168,11 @@ export async function getSession() {
     return isDemoAuthEnabled ? readDemoSession() : null
   }
   return { ...data.session, role }
+}
+
+export async function getActiveRole() {
+  const session = await getSession()
+  return session?.role ?? null
 }
 
 export function onAuthStateChange(callback) {

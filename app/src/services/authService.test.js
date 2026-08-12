@@ -147,6 +147,36 @@ describe('authService', () => {
     expect(localStorage.setItem).toHaveBeenCalled()
   })
 
+  it('reports a connection problem when Supabase auth is unreachable', async () => {
+    installBrowserStorage()
+    const { signInWithEmail } = await loadAuthService({
+      demoEnabled: false,
+      supabaseConfigured: true,
+      signInResult: { data: null, error: { name: 'AuthRetryableFetchError', message: 'Failed to fetch' } },
+    })
+
+    const result = await signInWithEmail('admin@alirin.local', 'alirin123')
+
+    expect(result).toMatchObject({
+      ok: false,
+      message: 'Server autentikasi tidak dapat dihubungi. Periksa koneksi internet dan pastikan project Supabase masih aktif.',
+    })
+  })
+
+  it('handles a thrown network failure from Supabase auth', async () => {
+    installBrowserStorage()
+    const { signInWithEmail } = await loadAuthService({ demoEnabled: false, supabaseConfigured: true })
+    const { supabase } = await import('./supabaseClient.js')
+    supabase.auth.signInWithPassword.mockRejectedValueOnce(new TypeError('Failed to fetch'))
+
+    const result = await signInWithEmail('admin@alirin.local', 'alirin123')
+
+    expect(result).toMatchObject({
+      ok: false,
+      message: 'Server autentikasi tidak dapat dihubungi. Periksa koneksi internet dan pastikan project Supabase masih aktif.',
+    })
+  })
+
   it('uses Supabase session role when Supabase login succeeds', async () => {
     const { localStorage } = installBrowserStorage()
     const { signInWithEmail } = await loadAuthService({

@@ -12,7 +12,7 @@ import {
   ShieldCheck,
 } from 'lucide-react'
 import './StatusPage.css'
-import { getReportByTrackingToken, subscribeReports } from '../services/reportsStore.js'
+import { findReportByTrackingToken, getReportByTrackingToken, subscribeReports } from '../services/reportsStore.js'
 import {
   CATEGORY_LABEL,
   SEVERITY_LABEL,
@@ -36,6 +36,28 @@ function maskStatusToken(token) {
   if (!value) return 'tidak ada token'
   if (value.length <= 14) return value
   return `${value.slice(0, 8)}...${value.slice(-4)}`
+}
+
+function StatusLoading() {
+  return (
+    <div className="status-page">
+      <header className="status-topbar">
+        <Link to="/" className="status-back"><ArrowLeft size={18} /> Beranda</Link>
+        <div className="status-brand">
+          <span className="status-brand-mark"><Droplets size={18} /></span>
+          ALIRIN
+        </div>
+      </header>
+      <main className="status-empty">
+        <div className="status-empty-card">
+          <span className="status-empty-icon"><Clock3 size={42} /></span>
+          <span className="status-kicker">Status laporan</span>
+          <h1>Memuat status laporan...</h1>
+          <p>Sedang mengambil perkembangan terbaru laporan kamu dari server.</p>
+        </div>
+      </main>
+    </div>
+  )
 }
 
 function NotFoundStatus({ token }) {
@@ -73,19 +95,42 @@ export default function StatusPage() {
     description: 'Lacak perkembangan laporan drainase melalui link status pribadi.'
   })
   const { token } = useParams()
-  const [, setStoreVersion] = useState(0)
+  const [storeVersion, setStoreVersion] = useState(0)
+  const [lookup, setLookup] = useState(() => {
+    const cachedReport = getReportByTrackingToken(token)
+    return { token, report: cachedReport, settled: Boolean(cachedReport) }
+  })
 
   useEffect(() => {
     return subscribeReports(() => setStoreVersion((version) => version + 1))
   }, [])
 
-  const report = getReportByTrackingToken(token)
+  useEffect(() => {
+    let active = true
+    findReportByTrackingToken(token)
+      .then((found) => {
+        if (active) setLookup({ token, report: found, settled: true })
+      })
+      .catch(() => {
+        if (active) setLookup({ token, report: null, settled: true })
+      })
+
+    return () => {
+      active = false
+    }
+  }, [token, storeVersion])
+
+  const report = lookup.token === token ? lookup.report : null
 
   const sortedHistory = useMemo(() => {
     return [...(report?.statusHistory ?? [])].sort((a, b) => new Date(a.at) - new Date(b.at))
   }, [report])
 
-  if (!report) return <NotFoundStatus token={token} />
+  if (!report) {
+    return lookup.settled && lookup.token === token
+      ? <NotFoundStatus token={token} />
+      : <StatusLoading />
+  }
 
   const riskClass = getRiskLevelClass(report.riskLevel)
   const latestStatus = STATUS_LABEL[report.status] ?? 'Masuk'

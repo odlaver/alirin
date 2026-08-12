@@ -15,6 +15,7 @@ import {
 } from './reportsLocalRepository.js'
 import {
   assignSupabaseReportOfficer,
+  fetchSupabaseReportByTrackingToken,
   insertSupabaseReport,
   updateSupabaseFieldProgress,
   updateSupabaseReportStatus,
@@ -414,16 +415,24 @@ export function getReportByTrackingToken(token) {
   return null
 }
 
+// Pelacakan publik: view public_reports tidak memuat tracking token, jadi laporan
+// yang tidak ada di cache lokal harus dicari lewat RPC khusus token.
+export async function findReportByTrackingToken(token) {
+  const cachedReport = getReportByTrackingToken(token)
+  if (cachedReport || !useSupabaseReports) return cachedReport
+
+  const normalized = String(token || '').trim()
+  if (!normalized) return null
+
+  return fetchSupabaseReportByTrackingToken(normalized)
+}
+
 export function isArchivedReport(report) {
   return Boolean(report?.archivedAt) || isFinalStatus(normalizeStatus(report?.status))
 }
 
 export function getActiveReports() {
   return getReports().filter((report) => !isArchivedReport(report))
-}
-
-export function getArchivedReports() {
-  return getReports().filter(isArchivedReport)
 }
 
 export async function updateReportStatus(reportId, status, note = '', actor = 'Admin Demo') {
@@ -697,10 +706,6 @@ function ensureRemoteSyncStarted() {
   hasStartedRemoteSync = true
   void refreshRemoteReports()
   realtimeUnsubscribe = startReportsRealtimeSync(refreshRemoteReports)
-}
-
-export function syncReportsNow() {
-  return refreshRemoteReports()
 }
 
 export function canResetDemoReports() {

@@ -42,26 +42,33 @@ const baseReport = {
   ],
 }
 
-async function loadRepository() {
+async function loadRepository({ role = null, rows = [], rpcResult = null } = {}) {
   const inserts = []
   const insert = vi.fn((payload) => {
     inserts.push(payload)
     return Promise.resolve({ error: null })
   })
-  const from = vi.fn(() => ({ insert }))
+  const order = vi.fn().mockResolvedValue({ data: rows, error: null })
+  const select = vi.fn(() => ({ order }))
+  const from = vi.fn(() => ({ insert, select }))
+  const rpc = vi.fn().mockResolvedValue({ data: rpcResult, error: null })
   const uploadReportPhoto = vi.fn().mockResolvedValue('https://cdn.alirin.test/report-photos/photo.webp')
+  const getActiveRole = vi.fn().mockResolvedValue(role)
 
   vi.doMock('./supabaseClient.js', () => ({
-    supabase: { from },
+    supabase: { from, rpc },
   }))
   vi.doMock('./storageService.js', () => ({
     uploadReportPhoto,
+  }))
+  vi.doMock('./authService.js', () => ({
+    getActiveRole,
   }))
 
   const repository = await import('./reportsSupabaseRepository.js')
   return {
     ...repository,
-    mocks: { from, insert, inserts, uploadReportPhoto },
+    mocks: { from, insert, inserts, order, rpc, select, uploadReportPhoto, getActiveRole },
   }
 }
 
@@ -89,6 +96,54 @@ describe('reportsSupabaseRepository', () => {
         expect.objectContaining({ url: 'https://cdn.alirin.test/report-photos/photo.webp' }),
       ],
     })
+  })
+
+  it('reads the public view when there is no staff session', async () => {
+    const { fetchSupabaseReports, mocks } = await loadRepository({
+      role: null,
+      rows: [{ id: 'report-1', code: 'ALR-2026-0001', report_photos: [], risk_breakdowns: [], report_status_history: [] }],
+    })
+
+    const reports = await fetchSupabaseReports()
+
+    expect(mocks.from).toHaveBeenCalledWith('public_reports')
+    expect(mocks.select).toHaveBeenCalledWith('*')
+    expect(reports).toHaveLength(1)
+    expect(reports[0].publicTrackingToken).toBe('')
+  })
+
+  it('reads the full reports table for a staff session', async () => {
+    const { fetchSupabaseReports, mocks } = await loadRepository({ role: 'admin' })
+
+    await fetchSupabaseReports()
+
+    expect(mocks.from).toHaveBeenCalledWith('reports')
+    expect(mocks.select).toHaveBeenCalledWith('*, report_photos(*), risk_breakdowns(*), report_status_history(*)')
+  })
+
+  it('looks up a public tracking token through the security definer RPC', async () => {
+    const { fetchSupabaseReportByTrackingToken, mocks } = await loadRepository({
+      rpcResult: {
+        id: 'report-1',
+        code: 'ALR-2026-0001',
+        public_tracking_token: 'trk_private_1',
+        report_photos: [],
+        risk_breakdowns: [],
+        report_status_history: [{ status: 'masuk', actor: 'Sistem', note: '', at: '2026-06-05T00:00:00.000Z' }],
+      },
+    })
+
+    const report = await fetchSupabaseReportByTrackingToken(' trk_private_1 ')
+
+    expect(mocks.rpc).toHaveBeenCalledWith('get_report_by_tracking_token', { p_token: 'trk_private_1' })
+    expect(report).toMatchObject({ id: 'report-1', publicTrackingToken: 'trk_private_1' })
+  })
+
+  it('skips the RPC call for an empty tracking token', async () => {
+    const { fetchSupabaseReportByTrackingToken, mocks } = await loadRepository()
+
+    expect(await fetchSupabaseReportByTrackingToken('   ')).toBeNull()
+    expect(mocks.rpc).not.toHaveBeenCalled()
   })
 
   it('retries with a new report code if insert fails with a unique constraint violation', async () => {

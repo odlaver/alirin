@@ -48,6 +48,7 @@ async function loadReportsStore({
   supabaseConfigured = true,
   insertSupabaseReport = vi.fn().mockRejectedValue(new Error('Network down')),
   updateSupabaseFieldProgress = vi.fn().mockImplementation(async (_reportId, report) => report),
+  fetchSupabaseReportByTrackingToken = vi.fn().mockResolvedValue(null),
   refreshReportsFromSupabase = vi.fn(),
   startReportsRealtimeSync = vi.fn(() => () => {}),
 } = {}) {
@@ -61,6 +62,7 @@ async function loadReportsStore({
   }))
   vi.doMock('./reportsSupabaseRepository.js', () => ({
     assignSupabaseReportOfficer: vi.fn(),
+    fetchSupabaseReportByTrackingToken,
     insertSupabaseReport,
     updateSupabaseFieldProgress,
     updateSupabaseReportStatus: vi.fn(),
@@ -74,6 +76,7 @@ async function loadReportsStore({
   return {
     ...store,
     mocks: {
+      fetchSupabaseReportByTrackingToken,
       insertSupabaseReport,
       updateSupabaseFieldProgress,
       refreshReportsFromSupabase,
@@ -140,6 +143,38 @@ describe('reportsStore data mode', () => {
     expect(getReportByTrackingToken(report.publicTrackingToken)?.id).toBe(report.id)
     expect(getReportByTrackingToken(report.code)).toBeNull()
     expect(getReportByCode(report.code)?.id).toBe(report.id)
+  })
+
+  it('falls back to the Supabase tracking RPC when the token is not cached locally', async () => {
+    installBrowserStorage()
+    const fetchSupabaseReportByTrackingToken = vi.fn().mockResolvedValue({
+      id: 'remote-1',
+      code: 'ALR-2026-0009',
+      publicTrackingToken: 'trk_remote_1',
+    })
+    const { findReportByTrackingToken, mocks } = await loadReportsStore({
+      dataMode: 'supabase',
+      fetchSupabaseReportByTrackingToken,
+    })
+
+    const report = await findReportByTrackingToken('trk_remote_1')
+
+    expect(mocks.fetchSupabaseReportByTrackingToken).toHaveBeenCalledWith('trk_remote_1')
+    expect(report).toMatchObject({ id: 'remote-1' })
+  })
+
+  it('does not call the tracking RPC in local mode', async () => {
+    installBrowserStorage()
+    const { createReport, findReportByTrackingToken, mocks } = await loadReportsStore({
+      dataMode: 'local',
+      insertSupabaseReport: vi.fn(),
+    })
+
+    const report = await createReport(validInput)
+
+    expect((await findReportByTrackingToken(report.publicTrackingToken))?.id).toBe(report.id)
+    expect(await findReportByTrackingToken('trk_tidak_ada')).toBeNull()
+    expect(mocks.fetchSupabaseReportByTrackingToken).not.toHaveBeenCalled()
   })
 
   it('writes petugas progress to Supabase in hybrid mode', async () => {

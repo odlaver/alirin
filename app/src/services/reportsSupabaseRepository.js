@@ -1,8 +1,11 @@
 import { supabase } from './supabaseClient.js'
+import { getActiveRole } from './authService.js'
 import { uploadReportPhoto } from './storageService.js'
 import { createReportCode } from '../domain/reports.js'
 
 const REPORT_SELECT = '*, report_photos(*), risk_breakdowns(*), report_status_history(*)'
+// View publik: kolom pribadi pelapor sudah tidak ikut, relasi anak sudah di-agregasi jsonb.
+const PUBLIC_REPORT_VIEW = 'public_reports'
 
 function mapPhoto(row, index = 0) {
   return {
@@ -14,7 +17,7 @@ function mapPhoto(row, index = 0) {
   }
 }
 
-export function mapSupabaseReportRow(row) {
+function mapSupabaseReportRow(row) {
   return {
     id: row.id,
     code: row.code,
@@ -61,17 +64,44 @@ export function mapSupabaseReportRow(row) {
   }
 }
 
+async function isStaffSession() {
+  try {
+    return Boolean(await getActiveRole())
+  } catch {
+    return false
+  }
+}
+
 export async function fetchSupabaseReports() {
-  const { data, error } = await supabase
-    .from('reports')
-    .select(REPORT_SELECT)
-    .order('created_at', { ascending: false })
+  // Warga (anon) tidak punya policy SELECT pada tabel reports, jadi peta publik
+  // membaca lewat view public_reports yang bebas data pribadi pelapor.
+  const isStaff = await isStaffSession()
+  const query = isStaff
+    ? supabase.from('reports').select(REPORT_SELECT)
+    : supabase.from(PUBLIC_REPORT_VIEW).select('*')
+
+  const { data, error } = await query.order('created_at', { ascending: false })
 
   if (error) {
     throw new Error(error.message || 'Gagal mengambil data laporan dari Supabase.', { cause: error })
   }
 
   return (data ?? []).map(mapSupabaseReportRow)
+}
+
+export async function fetchSupabaseReportByTrackingToken(token) {
+  const trackingToken = String(token || '').trim()
+  if (!trackingToken) return null
+
+  const { data, error } = await supabase.rpc('get_report_by_tracking_token', {
+    p_token: trackingToken,
+  })
+
+  if (error) {
+    throw new Error(error.message || 'Gagal mengambil status laporan dari Supabase.', { cause: error })
+  }
+
+  return data ? mapSupabaseReportRow(data) : null
 }
 
 async function insertReportPhotos(reportId, photos = []) {
@@ -216,7 +246,7 @@ export async function insertSupabaseReport(report) {
         } else {
           currentReport.code = createReportCode([{ code: currentReport.code }], createdAtDate)
         }
-      } catch (retryError) {
+      } catch {
         currentReport.code = createReportCode([{ code: currentReport.code }], new Date(currentReport.createdAt))
       }
     } else {
@@ -280,8 +310,12 @@ export async function updateSupabaseFieldProgress(reportId, report, historyItem)
   }
 }
 
+const PUBLIC_REFRESH_INTERVAL = 60000
+
 export function subscribeSupabaseReports(onChange) {
   let syncTimeout = null
+  let publicPoll = null
+  let closed = false
   const channel = supabase
     .channel('public:reports')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, () => {
@@ -290,8 +324,17 @@ export function subscribeSupabaseReports(onChange) {
     })
     .subscribe()
 
+  // Realtime postgres_changes tunduk pada RLS, jadi anon tidak menerima event apa pun.
+  // Peta publik tetap ikut perkembangan lewat polling ringan.
+  void isStaffSession().then((isStaff) => {
+    if (closed || isStaff) return
+    publicPoll = setInterval(onChange, PUBLIC_REFRESH_INTERVAL)
+  })
+
   return () => {
+    closed = true
     if (syncTimeout) clearTimeout(syncTimeout)
+    if (publicPoll) clearInterval(publicPoll)
     supabase.removeChannel?.(channel)
   }
 }
