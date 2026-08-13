@@ -98,6 +98,23 @@ describe('reportsSupabaseRepository', () => {
     })
   })
 
+  it('carries submission_mode in both directions for mobile parity', async () => {
+    const { fetchSupabaseReports, insertSupabaseReport, mocks } = await loadRepository({
+      rows: [{ id: 'report-1', code: 'ALR-2026-0001', submission_mode: 'Cepat' }],
+    })
+
+    const [mapped] = await fetchSupabaseReports()
+    expect(mapped.submissionMode).toBe('Cepat')
+
+    await insertSupabaseReport({ ...baseReport, submissionMode: 'Lengkap' })
+    await insertSupabaseReport(baseReport)
+
+    // inserts memuat payload anak (foto, breakdown, riwayat) juga; ambil baris laporannya saja.
+    const reportInserts = mocks.inserts.filter((payload) => payload?.code)
+    expect(reportInserts[0]).toMatchObject({ submission_mode: 'Lengkap' })
+    expect(reportInserts[1].submission_mode).toBeNull()
+  })
+
   it('reads the public view when there is no staff session', async () => {
     const { fetchSupabaseReports, mocks } = await loadRepository({
       role: null,

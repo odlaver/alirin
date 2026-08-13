@@ -76,6 +76,14 @@ async function checkAnon() {
     pass('baca view public_reports (peta publik)', `${publicReports.length} baris contoh`)
   }
 
+  // Kolom untuk klien mobile: asal laporan Cepat/Lengkap harus ikut terbaca.
+  const { error: modeError } = await supabase.from('public_reports').select('submission_mode').limit(1)
+  if (modeError) {
+    fail('view publik mengekspos submission_mode', `${modeError.message} - migrasi 20260812210000 belum dijalankan`)
+  } else {
+    pass('view publik mengekspos submission_mode', 'klien mobile bisa membaca mode laporan')
+  }
+
   const { data: leak } = await supabase.from('public_reports').select('reporter_contact').limit(1)
   if (leak) {
     fail('view publik menutup data pribadi', 'kolom reporter_contact masih terbaca')
