@@ -370,11 +370,19 @@ for each row execute function public.alirin_guard_status();
 -- reports.assigned_officer_id sebelumnya string bebas tanpa rujukan apa pun,
 -- dan tabel officers tidak terhubung ke akun Auth.
 
-alter table public.officers
-  add column if not exists auth_user_id uuid references auth.users (id) on delete set null;
+-- Dibungkus DO agar kegagalan hak akses ke schema auth tidak membatalkan
+-- seluruh migrasi. SQL Editor Supabase menjalankan skrip dalam satu transaksi,
+-- sehingga satu error di sini akan me-rollback semua yang di atasnya.
+do $outer$
+begin
+  alter table public.officers
+    add column if not exists auth_user_id uuid references auth.users (id) on delete set null;
 
-create unique index if not exists officers_auth_user_id_idx
-  on public.officers (auth_user_id) where auth_user_id is not null;
+  create unique index if not exists officers_auth_user_id_idx
+    on public.officers (auth_user_id) where auth_user_id is not null;
+exception when others then
+  raise notice 'officers.auth_user_id dilewati: %. Kolom ini opsional; sisa migrasi tetap berlaku.', sqlerrm;
+end $outer$;
 
 -- Daftar petugas dibaca aplikasi untuk penugasan, jadi nama & wilayah boleh
 -- terbaca staff. Nomor telepon tetap hanya untuk staff yang login.
@@ -426,29 +434,50 @@ with check (
 -- baris. Akibatnya berkas yatim tidak bisa dibersihkan lewat aplikasi sama
 -- sekali. Gejala yang sama dengan CHECK constraint yang hilang: migrasi
 -- 20260605000100 memakai bentuk yang tidak pernah dieksekusi di remote.
-drop policy if exists "reports_storage_public_read" on storage.objects;
-create policy "reports_storage_public_read"
-on storage.objects for select to anon, authenticated
-using (bucket_id = 'reports');
+-- storage.objects dimiliki supabase_storage_admin, sehingga peran yang
+-- menjalankan SQL Editor belum tentu boleh memasang policy di atasnya. Karena
+-- seluruh skrip berjalan dalam satu transaksi, kegagalan di sini akan
+-- membatalkan Risk Engine yang sudah dibuat di atas. Jadi blok ini dibuat
+-- tidak mematikan: kalau ditolak, migrasi lanjut dan mencetak catatan.
+do $outer$
+begin
+  execute $p$ drop policy if exists "reports_storage_public_read" on storage.objects $p$;
+  execute $p$
+    create policy "reports_storage_public_read"
+    on storage.objects for select to anon, authenticated
+    using (bucket_id = 'reports')
+  $p$;
 
-drop policy if exists "reports_storage_public_upload" on storage.objects;
-create policy "reports_storage_public_upload"
-on storage.objects for insert to anon, authenticated
-with check (
-  bucket_id = 'reports'
-  and (storage.foldername(name))[1] = 'report-photos'
-);
+  execute $p$ drop policy if exists "reports_storage_public_upload" on storage.objects $p$;
+  execute $p$
+    create policy "reports_storage_public_upload"
+    on storage.objects for insert to anon, authenticated
+    with check (
+      bucket_id = 'reports'
+      and (storage.foldername(name))[1] = 'report-photos'
+    )
+  $p$;
 
-drop policy if exists "reports_storage_staff_update" on storage.objects;
-create policy "reports_storage_staff_update"
-on storage.objects for update to authenticated
-using (bucket_id = 'reports' and public.alirin_is_staff())
-with check (bucket_id = 'reports' and public.alirin_is_staff());
+  execute $p$ drop policy if exists "reports_storage_staff_update" on storage.objects $p$;
+  execute $p$
+    create policy "reports_storage_staff_update"
+    on storage.objects for update to authenticated
+    using (bucket_id = 'reports' and public.alirin_is_staff())
+    with check (bucket_id = 'reports' and public.alirin_is_staff())
+  $p$;
 
-drop policy if exists "reports_storage_staff_delete" on storage.objects;
-create policy "reports_storage_staff_delete"
-on storage.objects for delete to authenticated
-using (bucket_id = 'reports' and public.alirin_is_staff());
+  execute $p$ drop policy if exists "reports_storage_staff_delete" on storage.objects $p$;
+  execute $p$
+    create policy "reports_storage_staff_delete"
+    on storage.objects for delete to authenticated
+    using (bucket_id = 'reports' and public.alirin_is_staff())
+  $p$;
+
+  raise notice 'Policy Storage terpasang.';
+exception when others then
+  raise notice 'Policy Storage dilewati: %.', sqlerrm;
+  raise notice 'Pasang manual lewat Dashboard > Storage > Policies pada bucket reports, atau jalankan blok ini sebagai supabase_storage_admin. Tanpa itu, pembersihan berkas yatim tidak bisa dijalankan.';
+end $outer$;
 
 -- Moderasi: admin perlu jalan menghapus spam, duplikat, dan data uji.
 -- Sebelumnya tidak ada policy DELETE sama sekali di seluruh tabel.

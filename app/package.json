@@ -14,7 +14,8 @@
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
-    "supabase:cleanup-photos": "node scripts/cleanup-orphan-photos.mjs"
+    "supabase:cleanup-photos": "node scripts/cleanup-orphan-photos.mjs",
+    "supabase:status": "node scripts/check-migration-status.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

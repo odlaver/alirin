@@ -1,6 +1,7 @@
 -- Pembersihan artefak probe dan pengaktifan constraint.
 --
--- Dijalankan setelah 20260826090000_risk_engine.sql.
+-- WAJIB dijalankan SETELAH 20260826090000_risk_engine.sql. Migrasi itulah yang
+-- membuat constraint-nya; tanpa itu, VALIDATE di bawah tidak punya sasaran.
 --
 -- Yang dihapus HANYA baris yang tokennya berpola 'trk_probe_%'. Baris itu
 -- ditanam manual saat pengujian lubang akses, bukan lewat aplikasi: tokennya
@@ -16,22 +17,70 @@
 --     atau penghapusannya diserahkan ke admin lewat policy DELETE yang baru,
 --     bukan diputuskan migrasi.
 
+-- ---------------------------------------------------------------------------
+-- 0. Pastikan migrasi Risk Engine sudah berjalan
+-- ---------------------------------------------------------------------------
+--
+-- Tanpa penjagaan ini, menjalankan berkas ini lebih dulu berakhir dengan
+-- "constraint reports_severity_check does not exist" yang tidak menjelaskan
+-- apa pun tentang penyebabnya.
+
+do $$
+begin
+  if to_regprocedure('public.alirin_risk_score(integer,integer,integer,integer)') is null then
+    raise exception
+      'Migrasi 20260826090000_risk_engine.sql belum dijalankan. Jalankan berkas itu lebih dulu, baru berkas ini.'
+      using errcode = 'raise_exception';
+  end if;
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- 1. Hapus artefak probe
+-- ---------------------------------------------------------------------------
+
 delete from public.reports
 where public_tracking_token like 'trk\_probe\_%';
 
 -- ---------------------------------------------------------------------------
--- Aktifkan constraint yang sudah bisa lolos untuk seluruh baris tersisa
+-- 2. Aktifkan constraint yang sudah bisa lolos untuk seluruh baris tersisa
 -- ---------------------------------------------------------------------------
+--
+-- Di-VALIDATE satu per satu di dalam blok. Constraint yang belum ada dilewati
+-- dengan catatan, dan constraint yang masih dilanggar baris lama tidak
+-- membatalkan seluruh migrasi.
 
-alter table public.reports validate constraint reports_severity_check;
-alter table public.reports validate constraint reports_category_check;
-alter table public.reports validate constraint reports_status_check;
-alter table public.reports validate constraint reports_risk_score_check;
-alter table public.reports validate constraint reports_risk_level_check;
-alter table public.reports validate constraint reports_coordinate_bounds_check;
-alter table public.reports validate constraint reports_assigned_officer_fk;
+do $$
+declare
+  target text;
+begin
+  foreach target in array array[
+    'reports_severity_check',
+    'reports_category_check',
+    'reports_status_check',
+    'reports_risk_score_check',
+    'reports_risk_level_check',
+    'reports_coordinate_bounds_check',
+    'reports_assigned_officer_fk'
+  ]
+  loop
+    if not exists (
+      select 1 from pg_constraint
+      where conrelid = 'public.reports'::regclass and conname = target
+    ) then
+      raise notice 'Dilewati: constraint % belum ada.', target;
+      continue;
+    end if;
 
--- reports_area_filled_check sengaja dibiarkan NOT VALID: ALR-2026-0013 dan
+    begin
+      execute format('alter table public.reports validate constraint %I', target);
+      raise notice 'Aktif: %.', target;
+    exception when others then
+      raise notice 'Belum bisa diaktifkan: % (%). Perbaiki baris yang melanggar lalu ulangi.', target, sqlerrm;
+    end;
+  end loop;
+end $$;
+
+-- reports_area_filled_check sengaja tidak ikut divalidasi: ALR-2026-0013 dan
 -- ALR-2026-0014 masih berwilayah kosong. Menebak wilayahnya berarti mengarang
 -- data. Constraint tetap menolak penulisan baru; jalankan
 --   alter table public.reports validate constraint reports_area_filled_check;

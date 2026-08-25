@@ -8,14 +8,25 @@ Dua migrasi baru menutup temuan audit. Keduanya belum diterapkan ke project live
 | 1 | `supabase/migrations/20260826090000_risk_engine.sql` | Risk & Priority Engine sebagai trigger, penjaga transisi status, constraint, FK petugas, policy Storage & DELETE, view publik dengan koordinat dibulatkan |
 | 2 | `supabase/migrations/20260826091000_cleanup_probe_rows.sql` | Menghapus 2 baris probe, lalu mengaktifkan constraint |
 
+## Cek dulu kondisi sekarang
+
+```bash
+cd app
+npm run supabase:status
+```
+
+Perintah ini melaporkan bagian mana yang sudah terpasang. Jalankan sebelum dan
+sesudah setiap langkah di bawah.
+
 ## Cara menjalankan
 
 Buka **Supabase Dashboard → SQL Editor**, lalu jalankan **berurutan**:
 
-1. Tempel seluruh isi `20260826090000_risk_engine.sql` → Run.
-2. Tempel seluruh isi `20260826091000_cleanup_probe_rows.sql` → Run.
+1. Tempel seluruh isi `20260826090000_risk_engine.sql` → Run. Tunggu sampai
+   selesai tanpa error.
+2. Baru tempel seluruh isi `20260826091000_cleanup_probe_rows.sql` → Run.
 
-Migrasi 1 aman diulang. Migrasi 2 menghapus baris, jadi cukup sekali.
+Keduanya aman diulang.
 
 Alternatif lewat CLI, bila kredensial database tersedia:
 
@@ -24,17 +35,53 @@ npx supabase link --project-ref prfgbvepsyfjwyctgeeq
 npx supabase db push          # gunakan Session pooler port 5432, bukan 6543
 ```
 
-## Urutan itu penting
+## Urutan itu penting, dan tidak boleh dibalik
 
-Migrasi 1 menghitung ulang seluruh laporan **sebelum** memasang constraint.
-Constraint `NOT VALID` tetap diperiksa pada setiap `UPDATE`, sehingga membalik
-urutannya membuat baris lama yang melanggar (`severity = 'ngawur'`, wilayah
-kosong) menggagalkan seluruh migrasi.
+**Berkas 2 bergantung penuh pada berkas 1.** Berkas 1 yang membuat constraint;
+berkas 2 hanya mengaktifkannya. Menjalankan berkas 2 lebih dulu dulu berakhir
+dengan:
+
+```
+ERROR: 42704: constraint "reports_severity_check" of relation "reports" does not exist
+```
+
+Berkas 2 sekarang memeriksa ini sendiri dan berhenti dengan pesan yang jelas
+bila berkas 1 belum berjalan.
+
+Di dalam berkas 1, urutannya juga penting: seluruh laporan dihitung ulang
+**sebelum** constraint dipasang. Constraint `NOT VALID` tetap diperiksa pada
+setiap `UPDATE`, sehingga membalik urutan itu membuat baris lama yang melanggar
+(`severity = 'ngawur'`, wilayah kosong) menggagalkan seluruh migrasi.
+
+## Kalau berkas 1 gagal di tengah
+
+SQL Editor Supabase membungkus **seluruh skrip dalam satu transaksi**. Satu
+pernyataan gagal berarti semuanya di-rollback, dan database tampak sama sekali
+tidak tersentuh meski sebagian besar skrip sebenarnya sudah berjalan. Karena
+itu `npm run supabase:status` bisa melaporkan 0/7 walaupun Anda merasa sudah
+menjalankannya.
+
+Dua blok yang paling mungkin ditolak sudah dibuat **tidak mematikan** — bila
+gagal, migrasi tetap lanjut dan hanya mencetak `NOTICE`:
+
+| Blok | Kenapa bisa ditolak |
+|---|---|
+| Policy `storage.objects` | Tabelnya dimiliki `supabase_storage_admin`, bukan peran SQL Editor |
+| Kolom `officers.auth_user_id` | Foreign key ke `auth.users` butuh hak pada schema `auth` |
+
+Kalau policy Storage dilewati, pasang manual lewat **Dashboard → Storage →
+Policies** pada bucket `reports`, atau jalankan blok itu sebagai
+`supabase_storage_admin`. Tanpa policy hapus, pembersihan berkas yatim tidak
+bisa dijalankan, tetapi sisa sistem tetap berfungsi.
+
+Untuk error lain, salin pesannya apa adanya — nomor `ERROR: XXXXX:` dan
+teksnya — lalu perbaiki penyebabnya sebelum mengulang.
 
 ## Verifikasi setelah menjalankan
 
 ```bash
 cd app
+npm run supabase:status   # harus 7/7 terpasang
 npm run supabase:check
 ```
 
