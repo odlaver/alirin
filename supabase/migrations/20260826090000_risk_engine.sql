@@ -25,6 +25,29 @@ alter table public.reports
   check (rainfall_mm is null or rainfall_mm >= 0);
 
 -- ---------------------------------------------------------------------------
+-- 1b. Kunci faktor pada rincian skor
+-- ---------------------------------------------------------------------------
+--
+-- Terverifikasi pada project live: reports.id, report_photos.report_id,
+-- risk_breakdowns.id, dan risk_breakdowns.report_id semuanya bertipe uuid,
+-- sedangkan migrasi 20260605000100 di repo mendeklarasikannya text. Bukti
+-- lanjutan bahwa migrasi itu tidak pernah dieksekusi di remote.
+--
+-- Karena risk_breakdowns.id adalah uuid dengan default, kunci faktor
+-- ('severity', 'history', ...) tidak bisa ditaruh di sana. Kolom terpisah ini
+-- yang menyimpannya, dan klien membacanya sebagai id faktor.
+alter table public.risk_breakdowns
+  add column if not exists factor text;
+
+alter table public.risk_breakdowns drop constraint if exists risk_breakdowns_factor_check;
+alter table public.risk_breakdowns
+  add constraint risk_breakdowns_factor_check
+  check (factor is null or factor in ('severity', 'history', 'weather', 'location', 'bukti', 'sensor'));
+
+create unique index if not exists risk_breakdowns_report_factor_idx
+  on public.risk_breakdowns (report_id, factor) where factor is not null;
+
+-- ---------------------------------------------------------------------------
 -- 2. Master fasilitas publik (faktor Lokasi)
 -- ---------------------------------------------------------------------------
 
@@ -127,7 +150,9 @@ create or replace function public.alirin_history_score(
 ) returns integer language sql stable parallel safe as $$
   select least(100, count(*)::integer * 20)
   from public.reports r
-  where r.id is distinct from p_id
+  -- Dicasting ke text agar cocok baik saat reports.id bertipe uuid (kondisi
+  -- project live) maupun text (deklarasi di migrasi repo).
+  where r.id::text is distinct from p_id
     and r.status <> 'ditolak'
     and r.created_at <= p_created_at
     and r.created_at >= p_created_at - interval '180 days'
@@ -176,7 +201,7 @@ declare
   v_score    integer;
 begin
   v_severity := public.alirin_severity_score(new.severity);
-  v_history  := public.alirin_history_score(new.id, new.lat, new.lng, coalesce(new.created_at, now()));
+  v_history  := public.alirin_history_score(new.id::text, new.lat, new.lng, coalesce(new.created_at, now()));
   v_weather  := public.alirin_weather_score(new.rainfall_mm);
   v_location := public.alirin_location_score(new.lat, new.lng);
   v_score    := public.alirin_risk_score(v_severity, v_history, v_weather, v_location);
@@ -215,7 +240,7 @@ declare
   v_near          record;
 begin
   v_severity := public.alirin_severity_score(new.severity);
-  v_history  := public.alirin_history_score(new.id, new.lat, new.lng, coalesce(new.created_at, now()));
+  v_history  := public.alirin_history_score(new.id::text, new.lat, new.lng, coalesce(new.created_at, now()));
   v_weather  := public.alirin_weather_score(new.rainfall_mm);
   v_location := public.alirin_location_score(new.lat, new.lng);
   v_total    := 35 + 25 + 15 + case when v_weather is null then 0 else 25 end;
@@ -249,7 +274,7 @@ begin
 
   delete from public.risk_breakdowns where report_id = new.id;
 
-  insert into public.risk_breakdowns (report_id, id, label, points, weight, detail) values
+  insert into public.risk_breakdowns (report_id, factor, label, points, weight, detail) values
     (new.id, 'severity', 'Keparahan laporan',
       round(v_severity * 35.0 / v_total), round(35.0 * 100 / v_total),
       'Tingkat ' || coalesce(new.severity, 'belum diisi')),
@@ -288,20 +313,16 @@ for each row execute function public.alirin_write_breakdown();
 -- menyegarkan rincian begitu fotonya menyusul.
 create or replace function public.alirin_refresh_breakdown_on_photo()
 returns trigger language plpgsql security definer set search_path = public as $$
-declare
-  v_report_id text;
 begin
   -- TG_OP diperiksa eksplisit: pada DELETE record NEW tidak ter-assign, jadi
   -- membaca new.report_id di sana bisa melempar error saat dijalankan.
+  -- Kolomnya dipakai langsung tanpa variabel perantara agar tipenya selalu
+  -- cocok dengan reports.id dan indeks primary key tetap terpakai.
   if tg_op = 'DELETE' then
-    v_report_id := old.report_id;
+    update public.reports set severity = severity where id = old.report_id;
   else
-    v_report_id := new.report_id;
+    update public.reports set severity = severity where id = new.report_id;
   end if;
-
-  -- Menyentuh kolom dengan nilainya sendiri; yang dituju hanya memicu
-  -- alirin_write_breakdown agar jumlah foto pada rincian ikut diperbarui.
-  update public.reports set severity = severity where id = v_report_id;
   return null;
 end $$;
 
@@ -548,8 +569,8 @@ select
   coalesce(
     (
       select jsonb_agg(
-        jsonb_build_object('id', b.id, 'label', b.label, 'points', b.points,
-                           'weight', b.weight, 'detail', b.detail)
+        jsonb_build_object('id', coalesce(b.factor, b.id::text), 'label', b.label,
+                           'points', b.points, 'weight', b.weight, 'detail', b.detail)
       )
       from public.risk_breakdowns b
       where b.report_id = r.id
@@ -568,6 +589,65 @@ select
 from public.reports r;
 
 grant select on public.public_reports to anon, authenticated;
+
+-- RPC pelacakan token ikut diperbarui agar rincian skor memakai kunci faktor
+-- yang sama dengan view. Tanpa ini, halaman status warga menerima uuid sebagai
+-- id faktor dan tidak bisa mencocokkannya dengan label mana pun.
+create or replace function public.get_report_by_tracking_token(p_token text)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select to_jsonb(r)
+    || jsonb_build_object(
+      'report_photos', coalesce(
+        (
+          select jsonb_agg(
+            jsonb_build_object(
+              'id', p.id, 'url', p.url, 'name', p.name,
+              'type', p.type, 'size', p.size, 'kind', p.kind
+            )
+            order by p.created_at
+          )
+          from public.report_photos p
+          where p.report_id = r.id
+        ),
+        '[]'::jsonb
+      ),
+      'risk_breakdowns', coalesce(
+        (
+          select jsonb_agg(
+            jsonb_build_object(
+              'id', coalesce(b.factor, b.id::text), 'label', b.label,
+              'points', b.points, 'weight', b.weight, 'detail', b.detail
+            )
+          )
+          from public.risk_breakdowns b
+          where b.report_id = r.id
+        ),
+        '[]'::jsonb
+      ),
+      'report_status_history', coalesce(
+        (
+          select jsonb_agg(
+            jsonb_build_object('status', h.status, 'actor', h.actor, 'note', h.note, 'at', h.at)
+            order by h.at
+          )
+          from public.report_status_history h
+          where h.report_id = r.id
+        ),
+        '[]'::jsonb
+      )
+    )
+  from public.reports r
+  where r.public_tracking_token = p_token
+  limit 1;
+$$;
+
+revoke all on function public.get_report_by_tracking_token(text) from public;
+grant execute on function public.get_report_by_tracking_token(text) to anon, authenticated;
 
 -- ---------------------------------------------------------------------------
 -- 9. Hitung ulang seluruh laporan yang sudah ada

@@ -77,6 +77,38 @@ bisa dijalankan, tetapi sisa sistem tetap berfungsi.
 Untuk error lain, salin pesannya apa adanya — nomor `ERROR: XXXXX:` dan
 teksnya — lalu perbaiki penyebabnya sebelum mengulang.
 
+## Tipe kolom di project live berbeda dari migrasi repo
+
+Terverifikasi lewat pemeriksaan langsung, bukan dugaan:
+
+| Kolom | Migrasi repo | Project live |
+|---|---|---|
+| `reports.id` | `text` | **`uuid`** |
+| `report_photos.report_id` | `text` | **`uuid`** |
+| `risk_breakdowns.id` | `text` | **`uuid`** |
+| `risk_breakdowns.report_id` | `text` | **`uuid`** |
+| `report_status_history.report_id` | `text` | **`uuid`** |
+| `officers.id` | `text` | `text` |
+| `reports.assigned_officer_id` | `text` | `text` |
+
+Ini bukti ketiga bahwa migrasi `20260605000100` tidak pernah dieksekusi di
+remote, setelah CHECK constraint yang hilang dan policy Storage yang tidak ada.
+
+Dua konsekuensi yang sudah ditangani migrasi baru:
+
+1. Perbandingan `reports.id` dengan parameter fungsi dicasting ke `text`,
+   sehingga bekerja pada kedua bentuk skema.
+2. Kunci faktor rincian skor (`severity`, `history`, ...) tidak bisa ditaruh di
+   `risk_breakdowns.id` karena kolom itu `uuid` dengan default. Migrasi
+   menambahkan kolom `factor` untuk menyimpannya, dan view serta RPC
+   memancarkannya sebagai `id` supaya klien tidak perlu tahu bedanya.
+
+Menyamakan tipe `id` menjadi `text` di project live **tidak** dilakukan: itu
+berarti mengubah primary key beserta seluruh foreign key yang menunjuk padanya,
+risiko besar untuk keuntungan kosmetik. Yang benar adalah memperbarui migrasi
+baseline di repo agar mencerminkan `uuid`, dan itu pekerjaan terpisah dari
+penerapan ini.
+
 ## Verifikasi setelah menjalankan
 
 ```bash

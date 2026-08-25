@@ -49,7 +49,11 @@ function mapSupabaseReportRow(row) {
       .filter((photo) => !photo.kind || photo.kind === 'report')
       .map(mapPhoto),
     riskBreakdown: (row.risk_breakdowns || []).map((item) => ({
-      id: item.id,
+      // Kunci faktor ada di kolom factor. Kolom id bertipe uuid di project live,
+      // jadi tidak bisa dipakai untuk mencocokkan 'severity', 'weather', dst.
+      // View publik sudah memancarkan factor sebagai id; pembacaan tabel mentah
+      // oleh staff tidak, sehingga keduanya diseragamkan di sini.
+      id: item.factor || item.id,
       label: item.label,
       points: item.points,
       weight: item.weight,
