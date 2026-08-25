@@ -1,23 +1,33 @@
+// Master wilayah Kota Bandar Lampung: 20 kecamatan, 126 kelurahan.
+// Sumber: Daftar kecamatan dan kelurahan di Kota Bandar Lampung (Wikipedia,
+// mengikuti Permendagri), diperiksa ulang 26 Agustus 2026.
+//
+// Sebelumnya daftar ini hanya memuat 122 kelurahan, sehingga titik yang dipilih
+// di wilayah yang belum terdaftar membuat laporan ditolak validasi. Yang
+// diperbaiki: Tanjung Gading, Gedong Meneng, Gedong Meneng Baru, Pasir Gintung,
+// dan Gulak Galik ditambahkan; 'Nyunyai' dihapus karena bukan kelurahan resmi
+// (yang benar 'Rajabasa Nunyai', sudah ada); 'Gedong Pakuon' dan 'Tukik'
+// diperbaiki menjadi 'Gedong Pakuan' dan 'Teluk Betung'.
 export const KECAMATAN_DATA = {
   'Bumi Waras': ['Bumi Raya', 'Bumi Waras', 'Garuntang', 'Kangkung', 'Sukaraja'],
   Enggal: ['Enggal', 'Gunung Sari', 'Pahoman', 'Pelita', 'Rawa Laut', 'Tanjung Karang'],
-  Kedamaian: ['Bumi Kedamaian', 'Kalibalau Kencana', 'Kedamaian', 'Tanjung Agung Raya', 'Tanjung Baru', 'Tanjung Raya'],
+  Kedamaian: ['Bumi Kedamaian', 'Kalibalau Kencana', 'Kedamaian', 'Tanjung Agung Raya', 'Tanjung Baru', 'Tanjung Gading', 'Tanjung Raya'],
   Kedaton: ['Kedaton', 'Penengahan', 'Penengahan Raya', 'Sidodadi', 'Sukamenanti', 'Sukamenanti Baru', 'Surabaya'],
   Kemiling: ['Beringin Jaya', 'Beringin Raya', 'Kedaung', 'Kemiling Permai', 'Kemiling Raya', 'Pinang Jaya', 'Sumber Agung', 'Sumber Rejo', 'Sumber Rejo Sejahtera'],
   'Labuhan Ratu': ['Kampung Baru', 'Kampung Baru Raya', 'Kota Sepang', 'Labuhan Ratu', 'Labuhan Ratu Raya', 'Sepang Jaya'],
   Langkapura: ['Bilabong Jaya', 'Gunung Agung', 'Gunung Terang', 'Langkapura', 'Langkapura Baru'],
   Panjang: ['Karang Maritim', 'Ketapang', 'Ketapang Kuala', 'Panjang Selatan', 'Panjang Utara', 'Pidada', 'Srengsem', 'Way Lunik'],
-  Rajabasa: ['Nyunyai', 'Rajabasa', 'Rajabasa Jaya', 'Rajabasa Nunyai', 'Rajabasa Pemuka', 'Rajabasa Raya'],
+  Rajabasa: ['Gedong Meneng', 'Gedong Meneng Baru', 'Rajabasa', 'Rajabasa Jaya', 'Rajabasa Nunyai', 'Rajabasa Pemuka', 'Rajabasa Raya'],
   Sukabumi: ['Campang Jaya', 'Campang Raya', 'Nusantara Permai', 'Sukabumi', 'Sukabumi Indah', 'Way Gubak', 'Way Laga'],
   Sukarame: ['Korpri Jaya', 'Korpri Raya', 'Sukarame', 'Sukarame Baru', 'Way Dadi', 'Way Dadi Baru'],
   'Tanjung Karang Barat': ['Gedong Air', 'Kelapa Tiga Permai', 'Segala Mider', 'Sukadanaham', 'Sukajawa', 'Sukajawa Baru', 'Susunan Baru'],
-  'Tanjung Karang Pusat': ['Durian Payung', 'Gotong Royong', 'Kaliawi', 'Kaliawi Persada', 'Kelapa Tiga', 'Palapa'],
-  'Tanjung Karang Timur': ['Kota Baru', 'Sawah Brebes', 'Sawah Lama', 'Tanjung Agung', 'Kebon Jeruk'],
+  'Tanjung Karang Pusat': ['Durian Payung', 'Gotong Royong', 'Kaliawi', 'Kaliawi Persada', 'Kelapa Tiga', 'Palapa', 'Pasir Gintung'],
+  'Tanjung Karang Timur': ['Kebon Jeruk', 'Kota Baru', 'Sawah Brebes', 'Sawah Lama', 'Tanjung Agung'],
   'Tanjung Senang': ['Labuhan Dalam', 'Pematang Wangi', 'Perumnas Way Kandis', 'Tanjung Senang', 'Way Kandis'],
   'Teluk Betung Barat': ['Bakung', 'Batu Putuk', 'Kuripan', 'Negeri Olok Gading', 'Sukarame II'],
-  'Teluk Betung Selatan': ['Gedong Pakuon', 'Gunung Mas', 'Pesawahan', 'Sumur Putri', 'Talang', 'Tukik'],
+  'Teluk Betung Selatan': ['Gedong Pakuan', 'Gunung Mas', 'Pesawahan', 'Sumur Putri', 'Talang', 'Teluk Betung'],
   'Teluk Betung Timur': ['Keteguhan', 'Kota Karang', 'Kota Karang Raya', 'Perwata', 'Sukamaju', 'Way Tataan'],
-  'Teluk Betung Utara': ['Kupang Kota', 'Kupang Raya', 'Kupang Teba', 'Pengajaran', 'Sumur Batu'],
+  'Teluk Betung Utara': ['Gulak Galik', 'Kupang Kota', 'Kupang Raya', 'Kupang Teba', 'Pengajaran', 'Sumur Batu'],
   'Way Halim': ['Gunung Sulah', 'Jagabaya I', 'Jagabaya II', 'Jagabaya III', 'Perumnas Way Halim', 'Way Halim Permai'],
 }
 
@@ -50,7 +60,7 @@ export function isInsideCity(lat, lng) {
 
 // Kode wilayah Permendagri untuk endpoint prakiraan BMKG. Daftarnya kurasi,
 // sama persis dengan app/src/main/assets/bandar_lampung_kelurahan.json di mobile.
-// Baru 20 dari 122 kelurahan yang terpetakan; sisanya memakai pencadangan
+// Baru 20 dari 126 kelurahan yang terpetakan; sisanya memakai pencadangan
 // tingkat kecamatan lalu titik acuan kota (lihat resolveAdm4).
 export const KELURAHAN_ADM4 = [
   ['Kemiling', 'Beringin Jaya', '18.71.13.1001'],

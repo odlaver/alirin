@@ -132,7 +132,7 @@ export const DEMO_REPORT_INPUTS = [
     lat: -5.4395,
     lng: 105.2674,
     kecamatan: 'Teluk Betung Selatan',
-    kelurahan: 'Gedong Pakuon',
+    kelurahan: 'Gedong Pakuan',
     address: 'Dekat Pasar Kangkung',
     status: 'diverifikasi',
     createdAt: hoursAgo(22),
