@@ -19,11 +19,15 @@ Aplikasi ini dikembangkan untuk mendukung ekosistem kota cerdas (*Smart City*) d
 ## ✨ Fitur Utama
 
 1. **Pelaporan Warga Terstandarisasi (`/lapor`)**
-   - Form pelaporan 3 langkah interaktif dengan pemilih lokasi di peta (*Map Picker*).
+   - Dua jalur sesuai Proposal 4.3.1: **Lapor Cepat** untuk kondisi mendesak (foto & deskripsi opsional) dan **Lapor Lengkap** (foto & deskripsi wajib).
+   - Form 3 langkah dengan pemilih lokasi di peta. Titik wajib ditandai; koordinat di luar Kota Bandar Lampung ditolak.
    - Pengunggahan foto bukti (dikompresi otomatis secara *client-side* untuk menghemat bandwidth).
 
-2. **Kalkulator Skor Risiko Otomatis (0 - 100)**
-   - Prioritas dihitung secara transparan berdasarkan tingkat keparahan genangan, kedekatan fasilitas publik, riwayat laporan sekitar, dan durasi genangan.
+2. **Risk & Priority Engine (skor 0 - 100)**
+   - Dihitung oleh *trigger* PostgreSQL, bukan di sisi klien, sehingga web dan aplikasi mobile selalu menampilkan angka yang sama untuk laporan yang sama.
+   - Bobot mengikuti Proposal GEMASTIK 4.4: keparahan 35%, histori kejadian 25%, cuaca 25%, dampak lokasi 15%.
+   - Faktor cuaca memakai prakiraan curah hujan 3 jam dari BMKG pada wilayah laporan.
+   - Deterministik: menghitung ulang kapan pun memberi angka yang sama, sehingga urutan prioritas bisa diaudit. Spesifikasi lengkap di [`docs/RISK-ENGINE.md`](docs/RISK-ENGINE.md).
 
 3. **Peta Risiko Publik & Filter Cerdas (`/peta`)**
    - Menggunakan *Leaflet.js* untuk memetakan titik drainase bermasalah di Kota Bandar Lampung.
@@ -34,13 +38,14 @@ Aplikasi ini dikembangkan untuk mendukung ekosistem kota cerdas (*Smart City*) d
    - Dukungan penuh instalasi (Add to Home Screen) untuk *mobile*.
    - Siap digunakan kapan pun.
 
-5. **Notifikasi *Real-Time***
-   - Integrasi **Sonner Toaster** untuk memberikan konfirmasi aksi *(Success/Error)* yang instan dan cantik tanpa perlu *refresh*.
-   - Sinkronisasi instan *database* antar perangkat (WebSockets via Supabase).
+5. **Sinkronisasi Real-Time**
+   - Sinkronisasi *database* antar perangkat lewat WebSockets Supabase.
+   - Konfirmasi aksi di antarmuka memakai **Sonner Toaster**. Notifikasi status laporan ke warga belum ada; itu masuk roadmap.
 
-6. **Dashboard Manajemen Lengkap**
-   - **Admin (`/admin`)**: Manajemen laporan, verifikasi, penugasan petugas, dan analitik data.
-   - **Petugas Lapangan (`/petugas`)**: Cek tugas yang ditugaskan, unggah foto perbaikan (*before/after*).
+6. **Dashboard Manajemen**
+   - **Admin (`/admin/dashboard`)**: validasi laporan, penugasan petugas, daftar prioritas, arsip, dan ekspor CSV.
+   - **Petugas Lapangan (`/petugas/tugas`)**: daftar tugas yang ditugaskan, pembaruan progres, dan unggah foto bukti penyelesaian.
+   - Penutupan pekerjaan adalah wewenang petugas dan wajib disertai foto bukti; aturannya ditegakkan di *database*, bukan hanya di antarmuka.
 
 ---
 

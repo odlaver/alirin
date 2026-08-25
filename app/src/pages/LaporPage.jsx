@@ -26,6 +26,7 @@ import {
 import './LaporPage.css'
 import { KECAMATAN_DATA } from '../data/bandarLampungAreas.js'
 import { createReport } from '../services/reportsStore.js'
+import { fetchRainfallMm } from '../services/weatherService.js'
 import { MAX_REPORT_PHOTOS, prepareReportPhotos } from '../services/imageFiles.js'
 import { getReportTrackingToken } from '../domain/reports.js'
 
@@ -49,9 +50,24 @@ const SEVERITY = [
 
 const STEPS = ['Lokasi', 'Detail', 'Kirim']
 
+// Dua jalur laporan pada Proposal 4.3.1. Lapor Cepat untuk kondisi mendesak:
+// foto dan deskripsi opsional, karena saat banjir berlangsung warga sering
+// tidak sempat mengisi laporan rinci (Proposal 1.4).
+const SUBMISSION_MODE_OPTIONS = [
+  { id: 'Cepat', label: 'Lapor Cepat', desc: 'Untuk kondisi mendesak. Foto dan deskripsi opsional.' },
+  { id: 'Lengkap', label: 'Lapor Lengkap', desc: 'Bukti lebih kuat. Foto dan deskripsi wajib.' },
+]
+
+// Titik awal tampilan peta, bukan nilai laporan. lat/lng baru sah setelah warga
+// menggeser pin atau memakai GPS; sebelum itu flag pinned menahan langkah.
+const MAP_START = { lat: -5.3971, lng: 105.2668 }
+
 const INITIAL_DATA = {
-  lat: -5.3971,
-  lng: 105.2668,
+  lat: MAP_START.lat,
+  lng: MAP_START.lng,
+  pinned: false,
+  submissionMode: 'Lengkap',
+  rainfallMm: null,
   kecamatan: '',
   kelurahan: '',
   alamat: '',
@@ -140,7 +156,7 @@ const Step1 = memo(function Step1({ data, updateData }) {
   const [isLocating, setIsLocating] = useState(false)
   const [locError, setLocError] = useState('')
   const isMounted = useRef(true)
-  const handleMapChange = useCallback((point) => updateData(point), [updateData])
+  const handleMapChange = useCallback((point) => updateData({ ...point, pinned: true }), [updateData])
 
   useEffect(() => {
     return () => {
@@ -163,7 +179,7 @@ const Step1 = memo(function Step1({ data, updateData }) {
         const lon = pos.coords.longitude
 
         setIsLocating(false)
-        updateData({ lat, lng: lon, alamat: 'Lokasi terkini Anda' })
+        updateData({ lat, lng: lon, pinned: true, alamat: 'Lokasi terkini Anda' })
       },
       (err) => {
         if (!isMounted.current) return
@@ -190,6 +206,22 @@ const Step1 = memo(function Step1({ data, updateData }) {
         </div>
       </div>
 
+      <div className="mode-choice" role="radiogroup" aria-label="Jenis laporan">
+        {SUBMISSION_MODE_OPTIONS.map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            role="radio"
+            aria-checked={data.submissionMode === option.id}
+            className={`mode-choice-item ${data.submissionMode === option.id ? 'is-active' : ''}`}
+            onClick={() => updateData({ submissionMode: option.id })}
+          >
+            <strong>{option.label}</strong>
+            <small>{option.desc}</small>
+          </button>
+        ))}
+      </div>
+
       <div className="map-picker-mock">
         <Suspense fallback={<div className="map-picker-loading">Memuat peta...</div>}>
           <ReportMapPicker
@@ -203,7 +235,9 @@ const Step1 = memo(function Step1({ data, updateData }) {
           <div className="map-coords">
             <MapPin size={14} />
             <span>
-              {data.lat.toFixed(5)}, {data.lng.toFixed(5)}
+              {data.pinned
+                ? `${data.lat.toFixed(5)}, ${data.lng.toFixed(5)}`
+                : 'Geser pin ke titik masalah'}
             </span>
           </div>
           <button
@@ -326,7 +360,12 @@ const Step2 = memo(function Step2({ data, updateData }) {
           value={data.deskripsi}
           onChange={(event) => updateData({ deskripsi: event.target.value })}
         />
-        <small>{data.deskripsi.length}/300 karakter (minimal 10 karakter)</small>
+        <small>
+          {data.deskripsi.length}/300 karakter
+          {data.submissionMode === 'Cepat'
+            ? ' (opsional, isi minimal 10 karakter bila diisi)'
+            : ' (minimal 10 karakter)'}
+        </small>
       </div>
     </div>
   )
@@ -452,8 +491,14 @@ const Step3 = memo(function Step3({ data, updateData }) {
       </div>
 
       <div className="form-group">
-        <label>Foto bukti <span>Wajib</span></label>
-        <small className="photo-required-note">Minimal 1 foto. Maksimal 3 foto, 5 MB per file.</small>
+        <label>
+          Foto bukti <span>{data.submissionMode === 'Cepat' ? 'Opsional' : 'Wajib'}</span>
+        </label>
+        <small className="photo-required-note">
+          {data.submissionMode === 'Cepat'
+            ? 'Lapor Cepat bisa dikirim tanpa foto. Maksimal 3 foto, 5 MB per file.'
+            : 'Minimal 1 foto. Maksimal 3 foto, 5 MB per file.'}
+        </small>
         <PhotoUploader photos={data.photos} onChange={handlePhotosChange} />
       </div>
 
@@ -598,11 +643,31 @@ export default function LaporPage() {
     }))
   }, [])
 
+  const isQuickMode = data.submissionMode === 'Cepat'
+
   const canProceed = useMemo(() => {
-    if (step === 1) return data.kecamatan !== '' && data.kelurahan.trim() !== ''
-    if (step === 2) return data.category !== '' && data.severity !== '' && data.deskripsi.trim().length >= 10
-    return data.photos.length > 0
-  }, [data.category, data.deskripsi, data.kecamatan, data.kelurahan, data.photos.length, data.severity, step])
+    if (step === 1) {
+      return data.pinned && data.kecamatan !== '' && data.kelurahan.trim() !== ''
+    }
+    if (step === 2) {
+      if (data.category === '' || data.severity === '') return false
+      const description = data.deskripsi.trim()
+      return isQuickMode ? (description.length === 0 || description.length >= 10) : description.length >= 10
+    }
+    return isQuickMode ? true : data.photos.length > 0
+  }, [data.category, data.deskripsi, data.kecamatan, data.kelurahan, data.photos.length,
+    data.pinned, data.severity, isQuickMode, step])
+
+  // Curah hujan 3 jam BMKG diambil sekali saat wilayah sudah pasti, lalu
+  // dibekukan di laporan sebagai masukan faktor Cuaca (Proposal 4.4).
+  useEffect(() => {
+    if (step !== 2 || !data.kecamatan || !data.kelurahan || data.rainfallMm !== null) return
+    let active = true
+    fetchRainfallMm(data.kecamatan, data.kelurahan).then((forecast) => {
+      if (active && forecast) updateData({ rainfallMm: forecast.rainfallMm })
+    })
+    return () => { active = false }
+  }, [step, data.kecamatan, data.kelurahan, data.rainfallMm, updateData])
 
   function goNext() {
     setSubmitError('')

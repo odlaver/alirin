@@ -1,6 +1,7 @@
 import { DEMO_PHOTO, DEMO_REPORT_INPUTS } from '../data/demoReports.js'
-import { KECAMATAN_DATA } from '../data/bandarLampungAreas.js'
-import { DEMO_OFFICERS, getOfficerById } from '../data/officers.js'
+import { KECAMATAN_DATA, isInsideCity } from '../data/bandarLampungAreas.js'
+import { DEMO_OFFICERS } from '../data/officers.js'
+import { findOfficerById as getOfficerById, loadOfficers } from './officersService.js'
 import { CATEGORY_LABEL, SEVERITY_LABEL, buildReport, formatReportLocation, getReportTitle, getReportTrackingToken, recalculateReportsRisk } from '../domain/reports.js'
 import { INITIAL_STATUS_HISTORY, REPORT_STATUSES, STATUS_LABEL, isFinalStatus, normalizeStatus, canTransitionTo } from '../domain/status.js'
 import { isSupabaseConfigured } from './supabaseClient.js'
@@ -72,9 +73,17 @@ function isKnownArea(kecamatan, kelurahan) {
   return Boolean(kecamatan && kelurahan && KECAMATAN_DATA[kecamatan]?.includes(kelurahan))
 }
 
-function cleanCoordinate(value, fallback) {
+// Koordinat tidak valid dikembalikan sebagai NaN, bukan diganti titik pusat
+// kota. Penggantian diam-diam membuat laporan tanpa lokasi menumpuk di satu
+// titik dan terbaca sebagai kerumunan yang tidak pernah ada.
+function cleanCoordinate(value) {
   const number = Number(value)
-  return Number.isFinite(number) ? number : fallback
+  return Number.isFinite(number) ? number : Number.NaN
+}
+
+function cleanRainfall(value) {
+  const number = Number(value)
+  return Number.isFinite(number) && number >= 0 ? number : null
 }
 
 function cleanPhotoUrl(value) {
@@ -127,8 +136,18 @@ function cleanOfficerFields(input) {
   }
 }
 
+export const SUBMISSION_MODES = ['Cepat', 'Lengkap']
+
+export function normalizeSubmissionMode(mode) {
+  return SUBMISSION_MODES.includes(mode) ? mode : 'Lengkap'
+}
+
+// Aturan validasi identik dengan mobile (LaporFlowScreen + ReportRepository.submit).
+// Lapor Cepat sengaja lebih longgar: Proposal 4.3.1 menempatkannya untuk kondisi
+// mendesak, saat warga tidak sempat mengisi laporan rinci (Proposal 1.4).
 function validateReportInput(input) {
   const description = cleanText(input.description ?? input.deskripsi, TEXT_LIMITS.long)
+  const mode = normalizeSubmissionMode(input.submissionMode)
   const errors = []
 
   if (!isKnownArea(input.kecamatan, input.kelurahan)) {
@@ -140,14 +159,21 @@ function validateReportInput(input) {
   if (!isKnownSeverity(input.severity)) {
     errors.push('Keparahan laporan belum valid.')
   }
-  if (description.length < 10) {
-    errors.push('Deskripsi minimal 10 karakter.')
-  }
   if (!Number.isFinite(Number(input.lat)) || !Number.isFinite(Number(input.lng))) {
     errors.push('Koordinat lokasi belum valid.')
+  } else if (!isInsideCity(input.lat, input.lng)) {
+    errors.push('Koordinat berada di luar wilayah Kota Bandar Lampung.')
   }
-  if (cleanPhotos(input.photos).length < 1) {
-    errors.push('Minimal 1 foto bukti wajib diunggah.')
+
+  if (mode === 'Lengkap') {
+    if (description.length < 10) {
+      errors.push('Deskripsi minimal 10 karakter.')
+    }
+    if (cleanPhotos(input.photos).length < 1) {
+      errors.push('Minimal 1 foto bukti wajib diunggah pada Lapor Lengkap.')
+    }
+  } else if (description.length > 0 && description.length < 10) {
+    errors.push('Deskripsi minimal 10 karakter, atau kosongkan saja.')
   }
 
   if (errors.length) {
@@ -164,8 +190,10 @@ function cleanReportInput(input) {
     category: isKnownCategory(input.category) ? input.category : 'lainnya',
     severity: isKnownSeverity(input.severity) ? input.severity : 'ringan',
     description: cleanText(input.description ?? input.deskripsi, TEXT_LIMITS.long),
-    lat: cleanCoordinate(input.lat, -5.3971),
-    lng: cleanCoordinate(input.lng, 105.2668),
+    submissionMode: normalizeSubmissionMode(input.submissionMode ?? input.submission_mode),
+    rainfallMm: cleanRainfall(input.rainfallMm ?? input.rainfall_mm),
+    lat: cleanCoordinate(input.lat),
+    lng: cleanCoordinate(input.lng),
     kecamatan,
     kelurahan,
     address: cleanText(input.address ?? input.alamat, TEXT_LIMITS.medium),
@@ -195,7 +223,7 @@ function normalizeHistory(history = [], fallbackStatus = 'masuk', fallbackAt = n
   return [historyItem(fallbackStatus, INITIAL_STATUS_HISTORY.actor, INITIAL_STATUS_HISTORY.note, fallbackAt)]
 }
 
-function normalizeReportRecord(record, normalizedReports) {
+function normalizeReportRecord(record, normalizedReports, { trustStoredRisk = false } = {}) {
   if (!record || typeof record !== 'object') return null
 
   const createdAt = cleanDate(record.createdAt)
@@ -206,6 +234,10 @@ function normalizeReportRecord(record, normalizedReports) {
     description: record.description,
     address: record.address,
   })
+
+  // Laporan tanpa koordinat sah tidak bisa dipetakan maupun dinilai risikonya.
+  if (!Number.isFinite(safeInput.lat) || !Number.isFinite(safeInput.lng)) return null
+
   const rebuilt = buildReport(safeInput, normalizedReports, new Date(createdAt), {
     id: cleanText(record.id, TEXT_LIMITS.short) || undefined,
     code: cleanText(record.code, TEXT_LIMITS.short) || undefined,
@@ -216,8 +248,22 @@ function normalizeReportRecord(record, normalizedReports) {
   })
   const history = normalizeHistory(record.statusHistory, rebuilt.status, createdAt)
 
+  // Skor dari Supabase adalah keluaran trigger alirin_apply_risk, satu-satunya
+  // otoritas. Menghitung ulang di browser dulu membuat setiap laporan punya dua
+  // angka berbeda antara yang tersimpan dan yang tampil.
+  const storedRisk = trustStoredRisk && Number.isFinite(Number(record.riskScore))
+    ? {
+      riskScore: Number(record.riskScore),
+      riskLevel: record.riskLevel || rebuilt.riskLevel,
+      riskBreakdown: Array.isArray(record.riskBreakdown) && record.riskBreakdown.length
+        ? record.riskBreakdown
+        : rebuilt.riskBreakdown,
+    }
+    : {}
+
   return {
     ...rebuilt,
+    ...storedRisk,
     status: normalizeStatus(record.status),
     statusHistory: history,
     archivedAt: isFinalStatus(normalizeStatus(record.status))
@@ -227,10 +273,10 @@ function normalizeReportRecord(record, normalizedReports) {
   }
 }
 
-function normalizeReports(rawReports) {
+function normalizeReports(rawReports, options) {
   if (!Array.isArray(rawReports)) return []
   return rawReports.reduce((normalized, record) => {
-    const report = normalizeReportRecord(record, normalized)
+    const report = normalizeReportRecord(record, normalized, options)
     if (report) normalized.push(report)
     return normalized
   }, [])
@@ -372,8 +418,10 @@ export async function createReport(input) {
     updatedAt: now,
   }
   
-  const nextReportsTemp = recalculateReportsRisk([withHistory, ...reports])
-  let calculatedReport = nextReportsTemp.find(r => r.id === withHistory.id) || withHistory
+  // buildReport sudah menghitung skor sementara untuk ditampilkan langsung.
+  // Angka final datang dari trigger Supabase pada sinkronisasi berikutnya.
+  const nextReportsTemp = [withHistory, ...reports]
+  let calculatedReport = withHistory
 
   if (useSupabaseReports) {
     try {
@@ -688,7 +736,7 @@ export function resetDemoReports() {
 }
 
 function acceptRemoteReports(remoteReports) {
-  const reports = recalculateReportsRisk(normalizeReports(remoteReports))
+  const reports = normalizeReports(remoteReports, { trustStoredRisk: true })
   if (!reports.length && useLocalReports) return getReports()
   saveReports(reports)
   return reports
@@ -704,6 +752,7 @@ async function refreshRemoteReports() {
 function ensureRemoteSyncStarted() {
   if (!useSupabaseReports || hasStartedRemoteSync) return
   hasStartedRemoteSync = true
+  void loadOfficers()
   void refreshRemoteReports()
   realtimeUnsubscribe = startReportsRealtimeSync(refreshRemoteReports)
 }
@@ -726,6 +775,8 @@ export function createReportsCsv(reports = getReports()) {
     'Skor',
     'Kategori',
     'Keparahan',
+    'Mode',
+    'Curah hujan 3 jam (mm)',
     'Kecamatan',
     'Kelurahan',
     'Alamat',
@@ -745,6 +796,8 @@ export function createReportsCsv(reports = getReports()) {
     report.riskScore,
     getReportTitle(report),
     SEVERITY_LABEL[report.severity] ?? report.severity,
+    report.submissionMode || '-',
+    report.rainfallMm ?? '-',
     report.kecamatan,
     report.kelurahan,
     report.address,

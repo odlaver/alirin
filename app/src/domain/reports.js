@@ -70,8 +70,12 @@ export function buildReport(input, existingReports = [], now = new Date(), overr
       ?? createReportTrackingToken(),
     category: input.category || 'lainnya',
     severity: input.severity || 'ringan',
-    // Asal laporan dari mobile (Cepat/Lengkap); web belum punya pilihan ini.
     submissionMode: input.submissionMode || input.submission_mode || '',
+    // Curah hujan 3 jam BMKG saat laporan dikirim, dibekukan di baris laporan
+    // supaya faktor Cuaca bisa dihitung ulang dengan hasil yang identik.
+    rainfallMm: Number.isFinite(Number(input.rainfallMm ?? input.rainfall_mm))
+      ? Number(input.rainfallMm ?? input.rainfall_mm)
+      : null,
     description: input.description || input.deskripsi || '',
     lat: Number(input.lat),
     lng: Number(input.lng),

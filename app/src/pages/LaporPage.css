@@ -1600,3 +1600,44 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Pilihan Lapor Cepat vs Lapor Lengkap (Proposal 4.3.1) */
+.mode-choice {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.mode-choice-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  text-align: left;
+  border: 1.5px solid var(--color-border, #d8e0e8);
+  border-radius: 12px;
+  background: var(--color-surface, #fff);
+  cursor: pointer;
+  transition: border-color .18s ease, background .18s ease;
+}
+
+.mode-choice-item:hover {
+  border-color: var(--color-primary, #0f6fa8);
+}
+
+.mode-choice-item.is-active {
+  border-color: var(--color-primary, #0f6fa8);
+  background: var(--color-primary-soft, #eaf4fb);
+}
+
+.mode-choice-item strong {
+  font-size: var(--text-sm, .9rem);
+  color: var(--color-text, #12212e);
+}
+
+.mode-choice-item small {
+  font-size: var(--text-xs, .75rem);
+  color: var(--color-text-secondary, #5a6b7c);
+  line-height: 1.4;
+}

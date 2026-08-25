@@ -1,3 +1,6 @@
+// Cadangan luring saja. Sumber kebenaran daftar petugas adalah tabel
+// public.officers di Supabase; lihat services/officersService.js.
+// Isi di sini harus sama dengan seed migrasi 20260605000100_reports_backend.sql.
 export const DEMO_OFFICERS = [
   {
     id: 'ofc-budi',

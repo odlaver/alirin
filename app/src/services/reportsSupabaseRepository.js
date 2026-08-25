@@ -34,6 +34,7 @@ function mapSupabaseReportRow(row) {
     riskLevel: row.risk_level,
     riskScore: row.risk_score,
     submissionMode: row.submission_mode || '',
+    rainfallMm: Number.isFinite(Number(row.rainfall_mm)) ? Number(row.rainfall_mm) : null,
     reporterName: row.reporter_name,
     reporterContact: row.reporter_contact,
     assignedOfficerId: row.assigned_officer_id,
@@ -143,22 +144,6 @@ async function syncInlinePhotos(photos = [], label = 'foto') {
   return uploadedPhotos
 }
 
-async function syncRiskBreakdown(reportId, riskBreakdown = []) {
-  if (!riskBreakdown.length) return
-
-  const { error } = await supabase.from('risk_breakdowns').insert(
-    riskBreakdown.map((item) => ({
-      report_id: reportId,
-      label: item.label,
-      points: item.points,
-      weight: item.weight,
-      detail: item.detail,
-    }))
-  )
-
-  if (error) throw new Error(error.message)
-}
-
 async function insertStatusHistory(reportId, historyItem) {
   if (!historyItem) return
 
@@ -196,9 +181,12 @@ export async function insertSupabaseReport(report) {
       kelurahan: currentReport.kelurahan,
       status: currentReport.status,
       severity: currentReport.severity,
+      // risk_level & risk_score dikirim sebagai nilai sementara; trigger
+      // alirin_apply_risk di Supabase selalu menimpanya dengan hasil resmi.
       risk_level: currentReport.riskLevel,
       risk_score: currentReport.riskScore,
       submission_mode: currentReport.submissionMode || null,
+      rainfall_mm: currentReport.rainfallMm ?? null,
       reporter_name: currentReport.reporterName,
       reporter_contact: currentReport.reporterContact,
       assigned_officer_id: currentReport.assignedOfficerId || null,
@@ -216,8 +204,8 @@ export async function insertSupabaseReport(report) {
         ...currentReport,
         completionPhotos,
       }
+      // risk_breakdowns diisi trigger alirin_write_breakdown, bukan klien.
       syncedReport.photos = await insertReportPhotos(currentReport.id, reportPhotos)
-      await syncRiskBreakdown(currentReport.id, syncedReport.riskBreakdown)
       await insertStatusHistory(currentReport.id, syncedReport.statusHistory?.[0])
 
       return syncedReport

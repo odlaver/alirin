@@ -64,7 +64,7 @@ describe('report domain', () => {
     })
     expect(report.photos).toHaveLength(3)
     expect(report.riskScore).toBeGreaterThan(0)
-    expect(report.riskBreakdown).toHaveLength(5)
+    expect(report.riskBreakdown).toHaveLength(6)
     expect(getReportTrackingToken(report)).toBe('private-token-1')
     expect(getReportTrackingToken(report)).not.toBe(report.code)
   })

@@ -221,3 +221,91 @@ describe('reportsStore data mode', () => {
     )).rejects.toThrow('Storage down')
   })
 })
+
+describe('validasi laporan per mode', () => {
+  afterEach(() => {
+    vi.resetModules()
+    vi.clearAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  it('menolak koordinat di luar Kota Bandar Lampung alih-alih menggantinya diam-diam', async () => {
+    installBrowserStorage()
+    const { createReport } = await loadReportsStore({ dataMode: 'local' })
+
+    await expect(createReport({ ...validInput, lat: -6.2, lng: 106.8 }))
+      .rejects.toThrow('di luar wilayah Kota Bandar Lampung')
+  })
+
+  it('menolak koordinat yang tidak valid', async () => {
+    installBrowserStorage()
+    const { createReport } = await loadReportsStore({ dataMode: 'local' })
+
+    await expect(createReport({ ...validInput, lat: 'bukan angka', lng: null }))
+      .rejects.toThrow('Koordinat lokasi belum valid.')
+  })
+
+  it('Lapor Lengkap tetap mewajibkan foto dan deskripsi', async () => {
+    installBrowserStorage()
+    const { createReport } = await loadReportsStore({ dataMode: 'local' })
+
+    await expect(createReport({ ...validInput, submissionMode: 'Lengkap', photos: [] }))
+      .rejects.toThrow('Minimal 1 foto bukti')
+    await expect(createReport({ ...validInput, submissionMode: 'Lengkap', description: 'pendek' }))
+      .rejects.toThrow('Deskripsi minimal 10 karakter.')
+  })
+
+  it('Lapor Cepat menerima laporan tanpa foto dan tanpa deskripsi', async () => {
+    installBrowserStorage()
+    const { createReport } = await loadReportsStore({ dataMode: 'local' })
+
+    const report = await createReport({
+      ...validInput,
+      submissionMode: 'Cepat',
+      description: '',
+      photos: [],
+    })
+
+    expect(report.submissionMode).toBe('Cepat')
+    expect(report.photos).toHaveLength(0)
+  })
+
+  it('menyimpan curah hujan BMKG sebagai masukan faktor cuaca', async () => {
+    installBrowserStorage()
+    const { createReport } = await loadReportsStore({ dataMode: 'local' })
+
+    const report = await createReport({ ...validInput, rainfallMm: 12.5 })
+
+    expect(report.rainfallMm).toBe(12.5)
+    expect(report.riskBreakdown.find((item) => item.id === 'weather').weight).toBe(25)
+  })
+
+  // Dua store terpisah supaya laporan pertama tidak ikut terhitung sebagai
+  // histori laporan kedua. Yang diuji murni pengaruh mode.
+  it('mode laporan tidak mengubah skor', async () => {
+    installBrowserStorage()
+    const first = await loadReportsStore({ dataMode: 'local' })
+    const cepat = await first.createReport({
+      ...validInput, submissionMode: 'Cepat', photos: [], description: '',
+    })
+
+    vi.resetModules()
+    vi.unstubAllGlobals()
+    installBrowserStorage()
+    const second = await loadReportsStore({ dataMode: 'local' })
+    const lengkap = await second.createReport({ ...validInput, submissionMode: 'Lengkap' })
+
+    expect(cepat.riskScore).toBe(lengkap.riskScore)
+  })
+
+  it('faktor histori naik saat ada laporan lain di titik yang sama', async () => {
+    installBrowserStorage()
+    const { createReport } = await loadReportsStore({ dataMode: 'local' })
+
+    const pertama = await createReport(validInput)
+    const kedua = await createReport(validInput)
+
+    const historyOf = (report) => report.riskBreakdown.find((item) => item.id === 'history').rawScore
+    expect(historyOf(kedua)).toBeGreaterThan(historyOf(pertama))
+  })
+})

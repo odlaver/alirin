@@ -5,7 +5,7 @@ import {
   AlertTriangle, CheckCircle2, Clock, FileCheck2,
   MapPin, TrendingUp, TrendingDown, X,
 } from 'lucide-react'
-import { DEMO_OFFICERS } from '../data/officers.js'
+import { getCachedOfficers, loadOfficers } from '../services/officersService.js'
 import { REPORT_STATUSES, STATUS_CLASS, STATUS_LABEL, canTransitionTo } from '../domain/status.js'
 import {
   formatDateTime,
@@ -104,6 +104,13 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
   const [statusError, setStatusError] = useState('')
   const [isSavingStatus, setIsSavingStatus] = useState(false)
   const [isAssigningOfficer, setIsAssigningOfficer] = useState(false)
+  const [officers, setOfficers] = useState(getCachedOfficers)
+
+  useEffect(() => {
+    let mounted = true
+    loadOfficers().then((list) => { if (mounted) setOfficers(list) })
+    return () => { mounted = false }
+  }, [])
 
   if (!report) return null
   const row = reportToAdminRow(report)
@@ -237,9 +244,15 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
               <select className="status-select-premium" value={status} onChange={(event) => { setStatus(event.target.value); setStatusError('') }}>
                 {REPORT_STATUSES
                   .filter((s) => canTransitionTo(report.status, s) || s === report.status)
+                  .filter((s) => s !== 'selesai' || report.status === 'selesai')
                   .map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)
                 }
               </select>
+              {report.status === 'ditangani' && (
+                <p className="assignment-note">
+                  Penutupan pekerjaan dilakukan petugas lapangan bersama foto bukti penyelesaian.
+                </p>
+              )}
               <textarea
                 className="status-note-input"
                 rows={3}
@@ -262,7 +275,7 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
                 disabled={!canAssignOfficer}
               >
                 <option value="">Pilih petugas</option>
-                {DEMO_OFFICERS.map((officer) => (
+                {officers.map((officer) => (
                   <option key={officer.id} value={officer.id}>{officer.name} - {officer.area}</option>
                 ))}
               </select>

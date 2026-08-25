@@ -12,28 +12,27 @@ import {
 import './MetodologiPage.css'
 
 const scoreItems = [
-  { label: 'Keparahan laporan', weight: '30%', detail: 'Ringan, sedang, parah, atau kritis.' },
-  { label: 'Kategori masalah', weight: '25%', detail: 'Sumbatan, genangan, drainase rusak, aliran lambat, bau, atau lainnya.' },
-  { label: 'Laporan sekitar', weight: '20%', detail: 'Jumlah laporan lain dalam radius sederhana sekitar titik laporan.' },
-  { label: 'Fasilitas publik', weight: '15%', detail: 'Kedekatan dengan fasilitas dummy seperti kampus, pasar, rumah sakit, atau terminal.' },
-  { label: 'Umur laporan', weight: '10%', detail: 'Laporan lama yang belum selesai naik prioritasnya secara bertahap.' },
+  { label: 'Keparahan laporan', weight: '35%', detail: 'Ringan, sedang, parah, atau kritis, sesuai pilihan pelapor.' },
+  { label: 'Histori kejadian', weight: '25%', detail: 'Laporan lain di titik yang sama, radius 350 m dalam 180 hari terakhir. Laporan yang ditolak tidak dihitung.' },
+  { label: 'Cuaca', weight: '25%', detail: 'Curah hujan 3 jam ke depan dari prakiraan BMKG pada wilayah laporan. Bila BMKG tidak terjangkau, bobotnya dibagi ulang ke faktor lain.' },
+  { label: 'Dampak lokasi', weight: '15%', detail: 'Jarak ke fasilitas publik terdekat: rumah sakit, kampus, pasar, atau simpul transportasi.' },
 ]
 
 const safetyItems = [
   {
     icon: LockKeyhole,
-    title: 'Demo login, bukan auth produksi',
-    body: 'Akun admin di project ini hanya untuk simulasi alur. Untuk produksi tetap perlu backend, session server-side, role, dan audit log.',
+    title: 'Autentikasi berbasis peran',
+    body: 'Login memakai Supabase Auth. Peran admin dan petugas dibaca dari JWT lalu ditegakkan Row Level Security di sisi database, bukan hanya di antarmuka.',
   },
   {
     icon: Database,
-    title: 'Local-first',
-    body: 'Data tersimpan di localStorage browser. Cocok untuk tugas, demo, dan eksplorasi, tetapi belum lintas perangkat.',
+    title: 'Satu sumber angka',
+    body: 'Laporan tersimpan di PostgreSQL dan tersinkron lintas perangkat. Risk score dihitung trigger database, sehingga web dan aplikasi mobile menampilkan angka yang sama untuk laporan yang sama.',
   },
   {
     icon: ShieldAlert,
-    title: 'Input dibatasi',
-    body: 'Laporan baru divalidasi, status harus memakai enum resmi, foto wajib berupa data URL image, dan export CSV diberi proteksi formula injection.',
+    title: 'Batas akses publik',
+    body: 'Halaman publik membaca view tanpa nama dan kontak pelapor, dengan koordinat dibulatkan ke sekitar 110 meter. Koordinat presisi hanya terbuka bagi petugas yang login.',
   },
 ]
 
@@ -60,11 +59,11 @@ export default function MetodologiPage() {
 
       <main className="method-main">
         <section className="method-hero">
-          <span className="method-kicker">Metodologi prototype</span>
+          <span className="method-kicker">Metodologi</span>
           <h1>Cara ALIRIN menghitung prioritas laporan drainase.</h1>
           <p>
-            Halaman ini menjelaskan batasan dan cara kerja ALIRIN agar project tetap jujur
-            sebagai prototype local-first untuk kebutuhan perkuliahan.
+            Halaman ini menjelaskan cara kerja dan batasan ALIRIN secara terbuka, termasuk
+            rumus prioritas yang dipakai dan hal-hal yang belum tercakup.
           </p>
         </section>
 
@@ -78,8 +77,10 @@ export default function MetodologiPage() {
               </div>
             </div>
             <p>
-              Skor prioritas dihitung saat laporan dibuat. Angka ini bukan keputusan final,
-              tetapi alat bantu admin untuk menyusun urutan tindak lanjut.
+              Skor dihitung trigger database memakai rumus Proposal 4.4, dengan jendela
+              histori berlabuh pada waktu laporan dibuat. Menghitung ulang kapan pun
+              memberi angka yang sama, sehingga urutan prioritas bisa diaudit. Angka ini
+              alat bantu penyusunan urutan, bukan keputusan final.
             </p>
             <div className="score-method-list">
               {scoreItems.map((item) => (
@@ -98,13 +99,14 @@ export default function MetodologiPage() {
             <div className="method-card-head">
               <MapPin size={20} />
               <div>
-                <span>Data lokal</span>
+                <span>Data wilayah</span>
                 <h2>Bandar Lampung</h2>
               </div>
             </div>
             <p>
-              Data wilayah, fasilitas publik, dan laporan demo dipakai untuk membuat peta
-              terasa lokal. Data ini masih dummy terstruktur, bukan data resmi produksi.
+              Master 20 kecamatan dan 122 kelurahan dipakai untuk memvalidasi wilayah
+              laporan. Daftar fasilitas publik masih kurasi terbatas, dan pemetaan kode
+              wilayah BMKG baru mencakup sebagian kelurahan.
             </p>
           </article>
 
@@ -117,8 +119,9 @@ export default function MetodologiPage() {
               </div>
             </div>
             <p>
-              Setiap perubahan status menambah riwayat. Warga memakai link status pribadi
-              untuk melihat progres dari masuk sampai selesai atau ditolak.
+              Setiap perubahan status menambah riwayat, dan urutannya dijaga di database
+              sehingga tidak ada tahap yang bisa dilompati. Warga memakai link status
+              pribadi untuk melihat progres dari masuk sampai selesai atau ditolak.
             </p>
           </article>
         </section>
@@ -126,7 +129,7 @@ export default function MetodologiPage() {
         <section className="method-safety">
           <div className="method-section-title">
             <span>Keamanan dan batasan</span>
-            <h2>Yang sudah diamankan di prototype ini.</h2>
+            <h2>Yang sudah ditegakkan sistem.</h2>
           </div>
           <div className="safety-grid">
             {safetyItems.map((item) => (
@@ -142,9 +145,11 @@ export default function MetodologiPage() {
         <section className="method-note">
           <strong>Batasan penting:</strong>
           <span>
-            ALIRIN saat ini belum memakai backend, belum multi-user sungguhan, dan belum boleh
-            dianggap sebagai sistem operasional pemerintah. Versi ini aman untuk demo lokal,
-            evaluasi konsep, dan tugas kuliah.
+            ALIRIN adalah sistem pendukung keputusan, bukan pengganti kewenangan instansi.
+            Skor risiko membantu menyusun urutan, sedangkan keputusan penanganan tetap pada
+            admin dan verifikasi petugas di lapangan. Analisis berbantuan AI dan masukan
+            sensor IoT masih tahap berikutnya pada roadmap, sehingga skor saat ini sepenuhnya
+            berbasis aturan yang dapat diaudit di halaman ini.
           </span>
         </section>
       </main>

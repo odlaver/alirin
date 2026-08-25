@@ -44,6 +44,14 @@ async function loadAuthService({
   vi.doMock('./runtimeConfig.js', () => ({
     isDemoAuthEnabled: demoEnabled,
   }))
+  // Kredensial demo kini datang dari env, bukan konstanta di repo. Uji ini
+  // menguji perilaku authService, jadi daftarnya dipasang tetap di sini.
+  vi.doMock('../data/demoUsers.js', () => ({
+    DEMO_USERS: {
+      admin: { email: 'admin@alirin.local', password: 'alirin123', name: 'Admin Pemda', role: 'admin' },
+      petugas: { email: 'petugas@alirin.local', password: 'alirin123', name: 'Budi Santoso', role: 'petugas', officerId: 'ofc-budi' },
+    },
+  }))
   vi.doMock('./supabaseClient.js', () => ({
     isSupabaseConfigured: supabaseConfigured,
     supabase: {
