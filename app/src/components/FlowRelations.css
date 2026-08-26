@@ -1,0 +1,102 @@
+/* P-3 - panel relasi hulu-hilir di halaman peta. */
+
+.flow-relations {
+  border-top: 1px solid var(--color-border);
+  padding-top: 14px;
+  margin-top: 14px;
+}
+
+.flow-relations-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.flow-relations-head small {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.flow-relations-head span {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.flow-relations-intro {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+
+.flow-relations-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.flow-relations-list li {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface-hover);
+}
+
+.flow-relations-pair {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
+.flow-relations-pair strong {
+  font-weight: 600;
+}
+
+.flow-strength {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  margin-left: auto;
+}
+
+.flow-strength-3 { background: var(--color-danger); color: #fff; }
+.flow-strength-2 { background: var(--color-warning); color: #3d2a00; }
+.flow-strength-1 { background: var(--color-surface-muted); color: var(--color-text-muted); }
+
+.flow-relations-rain {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.flow-relations-source {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  margin-top: 6px;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--color-text-muted);
+}
+
+.flow-relations-source svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}

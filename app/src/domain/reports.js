@@ -73,6 +73,10 @@ export function buildReport(input, existingReports = [], now = new Date(), overr
     submissionMode: input.submissionMode || input.submission_mode || '',
     // Curah hujan 3 jam BMKG saat laporan dikirim, dibekukan di baris laporan
     // supaya faktor Cuaca bisa dihitung ulang dengan hasil yang identik.
+    // Konteks hulu ikut dibawa supaya pratinjau skor memakai masukan yang sama
+    // dengan trigger basis data (P-3). Tidak disimpan ke server: server
+    // membacanya sendiri dari area_weather saat menilai.
+    upstream: input.upstream ?? null,
     rainfallMm: Number.isFinite(Number(input.rainfallMm ?? input.rainfall_mm))
       ? Number(input.rainfallMm ?? input.rainfall_mm)
       : null,

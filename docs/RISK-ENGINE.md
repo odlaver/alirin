@@ -81,7 +81,13 @@ laporan, diambil saat laporan dikirim lalu disimpan permanen di baris laporan.
 | 10–20 mm | Hujan lebat | 88 |
 | ≥ 20 mm | Hujan sangat lebat | 100 |
 
-**Bila `rainfall_mm` kosong** (BMKG tidak terjangkau, atau wilayah tanpa kode `adm4`),
+Seluruh 126 kelurahan punya kode `adm4` BMKG-nya sendiri, dibaca satu per satu
+langsung dari endpoint BMKG pada 26 Agustus 2026. Sebelumnya hanya 20 kelurahan
+yang punya kode dan 17 di antaranya salah — enam menunjuk kecamatan yang sama
+sekali berbeda — sehingga faktor Cuaca memakai hujan dari wilayah yang keliru
+tanpa satu pun tanda kesalahan.
+
+**Bila `rainfall_mm` kosong** (BMKG tidak terjangkau, atau wilayah tidak dikenali),
 faktor ini dikeluarkan dari perhitungan dan **bobotnya dibagi ulang secara proporsional**
 ke tiga faktor lain:
 
@@ -92,6 +98,36 @@ Risk Score = Σ(sub_i x bobot_i) / Σ(bobot_i yang tersedia)
 Alternatifnya — menganggap cuaca bernilai 0 — akan menghukum laporan yang datanya kebetulan
 tidak terambil. Pembagian ulang bobot menjaga skor tetap sebanding, dan status
 ketersediaannya selalu tercatat di rincian skor.
+
+#### Hujan di hulu ikut dihitung
+
+Proposal §1.1 mencatat sebagian Bandar Lampung berbukit dan berperan sebagai hulu,
+dan §1.4 mencatat warga Rajabasa mengenali hubungan banjir mereka dengan hujan di
+Kemiling — sementara *hujan lokal belum tentu langsung memicu banjir*. Faktor
+Cuaca karena itu tidak hanya membaca hujan di titik laporan.
+
+Yang masuk ke tabel sub-skor di atas adalah **curah hujan efektif**:
+
+```
+efektif = max( hujan_lokal , hujan_hulu x kekuatan_relasi / 3 )
+```
+
+- Relasi diambil dari `area_flow_relations`. Setiap baris membawa kolom `sumber`
+  berisi kutipan lapangan asalnya; relasi tanpa sumber tidak boleh ditambahkan.
+- `kekuatan` bernilai 1–3. Nilai 3 berarti hubungan itu disebut langsung oleh
+  warga di lokasi terdampak dan hujannya diteruskan penuh; nilai 1 berarti hanya
+  arah aliran umum dan hanya sepertiganya yang diteruskan.
+- Hujan per kecamatan dibaca dari `area_weather`, diisi klien setiap kali
+  memanggil BMKG, dan hanya dipakai bila umurnya di bawah 3 jam.
+- **Diambil yang terbesar, bukan dijumlahkan.** Sub-skor Cuaca menyatakan
+  intensitas hujan, bukan volume air.
+
+Bila hulu yang menentukan, kecamatan dan curah hujannya disimpan di baris laporan
+(`upstream_kecamatan`, `upstream_rainfall_mm`) dan disebut di rincian skor —
+tanpa itu pengguna melihat skor cuaca tinggi sementara di tempatnya sedang cerah,
+dan angkanya tampak salah padahal justru itu intinya.
+
+Bobotnya sendiri tidak berubah: Cuaca tetap 25%.
 
 ### 2.4 Lokasi — 15%
 

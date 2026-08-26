@@ -11,6 +11,7 @@ import {
   SlidersHorizontal,
 } from 'lucide-react'
 import RiskMap from '../components/RiskMap.jsx'
+import FlowRelations from '../components/FlowRelations.jsx'
 import { getLevelClass } from '../components/mapData.js'
 import { reportsToMarkers } from '../domain/reports.js'
 import { KECAMATAN_DATA } from '../data/bandarLampungAreas.js'
@@ -177,6 +178,8 @@ export default function PetaPage() {
               <div className="peta-empty-list">Tidak ada laporan sesuai filter.</div>
             )}
           </div>
+
+          <FlowRelations />
         </aside>
 
         <section className="peta-map-shell" aria-label="Peta risiko drainase">

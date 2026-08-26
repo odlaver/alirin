@@ -8,6 +8,7 @@ Migrasi 1 dan 2 menutup temuan audit dan **sudah diterapkan** ke project live
 | 1 | `supabase/migrations/20260826090000_risk_engine.sql` | Risk & Priority Engine sebagai trigger, penjaga transisi status, constraint, FK petugas, policy Storage & DELETE, view publik dengan koordinat dibulatkan |
 | 2 | `supabase/migrations/20260826091000_cleanup_probe_rows.sql` | Menghapus 2 baris probe, lalu mengaktifkan constraint |
 | 3 | `supabase/migrations/20260826100000_breakdown_apportion.sql` | Poin rincian dibagi dengan metode sisa terbesar sehingga berjumlah sama dengan skor; pembangun rincian dipisah dari trigger |
+| 4 | `supabase/migrations/20260826110000_hulu_hilir.sql` | Relasi hulu-hilir, cache cuaca per kecamatan, dan faktor Cuaca yang membaca hujan di hulu |
 
 ## Cek dulu kondisi sekarang
 
@@ -26,10 +27,13 @@ Buka **Supabase Dashboard → SQL Editor**, lalu jalankan **berurutan**:
 1. Tempel seluruh isi `20260826090000_risk_engine.sql` → Run. Tunggu sampai
    selesai tanpa error.
 2. Baru tempel seluruh isi `20260826091000_cleanup_probe_rows.sql` → Run.
-3. Terakhir `20260826100000_breakdown_apportion.sql` → Run. Berkas ini
-   membangun ulang rincian seluruh laporan yang sudah ada di bagian akhirnya.
+3. Lalu `20260826100000_breakdown_apportion.sql` → Run. Berkas ini membangun
+   ulang rincian seluruh laporan yang sudah ada di bagian akhirnya.
+4. Terakhir `20260826110000_hulu_hilir.sql` → Run.
 
-Ketiganya aman diulang.
+Keempatnya aman diulang, tetapi **urutannya tidak boleh dibalik**: berkas 4
+menambahkan dua kolom pada view `public_reports`, dan `create or replace view`
+menolak menghapus kolom. Menjalankan berkas 3 setelah berkas 4 akan gagal.
 
 Alternatif lewat CLI, bila kredensial database tersedia:
 

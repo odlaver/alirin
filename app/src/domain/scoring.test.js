@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   apportion,
   calculateRiskScore,
+  combineRainfall,
   combineRiskFactors,
   getDistanceKm,
   getRiskLevel,
@@ -171,5 +172,68 @@ describe('pembagian poin per faktor', () => {
         expect(`${severity}/${rainfallMm}: ${total}`).toBe(`${severity}/${rainfallMm}: ${risk.score}`)
       }
     }
+  })
+})
+
+// P-3: hujan di hulu ikut menentukan risiko di hilir.
+describe('relasi hulu-hilir', () => {
+  const KEMILING_LEBAT = { kecamatan: 'Kemiling', rainfallMm: 18, kekuatan: 3 }
+
+  it('memakai sumbangan hulu saat hujan lokal lebih kecil', () => {
+    const rain = combineRainfall(0.5, KEMILING_LEBAT)
+    expect(rain.effective).toBe(18)
+    expect(rain.fromUpstream).toBe(true)
+  })
+
+  it('mempertahankan hujan lokal saat lokal lebih besar', () => {
+    const rain = combineRainfall(30, KEMILING_LEBAT)
+    expect(rain.effective).toBe(30)
+    expect(rain.fromUpstream).toBe(false)
+  })
+
+  it('meredam sumbangan sesuai kekuatan relasi', () => {
+    expect(combineRainfall(0, { kecamatan: 'Kemiling', rainfallMm: 18, kekuatan: 1 }).effective).toBe(6)
+    expect(combineRainfall(0, { kecamatan: 'Kemiling', rainfallMm: 18, kekuatan: 2 }).effective).toBe(12)
+  })
+
+  it('tetap null saat lokal dan hulu sama-sama tidak ada', () => {
+    expect(combineRainfall(null, null).effective).toBeNull()
+    expect(combineRainfall(null, { kecamatan: 'Kemiling', rainfallMm: null, kekuatan: 3 }).effective).toBeNull()
+  })
+
+  it('mengabaikan kekuatan di luar 1-3', () => {
+    expect(combineRainfall(2, { kecamatan: 'X', rainfallMm: 90, kekuatan: 9 }).effective).toBe(2)
+    expect(combineRainfall(2, { kecamatan: 'X', rainfallMm: 90, kekuatan: 0 }).effective).toBe(2)
+  })
+
+  it('menaikkan skor laporan hilir walau di lokasinya tidak hujan', () => {
+    const tanpaHulu = calculateRiskScore(
+      { ...BASE_REPORT, rainfallMm: 0 },
+      { reports: [], facilities: NEAR_FACILITY }
+    )
+    const denganHulu = calculateRiskScore(
+      { ...BASE_REPORT, rainfallMm: 0, upstream: KEMILING_LEBAT },
+      { reports: [], facilities: NEAR_FACILITY }
+    )
+    expect(denganHulu.score).toBeGreaterThan(tanpaHulu.score)
+  })
+
+  it('menyebut kecamatan hulu di rincian skor', () => {
+    const risk = calculateRiskScore(
+      { ...BASE_REPORT, rainfallMm: 0.5, upstream: KEMILING_LEBAT },
+      { reports: [], facilities: NEAR_FACILITY }
+    )
+    const weather = risk.breakdown.find((item) => item.id === 'weather')
+    expect(weather.detail).toContain('hulu Kemiling')
+    expect(weather.detail).toContain('relasi kuat')
+    expect(weather.detail).toContain('lokal 0.5 mm')
+  })
+
+  it('tidak menyebut hulu saat hujan lokal yang menentukan', () => {
+    const risk = calculateRiskScore(
+      { ...BASE_REPORT, rainfallMm: 30, upstream: KEMILING_LEBAT },
+      { reports: [], facilities: NEAR_FACILITY }
+    )
+    expect(risk.breakdown.find((item) => item.id === 'weather').detail).not.toContain('hulu')
   })
 })

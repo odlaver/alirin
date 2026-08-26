@@ -27,6 +27,7 @@ import './LaporPage.css'
 import { KECAMATAN_DATA } from '../data/bandarLampungAreas.js'
 import { createReport } from '../services/reportsStore.js'
 import { fetchRainfallMm } from '../services/weatherService.js'
+import { primeUpstreamWeather, saveAreaWeather } from '../services/upstreamService.js'
 import { MAX_REPORT_PHOTOS, prepareReportPhotos } from '../services/imageFiles.js'
 import { getReportTrackingToken } from '../domain/reports.js'
 
@@ -68,6 +69,7 @@ const INITIAL_DATA = {
   pinned: false,
   submissionMode: 'Lengkap',
   rainfallMm: null,
+  upstream: null,
   kecamatan: '',
   kelurahan: '',
   alamat: '',
@@ -660,12 +662,24 @@ export default function LaporPage() {
 
   // Curah hujan 3 jam BMKG diambil sekali saat wilayah sudah pasti, lalu
   // dibekukan di laporan sebagai masukan faktor Cuaca (Proposal 4.4).
+  //
+  // Prakiraan kecamatan hulu ikut diambil dan disimpan supaya basis data punya
+  // bahan untuk faktor hulu-hilir (P-3). Keduanya berjalan berdampingan; hulu
+  // yang gagal tidak menahan laporan.
   useEffect(() => {
     if (step !== 2 || !data.kecamatan || !data.kelurahan || data.rainfallMm !== null) return
     let active = true
+
     fetchRainfallMm(data.kecamatan, data.kelurahan).then((forecast) => {
-      if (active && forecast) updateData({ rainfallMm: forecast.rainfallMm })
+      if (!active || !forecast) return
+      updateData({ rainfallMm: forecast.rainfallMm })
+      saveAreaWeather(data.kecamatan, forecast.rainfallMm, forecast.description)
     })
+
+    primeUpstreamWeather(data.kecamatan).then((upstream) => {
+      if (active && upstream) updateData({ upstream })
+    })
+
     return () => { active = false }
   }, [step, data.kecamatan, data.kelurahan, data.rainfallMm, updateData])
 

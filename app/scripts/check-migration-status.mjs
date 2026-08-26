@@ -130,6 +130,33 @@ if (breakdowns.error) {
       : `${mismatched.length} meleset: ${mismatched.map((row) => row.code).join(', ')}`)
 }
 
+const flow = await supabase
+  .from('area_flow_relations')
+  .select('kecamatan_hulu, kecamatan_hilir, kekuatan, sumber')
+  .eq('active', true)
+const flowRows = flow.error ? [] : (flow.data ?? [])
+const flowBersumber = flowRows.every((row) => String(row.sumber || '').trim().length > 0)
+record('migrasi 4', 'tabel area_flow_relations', !flow.error && flowRows.length > 0 && flowBersumber,
+  flow.error ? '' : `${flowRows.length} relasi, semuanya bersumber: ${flowBersumber}`)
+
+const areaWeather = await supabase.from('area_weather').select('kecamatan').limit(1)
+record('migrasi 4', 'tabel area_weather', !areaWeather.error)
+
+// Hujan 18 mm di hulu dengan relasi kuat harus diteruskan penuh; relasi lemah
+// hanya sepertiganya. Dihitung basis data, bukan diklaim di sini.
+const rainContext = await supabase.rpc('alirin_rain_context', {
+  p_kecamatan: '__tidak ada__', p_local: 4, p_at: new Date().toISOString(),
+})
+const rainRow = Array.isArray(rainContext.data) ? rainContext.data[0] : rainContext.data
+record('migrasi 4', 'fungsi alirin_rain_context', !rainContext.error && Number(rainRow?.effective) === 4,
+  rainContext.error ? '' : `tanpa hulu, lokal 4 mm -> ${rainRow?.effective} (harus 4)`)
+
+const upstreamColumns = await supabase
+  .from('public_reports')
+  .select('code, upstream_kecamatan, upstream_rainfall_mm')
+  .limit(1)
+record('migrasi 4', 'view memancarkan konteks hulu', !upstreamColumns.error)
+
 const wajib = results.filter((r) => r.label !== 'kolom officers.auth_user_id')
 const terpasang = wajib.filter((r) => r.ok).length
 

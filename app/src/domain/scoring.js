@@ -80,6 +80,46 @@ export function getWeatherScore(rainfallMm) {
   return 100
 }
 
+// null berarti "tidak tahu", nol berarti "tidak hujan". Keduanya tidak boleh
+// tertukar: Number(null) bernilai 0 dan diam-diam mengubah data yang hilang
+// menjadi cuaca cerah.
+function toRainfall(value) {
+  if (value === null || value === undefined || value === '') return null
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null
+}
+
+// P-3 - Hujan di hulu ikut menentukan risiko di hilir.
+//
+// Sumbangannya dikalikan kekuatan relasi dibagi 3, sehingga relasi yang disebut
+// langsung oleh warga (kekuatan 3) diteruskan penuh dan relasi arah aliran umum
+// hanya sebagian. Yang dipakai adalah yang terbesar antara hujan lokal dan
+// sumbangan hulu -- bukan dijumlahkan, karena sub-skor Cuaca menyatakan
+// intensitas hujan, bukan volume.
+//
+// Cermin dari public.alirin_rain_context di basis data.
+export function combineRainfall(localMm, upstream = null) {
+  const local = toRainfall(localMm)
+  const upRain = toRainfall(upstream?.rainfallMm)
+  const upKekuatan = Number(upstream?.kekuatan)
+  const upContribution = upRain !== null && upKekuatan >= 1 && upKekuatan <= 3
+    ? upRain * (upKekuatan / 3)
+    : null
+
+  if (local === null && upContribution === null) {
+    return { effective: null, fromUpstream: false, upstream: null }
+  }
+
+  const effective = Math.max(local ?? 0, upContribution ?? 0)
+  const fromUpstream = upContribution !== null && upContribution > (local ?? 0)
+
+  return {
+    effective,
+    fromUpstream,
+    upstream: fromUpstream ? { ...upstream, contribution: upContribution } : null,
+  }
+}
+
 export function describeRainfall(rainfallMm) {
   const rain = Number(rainfallMm)
   if (!Number.isFinite(rain) || rain < 0) return 'Data BMKG belum tersedia'
@@ -196,11 +236,30 @@ export function apportion(exactValues, total) {
   return points
 }
 
+const KEKUATAN_LABEL = { 3: 'kuat', 2: 'sedang', 1: 'lemah' }
+
+// Teksnya harus menyebut hulu ketika hulu yang menentukan. Tanpa itu, pengguna
+// melihat skor cuaca tinggi sementara di tempatnya sedang cerah, dan angkanya
+// tampak salah padahal justru itu intinya.
+function describeWeatherFactor(weatherAvailable, localMm, rain) {
+  if (!weatherAvailable) return 'Data BMKG tidak tersedia, bobot dialihkan ke faktor lain'
+
+  if (rain.fromUpstream && rain.upstream) {
+    const { kecamatan, rainfallMm, kekuatan } = rain.upstream
+    return `${describeRainfall(rainfallMm)} di hulu ${kecamatan}` +
+      ` (${Number(rainfallMm).toFixed(1)} mm, relasi ${KEKUATAN_LABEL[kekuatan] ?? 'lemah'})` +
+      `, lokal ${Number(localMm ?? 0).toFixed(1)} mm`
+  }
+
+  return `${describeRainfall(localMm)}, ${Number(localMm ?? 0).toFixed(1)} mm dalam 3 jam (BMKG)`
+}
+
 export function calculateRiskScore(report, context = {}) {
   const rainfallMm = report.rainfallMm ?? context.rainfallMm ?? null
+  const rain = combineRainfall(rainfallMm, report.upstream ?? context.upstream ?? null)
   const severityRaw = getSeverityScore(report.severity)
   const history = getHistoryScore(report, context.reports ?? [])
-  const weatherRaw = getWeatherScore(rainfallMm)
+  const weatherRaw = getWeatherScore(rain.effective)
   const location = getLocationScore(report, context.facilities ?? PUBLIC_FACILITIES)
   const evidence = getEvidenceSummary(report)
 
@@ -249,9 +308,7 @@ export function calculateRiskScore(report, context = {}) {
       weight: weatherAvailable ? effectiveWeight(WEIGHTS.weather) : 0,
       rawScore: weatherAvailable ? weatherRaw : 0,
       points: weatherPoints,
-      detail: weatherAvailable
-        ? `${describeRainfall(rainfallMm)}, ${Number(rainfallMm).toFixed(1)} mm dalam 3 jam (BMKG)`
-        : 'Data BMKG tidak tersedia, bobot dialihkan ke faktor lain',
+      detail: describeWeatherFactor(weatherAvailable, rainfallMm, rain),
     },
     {
       id: 'location',

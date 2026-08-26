@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CITY_BOUNDS, KECAMATAN_DATA, isInsideCity, resolveAdm4 } from './bandarLampungAreas.js'
+import { CITY_BOUNDS, KECAMATAN_DATA, KELURAHAN_ADM4, isInsideCity, resolveAdm4 } from './bandarLampungAreas.js'
 
 describe('master wilayah Kota Bandar Lampung', () => {
   it('memuat 20 kecamatan dan 126 kelurahan', () => {
@@ -31,12 +31,12 @@ describe('master wilayah Kota Bandar Lampung', () => {
     const kelurahan = Object.values(KECAMATAN_DATA).flat()
     expect(kelurahan).not.toContain('Nyunyai')
     expect(kelurahan).not.toContain('Tukik')
-    expect(kelurahan).not.toContain('Gedong Pakuon')
   })
 
-  it('memakai ejaan resmi hasil koreksi', () => {
-    expect(KECAMATAN_DATA['Teluk Betung Selatan']).toContain('Gedong Pakuan')
+  it('memakai ejaan yang sama dengan sumber Kemendagri lewat BMKG', () => {
+    expect(KECAMATAN_DATA['Teluk Betung Selatan']).toContain('Gedong Pakuon')
     expect(KECAMATAN_DATA['Teluk Betung Selatan']).toContain('Teluk Betung')
+    expect(KECAMATAN_DATA['Teluk Betung Timur']).toContain('Parwata')
     expect(KECAMATAN_DATA.Rajabasa).toContain('Rajabasa Nunyai')
   })
 })
@@ -58,13 +58,26 @@ describe('resolveAdm4', () => {
     expect(resolveAdm4('Kemiling', 'Pinang Jaya')).toEqual({ adm4: '18.71.13.1007', precision: 'kelurahan' })
   })
 
-  it('mundur ke kecamatan bila kelurahan belum punya kode', () => {
-    const hasil = resolveAdm4('Kemiling', 'Sumber Agung')
-    expect(hasil.precision).toBe('kecamatan')
-    expect(hasil.adm4.startsWith('18.71.13.')).toBe(true)
+  // Sebelumnya hanya 20 kelurahan yang punya kode, dan 17 di antaranya salah.
+  it('punya kode untuk seluruh 126 kelurahan', () => {
+    const tanpaKode = []
+    for (const [kecamatan, daftar] of Object.entries(KECAMATAN_DATA)) {
+      for (const kelurahan of daftar) {
+        if (resolveAdm4(kecamatan, kelurahan).precision !== 'kelurahan') {
+          tanpaKode.push(`${kecamatan}/${kelurahan}`)
+        }
+      }
+    }
+    expect(tanpaKode).toEqual([])
+    expect(KELURAHAN_ADM4).toHaveLength(126)
   })
 
-  it('mundur ke acuan kota bila kecamatan belum punya kode sama sekali', () => {
-    expect(resolveAdm4('Panjang', 'Srengsem').precision).toBe('kota')
+  it('tiap kode hanya dipakai satu kelurahan', () => {
+    const kode = KELURAHAN_ADM4.map(([, , adm4]) => adm4)
+    expect(new Set(kode).size).toBe(kode.length)
+  })
+
+  it('mundur ke acuan kota bila wilayahnya tidak dikenali', () => {
+    expect(resolveAdm4('Antah Berantah', 'Entah').precision).toBe('kota')
   })
 })
