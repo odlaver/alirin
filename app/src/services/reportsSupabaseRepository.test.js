@@ -56,7 +56,8 @@ async function loadRepository({ role = null, rows = [], rpcResult = null } = {})
   const getActiveRole = vi.fn().mockResolvedValue(role)
 
   vi.doMock('./supabaseClient.js', () => ({
-    supabase: { from, rpc },
+    supabase: { from, rpc, auth: { getSession: async () => ({ data: { session: { user: {} } } }) } },
+    isSupabaseConfigured: true,
   }))
   vi.doMock('./storageService.js', () => ({
     uploadReportPhoto,
@@ -195,7 +196,8 @@ describe('reportsSupabaseRepository', () => {
     })
 
     vi.doMock('./supabaseClient.js', () => ({
-      supabase: { from: fromMock },
+      supabase: { from: fromMock, auth: { getSession: async () => ({ data: { session: { user: {} } } }) } },
+      isSupabaseConfigured: true,
     }))
     
     const uploadReportPhoto = vi.fn().mockResolvedValue('https://cdn.alirin.test/report-photos/photo.webp')

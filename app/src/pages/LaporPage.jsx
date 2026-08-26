@@ -618,6 +618,9 @@ const SuccessScreen = memo(function SuccessScreen({ report, onNew }) {
         <Link to={statusPath} className="btn btn-primary">
           Cek Status Laporan
         </Link>
+        <Link to="/laporan-saya" className="btn btn-ghost">
+          Laporan saya
+        </Link>
         <button className="btn btn-ghost" type="button" onClick={onNew}>
           Laporan baru
         </button>

@@ -12,6 +12,7 @@ const PetaPage = lazy(() => import('./pages/PetaPage.jsx'))
 const LoginPage = lazy(() => import('./pages/LoginPage.jsx'))
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard.jsx'))
 const StatusPage = lazy(() => import('./pages/StatusPage.jsx'))
+const MyReportsPage = lazy(() => import('./pages/MyReportsPage.jsx'))
 const MetodologiPage = lazy(() => import('./pages/MetodologiPage.jsx'))
 const PetugasTasksPage = lazy(() => import('./pages/PetugasTasksPage.jsx'))
 
@@ -80,6 +81,7 @@ function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/lapor" element={<LaporPage />} />
             <Route path="/status/:token" element={<StatusPage />} />
+            <Route path="/laporan-saya" element={<MyReportsPage />} />
             <Route path="/peta" element={<PetaPage />} />
             <Route path="/metodologi" element={<MetodologiPage />} />
             <Route path="/login" element={<LoginPage />} />

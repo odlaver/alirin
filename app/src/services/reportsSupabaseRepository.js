@@ -2,6 +2,7 @@ import { supabase } from './supabaseClient.js'
 import { getActiveRole } from './authService.js'
 import { uploadReportPhoto } from './storageService.js'
 import { createReportCode } from '../domain/reports.js'
+import { ensureCitizenSession } from './identityService.js'
 
 const REPORT_SELECT = '*, report_photos(*), risk_breakdowns(*), report_status_history(*)'
 // View publik: kolom pribadi pelapor sudah tidak ikut, relasi anak sudah di-agregasi jsonb.
@@ -171,6 +172,11 @@ async function insertStatusHistory(reportId, historyItem) {
 }
 
 export async function insertSupabaseReport(report) {
+  // Pastikan ada sesi anonim lebih dulu, supaya trigger di server bisa menandai
+  // laporan ini milik perangkat pengirim (P-8). Tanpa ini reporter_id tetap
+  // null dan laporan tidak muncul di "Laporan saya".
+  await ensureCitizenSession()
+
   const reportPhotos = await syncInlinePhotos(report.photos || [], 'foto laporan')
   const completionPhotos = await syncInlinePhotos(report.completionPhotos || [], 'foto penyelesaian')
 
