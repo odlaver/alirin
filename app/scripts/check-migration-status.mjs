@@ -191,6 +191,22 @@ const melanggar = areaKosong.error
 record('migrasi 6', 'tidak ada laporan berwilayah kosong', melanggar?.length === 0,
   melanggar === null ? 'tidak terbaca' : `${melanggar.length} melanggar${melanggar.length ? ': ' + melanggar.map((r) => r.code).join(', ') : ''}`)
 
+// P-6: tabel alert dan trigger ambang. Tabelnya publik-baca, jadi terbaca
+// tanpa sesi admin. Fungsi trigger dites dengan probe read-only.
+const alerts = await supabase.from('alerts').select('id, jenis').eq('active', true)
+record('migrasi 7', 'tabel alerts publik-baca', !alerts.error,
+  alerts.error ? alerts.error.code : `${alerts.data?.length ?? 0} alert aktif`)
+
+const alertFns = await Promise.all(
+  ['alirin_alert_threshold', 'alirin_alert_upstream'].map(async (name) => {
+    const probe = await supabase.rpc(name)
+    // Fungsi trigger tidak bisa dipanggil langsung: yang belum ada menjawab
+    // "could not find function" (PGRST202); yang ada menolak dengan alasan lain.
+    return { name, ada: probe.error?.code !== 'PGRST202' }
+  })
+)
+for (const fn of alertFns) record('migrasi 7', `fungsi ${fn.name}`, fn.ada)
+
 const wajib = results.filter((r) => r.label !== 'kolom officers.auth_user_id')
 const terpasang = wajib.filter((r) => r.ok).length
 

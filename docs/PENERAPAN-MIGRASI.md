@@ -10,6 +10,9 @@ Migrasi 1 dan 2 menutup temuan audit dan **sudah diterapkan** ke project live
 | 3 | `supabase/migrations/20260826100000_breakdown_apportion.sql` | Poin rincian dibagi dengan metode sisa terbesar sehingga berjumlah sama dengan skor; pembangun rincian dipisah dari trigger |
 | 4 | `supabase/migrations/20260826110000_hulu_hilir.sql` | Relasi hulu-hilir, cache cuaca per kecamatan, dan faktor Cuaca yang membaca hujan di hulu |
 | 5 | `supabase/migrations/20260826120000_ai_assessment.sql` | Kolom penilaian AI (`ai_*`) berdampingan dengan baseline |
+| 6 | `supabase/migrations/20260826130000_validate_constraints.sql` | Mengunci semua constraint yang masih NOT VALID |
+| 7 | `supabase/migrations/20260826140000_anon_identity.sql` | Identitas warga per perangkat, tutup celah eskalasi peran |
+| 8 | `supabase/migrations/20260826150000_alerts.sql` | Alert saat skor melewati ambang dan hujan deras di hulu |
 
 ## Cek dulu kondisi sekarang
 

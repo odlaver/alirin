@@ -1,0 +1,23 @@
+/* P-6 - spanduk alert. */
+.alert-banner-stack { display: grid; gap: 8px; margin-bottom: 16px; }
+.alert-banner {
+  display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;
+  border-radius: 12px; border: 1px solid transparent;
+}
+.alert-banner-skor {
+  background: color-mix(in srgb, var(--color-danger) 12%, var(--color-surface));
+  border-color: color-mix(in srgb, var(--color-danger) 35%, transparent);
+}
+.alert-banner-hulu {
+  background: color-mix(in srgb, var(--color-secondary) 14%, var(--color-surface));
+  border-color: color-mix(in srgb, var(--color-secondary) 35%, transparent);
+}
+.alert-banner-icon { flex-shrink: 0; margin-top: 1px; }
+.alert-banner-skor .alert-banner-icon { color: var(--color-danger); }
+.alert-banner-hulu .alert-banner-icon { color: var(--color-secondary); }
+.alert-banner-text { flex: 1; margin: 0; font-size: var(--text-sm); line-height: 1.5; color: var(--color-text-primary); }
+.alert-banner-close {
+  flex-shrink: 0; background: none; border: none; cursor: pointer; padding: 2px;
+  color: var(--color-text-muted); border-radius: 6px; line-height: 0;
+}
+.alert-banner-close:hover { background: var(--color-surface-hover); color: var(--color-text-primary); }

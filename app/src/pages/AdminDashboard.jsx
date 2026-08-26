@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import AlertBanner from '../components/AlertBanner.jsx'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Download, Menu, RefreshCw, RotateCcw, Search } from 'lucide-react'
@@ -176,6 +177,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="admin-content">
+          <AlertBanner />
           <AnimatePresence mode="wait">
             <motion.div key={nav} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.3 }}>
               {renderView()}

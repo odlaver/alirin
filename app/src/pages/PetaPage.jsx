@@ -13,6 +13,7 @@ import {
 import RiskMap from '../components/RiskMap.jsx'
 import FlowRelations from '../components/FlowRelations.jsx'
 import WeatherBrief from '../components/WeatherBrief.jsx'
+import AlertBanner from '../components/AlertBanner.jsx'
 import { getLevelClass } from '../components/mapData.js'
 import { reportsToMarkers } from '../domain/reports.js'
 import { KECAMATAN_DATA } from '../data/bandarLampungAreas.js'
@@ -79,6 +80,7 @@ export default function PetaPage() {
 
       <main className="peta-workspace">
         <aside className="peta-sidebar" aria-label="Daftar titik risiko">
+          <AlertBanner />
           <div className="peta-search-panel">
             <label htmlFor="peta-search">
               <Search size={16} />
