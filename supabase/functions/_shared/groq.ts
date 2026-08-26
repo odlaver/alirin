@@ -30,11 +30,49 @@ export function groqModel(): string {
   return Deno.env.get('GROQ_MODEL') || DEFAULT_MODEL
 }
 
+// Tier gratis Groq membatasi 8000 token per menit. Batas itu tidak terasa pada
+// pemakaian normal satu laporan per kirim, tetapi langsung tercapai saat banyak
+// laporan dinilai berturut-turut. Karena 429 selalu menyebutkan berapa detik
+// lagi kuotanya pulih, sekali coba ulang menutup hampir semua kasusnya.
+const RETRY_ON_RATE_LIMIT = 1
+const MAX_RETRY_WAIT_MS = 8_000
+
+function retryDelayMs(body: string): number | null {
+  const match = body.match(/try again in ([0-9.]+)s/i)
+  if (!match) return null
+  const ms = Math.ceil(Number(match[1]) * 1000) + 250
+  return Number.isFinite(ms) && ms <= MAX_RETRY_WAIT_MS ? ms : null
+}
+
 export async function askGroqJson<T>(systemPrompt: string, userPrompt: string): Promise<T> {
   const key = Deno.env.get('GROQ_API_KEY')
   if (!key) throw new GroqUnavailable('GROQ_API_KEY belum dipasang')
 
   const effort = Deno.env.get('GROQ_REASONING_EFFORT') ?? DEFAULT_EFFORT
+
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await callOnce<T>(key, effort, systemPrompt, userPrompt)
+    } catch (err) {
+      const wait = err instanceof RateLimited ? err.waitMs : null
+      if (wait === null || attempt >= RETRY_ON_RATE_LIMIT) throw err
+      await new Promise((resolve) => setTimeout(resolve, wait))
+    }
+  }
+}
+
+class RateLimited extends Error {
+  constructor(message: string, readonly waitMs: number) {
+    super(message)
+  }
+}
+
+async function callOnce<T>(
+  key: string,
+  effort: string,
+  systemPrompt: string,
+  userPrompt: string,
+): Promise<T> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
@@ -58,6 +96,10 @@ export async function askGroqJson<T>(systemPrompt: string, userPrompt: string): 
 
     if (!response.ok) {
       const body = await response.text()
+      if (response.status === 429) {
+        const wait = retryDelayMs(body)
+        if (wait !== null) throw new RateLimited(`Groq HTTP 429: ${body.slice(0, 200)}`, wait)
+      }
       // Alasannya dicetak apa adanya. Sebelumnya semua kegagalan ditelan
       // runCatching, sehingga kunci salah, model yang sudah dimatikan, dan
       // "memang belum dikonfigurasi" tidak bisa dibedakan.

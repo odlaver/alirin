@@ -164,8 +164,11 @@ Tugas: kembalikan penilaian JSON sesuai schema.`
     })
     .eq('id', reportId)
 
-  if (writeError) return jsonResponse({ error: writeError.message }, 500)
-
+  // Penilaiannya tetap dikembalikan walau gagal disimpan. Dua laporan berwilayah
+  // kosong (ALR-2026-0013 dan 0014) membuat setiap UPDATE ke barisnya ditolak
+  // reports_area_filled_check, karena constraint NOT VALID tetap diperiksa pada
+  // UPDATE. Itu masalah data yang terpisah, dan tidak seharusnya membuat
+  // penilaian AI ikut gagal total.
   return jsonResponse({
     source: 'ai',
     baseline_score: report.risk_score,
@@ -174,5 +177,7 @@ Tugas: kembalikan penilaian JSON sesuai schema.`
     alasan: assessment.alasan,
     rekomendasi,
     model: groqModel(),
+    tersimpan: !writeError,
+    ...(writeError ? { peringatan_simpan: writeError.message } : {}),
   })
 })
