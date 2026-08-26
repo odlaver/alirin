@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import AlertBanner from '../components/AlertBanner.jsx'
+import { createReportsGeoJson, createRekapHtml } from '../services/exportService.js'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Download, Menu, RefreshCw, RotateCcw, Search } from 'lucide-react'
@@ -38,6 +39,7 @@ export default function AdminDashboard() {
   const [selected, setSelected] = useState(null)
   const [quickSearch, setQuickSearch] = useState('')
   const [exportMode, setExportMode] = useState('semua')
+  const [exportFormat, setExportFormat] = useState('csv')
 
   useEffect(() => {
     const timer = window.setTimeout(() => setAnimated(true), 100)
@@ -64,18 +66,41 @@ export default function AdminDashboard() {
     if (updated) setSelected(updated)
   }
 
-  function handleExportCsv() {
+  function handleExport() {
     const exportReports = reports.filter((report) => {
       if (exportMode === 'aktif') return !isArchivedReport(report)
       if (exportMode === 'arsip') return isArchivedReport(report)
       return true
     })
+    const stamp = new Date().toISOString().slice(0, 10)
+
+    if (exportFormat === 'geojson') {
+      const geo = JSON.stringify(createReportsGeoJson(exportReports), null, 2)
+      downloadBlob(geo, 'application/geo+json', `alirin-titik-${stamp}.geojson`)
+      return
+    }
+
+    if (exportFormat === 'rekap') {
+      // Rekap dibuka di tab baru; pengguna menekan Cetak lalu "Simpan PDF".
+      // Tidak diunduh sebagai berkas supaya tombol Cetak-nya tersedia.
+      const win = window.open('', '_blank')
+      if (win) {
+        win.document.write(createRekapHtml(exportReports))
+        win.document.close()
+      }
+      return
+    }
+
     const csv = createReportsCsv(exportReports)
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    downloadBlob(csv, 'text/csv;charset=utf-8', `alirin-laporan-${stamp}.csv`)
+  }
+
+  function downloadBlob(content, type, filename) {
+    const blob = new Blob([content], { type })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `alirin-laporan-${new Date().toISOString().slice(0, 10)}.csv`
+    link.download = filename
     document.body.appendChild(link)
     link.click()
     link.remove()
@@ -157,13 +182,23 @@ export default function AdminDashboard() {
                   className="export-mode-select"
                   value={exportMode}
                   onChange={(event) => setExportMode(event.target.value)}
-                  aria-label="Mode export CSV"
+                  aria-label="Cakupan export"
                 >
                   <option value="semua">Semua</option>
                   <option value="aktif">Aktif</option>
                   <option value="arsip">Arsip</option>
                 </select>
-                <button className="topbar-tool-btn topbar-icon-only" type="button" onClick={handleExportCsv} aria-label="Export CSV" title="Export CSV">
+                <select
+                  className="export-mode-select"
+                  value={exportFormat}
+                  onChange={(event) => setExportFormat(event.target.value)}
+                  aria-label="Format export"
+                >
+                  <option value="csv">CSV</option>
+                  <option value="geojson">GeoJSON</option>
+                  <option value="rekap">Rekap PDF</option>
+                </select>
+                <button className="topbar-tool-btn topbar-icon-only" type="button" onClick={handleExport} aria-label="Export data" title="Export data">
                   <Download size={16} />
                 </button>
               </div>
