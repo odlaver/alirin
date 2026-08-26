@@ -9,7 +9,7 @@ import {
 
 export const NAV_MAIN = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'laporan', label: 'Laporan Masuk', icon: FileCheck2, badge: 6 },
+  { id: 'laporan', label: 'Laporan Masuk', icon: FileCheck2 },
   { id: 'prioritas', label: 'Daftar Prioritas', icon: ListChecks },
   { id: 'preventif', label: 'Titik Preventif', icon: Repeat },
   { id: 'peta', label: 'Peta Risiko', icon: Map },
