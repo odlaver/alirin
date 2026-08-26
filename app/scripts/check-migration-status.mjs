@@ -179,6 +179,18 @@ for (const fn of ['weather-brief', 'assess-risk']) {
     probe ? `HTTP ${probe.status}` : 'tidak terjangkau')
 }
 
+// Constraint NOT VALID tetap menjaga baris baru, tetapi membiarkan baris lama
+// yang melanggar. Selama masih ada, pelanggarannya tidak tercatat di mana pun
+// selain laporan audit -- dan setiap UPDATE ke baris itu akan gagal.
+const areaKosong = await supabase
+  .from('public_reports')
+  .select('code, kecamatan, kelurahan')
+const melanggar = areaKosong.error
+  ? null
+  : (areaKosong.data ?? []).filter((row) => !row.kecamatan || !row.kelurahan)
+record('migrasi 6', 'tidak ada laporan berwilayah kosong', melanggar?.length === 0,
+  melanggar === null ? 'tidak terbaca' : `${melanggar.length} melanggar${melanggar.length ? ': ' + melanggar.map((r) => r.code).join(', ') : ''}`)
+
 const wajib = results.filter((r) => r.label !== 'kolom officers.auth_user_id')
 const terpasang = wajib.filter((r) => r.ok).length
 
