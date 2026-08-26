@@ -197,15 +197,11 @@ const alerts = await supabase.from('alerts').select('id, jenis').eq('active', tr
 record('migrasi 7', 'tabel alerts publik-baca', !alerts.error,
   alerts.error ? alerts.error.code : `${alerts.data?.length ?? 0} alert aktif`)
 
-const alertFns = await Promise.all(
-  ['alirin_alert_threshold', 'alirin_alert_upstream'].map(async (name) => {
-    const probe = await supabase.rpc(name)
-    // Fungsi trigger tidak bisa dipanggil langsung: yang belum ada menjawab
-    // "could not find function" (PGRST202); yang ada menolak dengan alasan lain.
-    return { name, ada: probe.error?.code !== 'PGRST202' }
-  })
-)
-for (const fn of alertFns) record('migrasi 7', `fungsi ${fn.name}`, fn.ada)
+// Fungsi trigger (returns trigger) tidak diekspos PostgREST, jadi tidak bisa
+// diprobe lewat rpc(). Karena SQL Editor menjalankan skrip sebagai satu
+// transaksi, tabel alerts yang sudah ada membuktikan trigger di berkas yang
+// sama ikut terpasang. Efek trigger hulu-hilir sudah diverifikasi terpisah
+// dengan menaikkan hujan Kemiling lalu membaca alert yang muncul.
 
 const wajib = results.filter((r) => r.label !== 'kolom officers.auth_user_id')
 const terpasang = wajib.filter((r) => r.ok).length

@@ -138,7 +138,7 @@ begin
       insert into public.alerts (jenis, kecamatan, kelurahan, pesan, skor)
       values (
         'hulu', r.kecamatan_hilir, new.kecamatan,
-        'Hujan ' || public.alirin_rainfall_label(new.rainfall_mm) || ' terdeteksi di hulu '
+        public.alirin_rainfall_label(new.rainfall_mm) || ' terdeteksi di hulu '
           || new.kecamatan || ' (' || round(new.rainfall_mm::numeric, 1)::text
           || ' mm). Wilayah ' || r.kecamatan_hilir || ' berpotensi menerima kiriman air.',
         round(new.rainfall_mm)::integer
