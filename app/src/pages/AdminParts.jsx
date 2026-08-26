@@ -5,6 +5,7 @@ import {
   AlertTriangle, CheckCircle2, Clock, FileCheck2,
   MapPin, TrendingUp, TrendingDown, X,
 } from 'lucide-react'
+import AiAssessment from '../components/AiAssessment.jsx'
 import RiskBreakdown from '../components/RiskBreakdown.jsx'
 import { getCachedOfficers, loadOfficers } from '../services/officersService.js'
 import { REPORT_STATUSES, STATUS_CLASS, STATUS_LABEL, canTransitionTo } from '../domain/status.js'
@@ -187,6 +188,7 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
               </div>
             </div>
             <RiskBreakdown items={report.riskBreakdown} />
+            <AiAssessment report={report} />
             <div className="info-grid-2">
               <div className="info-block">
                 <div className="info-icon"><CheckCircle2 size={18}/></div>

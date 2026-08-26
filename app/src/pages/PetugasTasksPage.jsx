@@ -22,6 +22,7 @@ import {
   subscribeReports,
   updateFieldProgress,
 } from '../services/reportsStore.js'
+import AiAssessment from '../components/AiAssessment.jsx'
 import RiskBreakdown from '../components/RiskBreakdown.jsx'
 import { signOut } from '../services/authService.js'
 import { useAuth } from '../hooks/useAuth.js'
@@ -334,6 +335,7 @@ export default function PetugasTasksPage() {
 
                     <div className="field-breakdown">
                       <RiskBreakdown items={selected.riskBreakdown} title="Kenapa skornya segini" />
+                      <AiAssessment report={selected} />
                     </div>
 
                     <div className="field-photo-strip">

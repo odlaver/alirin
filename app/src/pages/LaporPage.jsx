@@ -28,6 +28,7 @@ import { KECAMATAN_DATA } from '../data/bandarLampungAreas.js'
 import { createReport } from '../services/reportsStore.js'
 import { fetchRainfallMm } from '../services/weatherService.js'
 import { primeUpstreamWeather, saveAreaWeather } from '../services/upstreamService.js'
+import { requestAiAssessment } from '../services/aiService.js'
 import { MAX_REPORT_PHOTOS, prepareReportPhotos } from '../services/imageFiles.js'
 import { getReportTrackingToken } from '../domain/reports.js'
 
@@ -711,6 +712,10 @@ export default function LaporPage() {
       })
       setSubmittedReport(report)
       window.scrollTo({ top: 0, behavior: 'smooth' })
+
+      // Penilaian AI berjalan setelah laporan tersimpan dan tidak ditunggu:
+      // skor baseline sudah ada, dan itu yang dipakai mengurutkan penanganan.
+      requestAiAssessment(report.id)
     } catch (error) {
       const isQuota = error.message?.toLowerCase().includes('penuh') ||
                       error.message?.toLowerCase().includes('quota') ||

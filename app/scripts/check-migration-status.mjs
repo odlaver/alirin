@@ -157,6 +157,28 @@ const upstreamColumns = await supabase
   .limit(1)
 record('migrasi 4', 'view memancarkan konteks hulu', !upstreamColumns.error)
 
+const aiColumns = await supabase
+  .from('public_reports')
+  .select('code, ai_risk_score, ai_risk_reason, ai_model')
+  .limit(1)
+record('migrasi 5', 'kolom penilaian AI', !aiColumns.error)
+
+// Edge Function tidak ikut migrasi SQL; ia diterbitkan terpisah. Diperiksa di
+// sini supaya "sudah dideploy" tidak perlu ditebak.
+for (const fn of ['weather-brief', 'assess-risk']) {
+  const probe = await fetch(`${supabaseUrl}/functions/v1/${fn}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${supabaseKey}`, apikey: supabaseKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  }).catch(() => null)
+
+  // Fungsi yang belum diterbitkan menjawab 404. Yang sudah diterbitkan menolak
+  // badan permintaan kosong dengan 400 -- itu justru bukti ia berjalan.
+  const deployed = Boolean(probe) && probe.status !== 404
+  record('edge fn', `fungsi ${fn} diterbitkan`, deployed,
+    probe ? `HTTP ${probe.status}` : 'tidak terjangkau')
+}
+
 const wajib = results.filter((r) => r.label !== 'kolom officers.auth_user_id')
 const terpasang = wajib.filter((r) => r.ok).length
 

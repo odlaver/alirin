@@ -1,0 +1,97 @@
+/* P-1 - penilaian AI berdampingan dengan baseline. */
+
+.ai-assessment {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface-hover);
+}
+
+.ai-assessment-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.ai-assessment-head small {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ai-assessment-model {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono, monospace);
+}
+
+.ai-assessment-scores {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.ai-score-cell {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  text-align: center;
+}
+
+.ai-score-cell strong {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-text-primary);
+}
+
+.ai-score-cell small {
+  display: block;
+  margin-top: 3px;
+  font-size: 10.5px;
+  color: var(--color-text-muted);
+}
+
+.ai-score-cell-ai strong {
+  color: var(--color-primary);
+}
+
+.ai-assessment-reason {
+  margin: 10px 0 0;
+  font-size: var(--text-xs);
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+.ai-assessment-actions {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 3px;
+}
+
+.ai-assessment-actions li {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.ai-assessment-note {
+  display: block;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--color-border);
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
