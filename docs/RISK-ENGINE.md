@@ -120,6 +120,47 @@ jalur datanya sudah teruji ketika bobotnya dinaikkan nanti.
 
 ---
 
+## 3b. Poin yang Ditampilkan
+
+Rincian skor dibaca pengguna, jadi poin tiap faktor **harus berjumlah persis
+sama dengan skornya**. Pembulatan masing-masing faktor secara terpisah tidak
+memenuhi syarat itu: pada laporan berskor 53, `round(46.67) + 0 + round(6.67)`
+menghasilkan 54.
+
+Pembagiannya memakai **metode sisa terbesar**:
+
+1. Tiap faktor mendapat bagian bulat ke bawah dari nilai eksaknya.
+2. Selisih terhadap skor akhir dibagikan satu poin per faktor, dimulai dari
+   yang pecahannya terbesar.
+
+| Faktor | Nilai eksak | Bulat bawah | Sisa | Poin |
+|---|---|---|---|---|
+| Keparahan | 46,67 | 46 | 0,67 | **47** |
+| Histori | 0,00 | 0 | 0,00 | 0 |
+| Cuaca | — | 0 | — | 0 |
+| Lokasi | 6,67 | 6 | 0,67 | 6 |
+| | | **52** | sisa 1 | **53** |
+
+Bobot yang ditampilkan tidak ikut dibagi ulang: `round(35 × 100 / total)` dan
+seterusnya sudah berjumlah 100 baik saat cuaca tersedia (35+25+25+15) maupun
+tidak (47+33+20).
+
+Bila dua pecahan **seri**, poin sisanya jatuh ke faktor yang lebih dulu dalam
+urutan tabel di atas. Basis data memakai `numeric` yang eksak, sedangkan kedua
+klien memakai float — karena itu keduanya membulatkan pecahan ke 6 desimal
+sebelum membandingkan, supaya seri tetap terbaca seri dan pilihannya sama.
+
+Urutan faktor yang dikirim ke klien juga dipatok (`alirin_factor_rank`).
+`jsonb_agg` tanpa `order by` tidak menjanjikan urutan apa pun, dan urutan yang
+berubah-ubah antar pemuatan akan langsung terlihat begitu rinciannya ditampilkan.
+
+Ketiga implementasinya harus sama: `alirin_apportion` (SQL, otoritatif),
+`apportion` di `app/src/domain/scoring.js`, dan `RiskEngine.apportion` di
+mobile. Uji "jumlah poin selalu sama dengan skor" ada di kedua sisi klien, dan
+`npm run supabase:status` memeriksanya langsung pada data yang tersimpan.
+
+---
+
 ## 4. Kelas Risiko
 
 | Skor | Kelas |

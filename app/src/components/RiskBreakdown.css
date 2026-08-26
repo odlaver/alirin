@@ -1,0 +1,117 @@
+/* Dipakai bersama oleh dasbor admin, antrean petugas, dan halaman status warga. */
+
+.risk-breakdown {
+  display: grid;
+  gap: 10px;
+}
+
+.risk-breakdown-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.risk-breakdown-head small {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.risk-breakdown-total {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.risk-breakdown-row {
+  display: block;
+}
+
+.risk-breakdown-row-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--text-sm);
+  margin-bottom: 5px;
+}
+
+.risk-breakdown-row-head span {
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.risk-breakdown-row-head strong {
+  color: var(--color-text-primary);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.risk-breakdown-row-head em {
+  font-style: normal;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.risk-breakdown-track {
+  height: 5px;
+  background: var(--color-surface-muted);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.risk-breakdown-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.risk-breakdown-detail {
+  display: block;
+  margin-top: 5px;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+.risk-breakdown-pending {
+  display: grid;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--color-border);
+}
+
+.risk-breakdown-pending > small {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.risk-breakdown-pending-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--text-xs);
+}
+
+.risk-breakdown-pending-row span {
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.risk-breakdown-pending-row small {
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+.risk-breakdown-empty small {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}

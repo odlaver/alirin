@@ -765,3 +765,10 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* P-2 - rincian faktor skor di kartu prioritas. */
+.status-breakdown {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}

@@ -5,6 +5,7 @@ import {
   AlertTriangle, CheckCircle2, Clock, FileCheck2,
   MapPin, TrendingUp, TrendingDown, X,
 } from 'lucide-react'
+import RiskBreakdown from '../components/RiskBreakdown.jsx'
 import { getCachedOfficers, loadOfficers } from '../services/officersService.js'
 import { REPORT_STATUSES, STATUS_CLASS, STATUS_LABEL, canTransitionTo } from '../domain/status.js'
 import {
@@ -185,30 +186,7 @@ export function ReportModal({ report, onClose, onStatusChange, onAssignOfficer }
                 <p>{report.description}</p>
               </div>
             </div>
-            <div className="modal-breakdown">
-              <small style={{display:'block',marginBottom:8,color:'var(--color-text-muted)',fontWeight:600,fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase'}}>Faktor Risiko</small>
-              {report.riskBreakdown.map((item) => {
-                const fillPct = Math.round((item.points / item.weight) * 100)
-                return (
-                  <div className="modal-breakdown-row" key={item.id}>
-                    <div className="breakdown-row-header">
-                      <span>{item.label}</span>
-                      <strong>{item.points}<span style={{fontWeight:400,color:'var(--color-text-muted)'}}>/{item.weight}</span></strong>
-                    </div>
-                    <div className="breakdown-bar-track">
-                      <div
-                        className="breakdown-bar-fill"
-                        style={{
-                          width: `${Math.min(fillPct, 100)}%`,
-                          background: fillPct >= 70 ? 'var(--color-danger)' : fillPct >= 40 ? 'var(--color-warning)' : 'var(--color-secondary)'
-                        }}
-                      />
-                    </div>
-                    <small className="breakdown-row-detail">{item.detail}</small>
-                  </div>
-                )
-              })}
-            </div>
+            <RiskBreakdown items={report.riskBreakdown} />
             <div className="info-grid-2">
               <div className="info-block">
                 <div className="info-icon"><CheckCircle2 size={18}/></div>

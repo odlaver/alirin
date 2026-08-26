@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  apportion,
   calculateRiskScore,
   combineRiskFactors,
   getDistanceKm,
@@ -136,5 +137,39 @@ describe('calculateRiskScore', () => {
     const cepat = calculateRiskScore({ ...BASE_REPORT, submissionMode: 'Cepat' }, { reports: [], facilities: NEAR_FACILITY })
     const lengkap = calculateRiskScore({ ...BASE_REPORT, submissionMode: 'Lengkap' }, { reports: [], facilities: NEAR_FACILITY })
     expect(cepat.score).toBe(lengkap.score)
+  })
+})
+
+// P-2: rincian skor ditampilkan ke pengguna, jadi angkanya harus berjumlah.
+describe('pembagian poin per faktor', () => {
+  it('membagi sisa ke pecahan terbesar', () => {
+    expect(apportion([46.6, 0, 0, 6.9], 53)).toEqual([46, 0, 0, 7])
+  })
+
+  // Pecahan seri harus jatuh ke faktor pertama di semua implementasi, bukan ke
+  // faktor yang kebetulan menang di digit ke-15 float.
+  it('memberi sisa ke faktor pertama saat pecahannya seri', () => {
+    expect(apportion([46.67, 0, 0, 6.67], 53)).toEqual([47, 0, 0, 6])
+    expect(apportion([2.5, 2.5], 6)).toEqual([3, 3])
+  })
+
+  it('tidak mengubah nilai yang sudah bulat', () => {
+    expect(apportion([35, 25, 25, 15], 100)).toEqual([35, 25, 25, 15])
+  })
+
+  it('jumlah poin selalu sama dengan skor', () => {
+    const severities = ['ringan', 'sedang', 'parah', 'kritis']
+    const rainfalls = [null, 0, 0.5, 3, 8, 15, 40]
+
+    for (const severity of severities) {
+      for (const rainfallMm of rainfalls) {
+        const risk = calculateRiskScore(
+          { ...BASE_REPORT, severity, rainfallMm },
+          { reports: [], facilities: NEAR_FACILITY }
+        )
+        const total = risk.breakdown.reduce((sum, item) => sum + item.points, 0)
+        expect(`${severity}/${rainfallMm}: ${total}`).toBe(`${severity}/${rainfallMm}: ${risk.score}`)
+      }
+    }
   })
 })

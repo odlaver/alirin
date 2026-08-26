@@ -171,6 +171,31 @@ export function combineRiskFactors({ severity, history, weather, location }) {
   return { score, weatherAvailable, activeWeightTotal, weighted }
 }
 
+// Metode sisa terbesar. Tiap faktor mendapat bagian bulat ke bawah, lalu sisa
+// poin dibagikan ke faktor dengan pecahan terbesar. Cermin dari
+// public.alirin_apportion di basis data.
+export function apportion(exactValues, total) {
+  const points = exactValues.map((value) => Math.floor(value))
+  // Pecahannya dibulatkan ke 6 desimal sebelum dibandingkan. Basis data memakai
+  // numeric yang eksak; di sini tipenya float. Tanpa pembulatan ini, dua pecahan
+  // yang seharusnya seri bisa berbeda pada digit ke-15 dan poin sisanya jatuh ke
+  // faktor yang berbeda dari yang dipilih basis data.
+  const fractions = exactValues.map((value, index) => Math.round((value - points[index]) * 1e6) / 1e6)
+
+  let gap = total - points.reduce((sum, value) => sum + value, 0)
+  while (gap > 0) {
+    let best = 0
+    for (let i = 1; i < fractions.length; i += 1) {
+      if (fractions[i] > fractions[best]) best = i
+    }
+    points[best] += 1
+    fractions[best] = -1  // sudah kebagian
+    gap -= 1
+  }
+
+  return points
+}
+
 export function calculateRiskScore(report, context = {}) {
   const rainfallMm = report.rainfallMm ?? context.rainfallMm ?? null
   const severityRaw = getSeverityScore(report.severity)
@@ -189,13 +214,25 @@ export function calculateRiskScore(report, context = {}) {
   // Bobot efektif untuk ditampilkan; totalnya selalu 100.
   const effectiveWeight = (weight) => Math.round((weight / activeWeightTotal) * 100)
 
+  // Poin dibagi dari skor akhir, bukan dibulatkan sendiri-sendiri, supaya
+  // jumlahnya persis sama dengan angka yang dilihat pengguna.
+  const [severityPoints, historyPoints, weatherPoints, locationPoints] = apportion(
+    [
+      weighted(severityRaw, WEIGHTS.severity),
+      weighted(history.rawScore, WEIGHTS.history),
+      weatherAvailable ? weighted(weatherRaw, WEIGHTS.weather) : 0,
+      weighted(location.rawScore, WEIGHTS.location),
+    ],
+    score
+  )
+
   const breakdown = [
     {
       id: 'severity',
       label: 'Keparahan laporan',
       weight: effectiveWeight(WEIGHTS.severity),
       rawScore: severityRaw,
-      points: Math.round(weighted(severityRaw, WEIGHTS.severity)),
+      points: severityPoints,
       detail: `Tingkat ${report.severity || 'belum diisi'}`,
     },
     {
@@ -203,7 +240,7 @@ export function calculateRiskScore(report, context = {}) {
       label: 'Histori kejadian',
       weight: effectiveWeight(WEIGHTS.history),
       rawScore: history.rawScore,
-      points: Math.round(weighted(history.rawScore, WEIGHTS.history)),
+      points: historyPoints,
       detail: `${history.count} laporan lain dalam radius ${Math.round(HISTORY_RADIUS_KM * 1000)} m, ${HISTORY_WINDOW_DAYS} hari terakhir`,
     },
     {
@@ -211,7 +248,7 @@ export function calculateRiskScore(report, context = {}) {
       label: 'Cuaca',
       weight: weatherAvailable ? effectiveWeight(WEIGHTS.weather) : 0,
       rawScore: weatherAvailable ? weatherRaw : 0,
-      points: weatherAvailable ? Math.round(weighted(weatherRaw, WEIGHTS.weather)) : 0,
+      points: weatherPoints,
       detail: weatherAvailable
         ? `${describeRainfall(rainfallMm)}, ${Number(rainfallMm).toFixed(1)} mm dalam 3 jam (BMKG)`
         : 'Data BMKG tidak tersedia, bobot dialihkan ke faktor lain',
@@ -221,7 +258,7 @@ export function calculateRiskScore(report, context = {}) {
       label: 'Dampak lokasi',
       weight: effectiveWeight(WEIGHTS.location),
       rawScore: location.rawScore,
-      points: Math.round(weighted(location.rawScore, WEIGHTS.location)),
+      points: locationPoints,
       detail: location.facility
         ? `${location.facility.name}, ${location.distanceKm.toFixed(1)} km`
         : 'Tidak ada fasilitas publik terdekat',

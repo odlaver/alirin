@@ -22,6 +22,7 @@ import {
   subscribeReports,
   updateFieldProgress,
 } from '../services/reportsStore.js'
+import RiskBreakdown from '../components/RiskBreakdown.jsx'
 import { signOut } from '../services/authService.js'
 import { useAuth } from '../hooks/useAuth.js'
 import {
@@ -330,6 +331,10 @@ export default function PetugasTasksPage() {
                     </div>
 
                     <p className="field-description">{selected.description}</p>
+
+                    <div className="field-breakdown">
+                      <RiskBreakdown items={selected.riskBreakdown} title="Kenapa skornya segini" />
+                    </div>
 
                     <div className="field-photo-strip">
                       {selected.photos.map((photo, index) => (

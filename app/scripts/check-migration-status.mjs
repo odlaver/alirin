@@ -104,6 +104,32 @@ const probeCount = probes.error ? null : (probes.data?.length ?? 0)
 record('migrasi 2', 'baris probe sudah dibersihkan', probeCount === 0,
   probeCount === null ? 'tidak terbaca tanpa sesi admin' : `${probeCount} baris tersisa`)
 
+const apportion = await supabase.rpc('alirin_apportion', {
+  p_exact: [46.67, 0, 0, 6.67], p_total: 53,
+})
+const apportionOk = !apportion.error && String(apportion.data) === '47,0,0,6'
+record('migrasi 3', 'fungsi alirin_apportion', apportionOk,
+  apportion.error ? '' : `[46.67, 0, 0, 6.67] -> [${apportion.data}] (harus 47,0,0,6)`)
+
+// Bukti nyata, bukan sekadar fungsinya ada: poin yang ditampilkan ke pengguna
+// harus berjumlah persis sama dengan skor laporannya.
+const breakdowns = await supabase.from('public_reports').select('code, risk_score, risk_breakdowns')
+if (breakdowns.error) {
+  record('migrasi 3', 'poin rincian berjumlah sama dengan skor', false)
+} else {
+  const rows = breakdowns.data ?? []
+  const mismatched = rows.filter((row) => {
+    const items = Array.isArray(row.risk_breakdowns) ? row.risk_breakdowns : []
+    if (items.length === 0) return true
+    const total = items.reduce((sum, item) => sum + Number(item.points || 0), 0)
+    return total !== Number(row.risk_score)
+  })
+  record('migrasi 3', 'poin rincian berjumlah sama dengan skor', mismatched.length === 0,
+    mismatched.length === 0
+      ? `${rows.length} laporan cocok`
+      : `${mismatched.length} meleset: ${mismatched.map((row) => row.code).join(', ')}`)
+}
+
 const wajib = results.filter((r) => r.label !== 'kolom officers.auth_user_id')
 const terpasang = wajib.filter((r) => r.ok).length
 

@@ -12,6 +12,7 @@ import {
   ShieldCheck,
 } from 'lucide-react'
 import './StatusPage.css'
+import RiskBreakdown from '../components/RiskBreakdown.jsx'
 import { findReportByTrackingToken, getReportByTrackingToken, subscribeReports } from '../services/reportsStore.js'
 import {
   CATEGORY_LABEL,
@@ -228,6 +229,10 @@ export default function StatusPage() {
               {report.archivedAt && (
                 <div><span>Arsip</span><strong>{formatDateTime(report.archivedAt)}</strong></div>
               )}
+            </div>
+
+            <div className="status-breakdown">
+              <RiskBreakdown items={report.riskBreakdown} title="Kenapa skornya segini" />
             </div>
           </article>
 
