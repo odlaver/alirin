@@ -13,6 +13,7 @@ Migrasi 1 dan 2 menutup temuan audit dan **sudah diterapkan** ke project live
 | 6 | `supabase/migrations/20260826130000_validate_constraints.sql` | Mengunci semua constraint yang masih NOT VALID |
 | 7 | `supabase/migrations/20260826140000_anon_identity.sql` | Identitas warga per perangkat, tutup celah eskalasi peran |
 | 8 | `supabase/migrations/20260826150000_alerts.sql` | Alert saat skor melewati ambang dan hujan deras di hulu |
+| 9 | `supabase/migrations/20260826160000_recurring_points.sql` | Titik berulang untuk daftar preventif (P-4) |
 
 ## Cek dulu kondisi sekarang
 

@@ -203,6 +203,12 @@ record('migrasi 7', 'tabel alerts publik-baca', !alerts.error,
 // sama ikut terpasang. Efek trigger hulu-hilir sudah diverifikasi terpisah
 // dengan menaikkan hujan Kemiling lalu membaca alert yang muncul.
 
+// P-4: fungsi titik berulang. Anon dijaga di dalam fungsi (return kosong),
+// jadi memanggilnya tanpa error sudah cukup jadi bukti ia terpasang.
+const recurring = await supabase.rpc('alirin_recurring_points', { p_window_days: 365, p_min_events: 2 })
+record('migrasi 8', 'fungsi alirin_recurring_points', !recurring.error || recurring.error.code !== 'PGRST202',
+  recurring.error ? recurring.error.code : `${recurring.data?.length ?? 0} titik (kosong tanpa sesi staf)`)
+
 const wajib = results.filter((r) => r.label !== 'kolom officers.auth_user_id')
 const terpasang = wajib.filter((r) => r.ok).length
 

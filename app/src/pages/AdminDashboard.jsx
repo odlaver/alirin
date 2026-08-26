@@ -18,6 +18,7 @@ import {
 import { signOut } from '../services/authService.js'
 import { ReportModal } from './AdminParts.jsx'
 import AdminDashboardView from './admin/AdminDashboardView.jsx'
+import PreventifView from './admin/PreventifView.jsx'
 import { ArsipView, LaporanView, PetaView, PrioritasView } from './admin/AdminReportViews.jsx'
 import AdminSidebar from './admin/AdminSidebar.jsx'
 import { PAGE_TITLE } from './admin/adminNavigation.js'
@@ -105,6 +106,8 @@ export default function AdminDashboard() {
         return <LaporanView reports={activeReports} onSelect={setSelected} search={quickSearch} onSearchChange={setQuickSearch} />
       case 'prioritas':
         return <PrioritasView reports={activeReports} onSelect={setSelected} search={quickSearch} />
+      case 'preventif':
+        return <PreventifView />
       case 'peta':
         return <PetaView reports={activeReports} onSelect={setSelected} />
       case 'arsip':
