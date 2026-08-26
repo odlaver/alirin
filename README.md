@@ -112,6 +112,25 @@ alirin/app/
 
 ---
 
+## 🗄️ Backend (Supabase)
+
+Seluruh backend — tabel, RLS, Risk Engine (trigger PostgreSQL), dan Edge
+Function — ada di folder [`supabase/`](supabase/). Untuk fork baru, setup cukup
+satu langkah:
+
+```bash
+supabase link --project-ref <ref> && supabase db push
+```
+
+Atau tempel [`supabase/setup.sql`](supabase/setup.sql) sekali di SQL Editor.
+Panduan lengkap: [`supabase/README.md`](supabase/README.md).
+
+## 📱 Aplikasi Mobile
+
+Aplikasi warga & petugas (Android, Kotlin + Jetpack Compose) berada di repositori
+terpisah dan berbagi backend Supabase yang sama:
+[**ALIRIN Mobile**](https://github.com/KhairiFadhil/ALIRIN-PM).
+
 ## 🤝 Kontribusi
 Kami menyambut baik semua bentuk kontribusi! Silakan baca [CONTRIBUTING.md](CONTRIBUTING.md) untuk panduan lengkap tentang tata cara pelaporan *bug*, pengajuan fitur, dan pengiriman *Pull Request*.
 

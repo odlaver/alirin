@@ -1,5 +1,11 @@
 # Penerapan Migrasi 26 Agustus 2026
 
+> **Menyiapkan fork baru?** Jangan pakai dokumen ini — lihat
+> [`../supabase/README.md`](../supabase/README.md). Cukup `supabase db push`
+> (atau tempel `supabase/setup.sql` sekali). Dokumen di bawah adalah **catatan
+> penerapan** ke project referensi `prfgbvepsyfjwyctgeeq`, disimpan sebagai
+> riwayat, bukan panduan setup.
+
 Migrasi 1 dan 2 menutup temuan audit dan **sudah diterapkan** ke project live
 `prfgbvepsyfjwyctgeeq`. Migrasi 3 menyusul bersama pengembangan P-2.
 
